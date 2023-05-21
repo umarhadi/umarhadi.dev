@@ -1,0 +1,23 @@
+<p dir="auto"><img src="Users/Public/Pictures/Portfolio/2022/Bank%20Server/1.png" alt="" width="563" height="430"></p>
+<p dir="auto">Layanan ini akan menyediakan API untuk dikonsumsi frontend dan melakukan hal-hal berikut:</p>
+<ol dir="auto">
+<li>Membuat dan mengelola rekening bank, yang terdiri dari nama pemilik, saldo, dan mata uang.</li>
+<li>Pencatatan semua perubahan saldo pada masing-masing akun. Jadi setiap kali sejumlah uang ditambahkan atau dikurangi dari akun, catatan entri akun akan dibuat.</li>
+<li>Melakukan transfer uang antar 2 rekening. Ini harus terjadi dalam suatu transaksi, sehingga saldo kedua akun berhasil diperbarui atau tidak ada yang berhasil.</li>
+</ol>
+<hr>
+<p>Dari proyek ini, saya belajar banyak hal seperti Unit Test, Continous Integration &amp; Continous Deployment. Anda dapat memeriksa <a href="https://github.com/umarhadi/bank-server" target="_blank" rel="noopener">repo</a> ini untuk informasi lebih lanjut.&nbsp;</p>
+<hr>
+<p>Teknologi yang digunakan:</p>
+<ul>
+<li>Go</li>
+<li>HTTP Server</li>
+<li>gRPC</li>
+<li>Postgresql</li>
+<li>Docker</li>
+<li>Kubernetes</li>
+<li>GitHub Actions</li>
+<li>AWS EKS</li>
+<li>AWS ECR</li>
+<li>Fly.io</li>
+</ul>

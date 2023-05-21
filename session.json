@@ -1,0 +1,65 @@
+{
+  "iconPositions": {
+    "/Users/Public/Desktop/AI Chat.url": {
+      "gridColumnStart": 1,
+      "gridRowStart": 2
+    },
+    "/Users/Public/Desktop/Contact.url": {
+      "gridColumnStart": 2,
+      "gridRowStart": 2
+    },
+    "/Users/Public/Desktop/My PC.url": {
+      "gridColumnStart": 1,
+      "gridRowStart": 1
+    },
+    "/Users/Public/Desktop/Umar.url": {
+      "gridColumnStart": 2,
+      "gridRowStart": 1
+    }
+  },
+  "runHistory": [],
+  "sortOrders": {
+    "/Users/Public/Desktop": [
+      [
+        "AI Chat.url",
+        "Contact.url"
+      ],
+      null,
+      true
+    ]
+  },
+  "wallpaperFit": "fill",
+  "windowStates": {
+    "VideoPlayer__https://youtu.be/gQlMMD8auMs": {
+      "position": {
+        "x": 28,
+        "y": 364
+      },
+      "size": {
+        "height": 239,
+        "width": 371
+      }
+    },
+    "Photos__/Users/Public/Pictures/Very Albums/2022/December/photo_2022-12-16 00.19.41.jpeg": {
+      "position": {
+        "x": 663,
+        "y": 229
+      },
+      "size": {
+        "height": 462,
+        "width": 326
+      }
+    },
+    "VideoPlayer__/Users/Public/Videos/2021/December/0a5d1d36702444b4b1b744968d70efd5.mp4": {
+      "maximized": false,
+      "size": {
+        "height": 628,
+        "width": 319
+      },
+      "position": {
+        "x": 101,
+        "y": 221
+      }
+    }
+  }
+}

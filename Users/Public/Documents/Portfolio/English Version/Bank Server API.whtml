@@ -1,0 +1,23 @@
+<p dir="auto"><img src="Users/Public/Pictures/Portfolio/2022/Bank%20Server/1.png" alt="" width="563" height="430"></p>
+<p dir="auto">This service will provide APIs for the frontend to do following things:</p>
+<ol dir="auto">
+<li>Create and manage bank accounts, which are composed of owner&rsquo;s name, balance, and currency.</li>
+<li>Record all balance changes to each of the account. So every time some money is added to or subtracted from the account, an account entry record will be created.</li>
+<li>Perform a money transfer between 2 accounts. This should happen within a transaction, so that either both accounts&rsquo; balance are updated successfully or none of them are.</li>
+</ol>
+<hr>
+<p>From this project, I learn so many things like Unit Test, Continous Integration &amp; Continous Deployment. You can check this <a href="https://github.com/umarhadi/bank-server" target="_blank" rel="noopener">repo</a> for more information.&nbsp;</p>
+<hr>
+<p>Tech Stack:</p>
+<ul>
+<li>Go</li>
+<li>HTTP Server</li>
+<li>gRPC</li>
+<li>Postgresql</li>
+<li>Docker</li>
+<li>Kubernetes</li>
+<li>GitHub Actions</li>
+<li>AWS EKS</li>
+<li>AWS ECR</li>
+<li>Fly.io&nbsp;</li>
+</ul>

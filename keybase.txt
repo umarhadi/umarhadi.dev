@@ -1,0 +1,86 @@
+==================================================================
+https://keybase.io/umarhadi
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of https://umarhadi.dev
+  * I am umarhadi (https://keybase.io/umarhadi) on keybase.
+  * I have a public key with fingerprint B34F C106 7742 76CB 4D83  B510 CF5D 39CA BB93 37E3
+
+To do so, I am signing this object:
+
+{
+  "body": {
+    "key": {
+      "eldest_kid": "012058a1fa24cec6f510418c74c4ab334bc33bb8c338658322766683d45fa1c2b7750a",
+      "fingerprint": "b34fc106774276cb4d83b510cf5d39cabb9337e3",
+      "host": "keybase.io",
+      "key_id": "cf5d39cabb9337e3",
+      "kid": "0101d9728d88b181e34cfc3f6c43a6cf275600cb209e5726114fa08c245c420bd8dc0a",
+      "uid": "259cce9cbd54af27851dcb6b515ad019",
+      "username": "umarhadi"
+    },
+    "merkle_root": {
+      "ctime": 1668600512,
+      "hash_meta": "b954bf519e6c69dcec2b5384fe9ec746bf189a6df8f125ecff2cefc861ba2c5f",
+      "seqno": 23561192
+    },
+    "revoke": {
+      "sig_ids": [
+        "c4253f2cfc8e6b24385457d13b29b3a9c30e3db5f7ba0717223ed0d84cd7f51c0f"
+      ]
+    },
+    "service": {
+      "hostname": "umarhadi.dev",
+      "protocol": "https:"
+    },
+    "type": "web_service_binding",
+    "version": 1
+  },
+  "ctime": 1668600529,
+  "expire_in": 157680000,
+  "prev": "7de378e97631cf2a3990282dd7b812d65ff45da5282dbf82d0e792246210f822",
+  "seqno": 24,
+  "tag": "signature"
+}
+
+which yields the signature:
+
+-----BEGIN PGP MESSAGE-----
+
+owFtk3lMFUccx58UWkWpeCFELboexZbA7szOHk9bFWObpjEaU+/Ac+dYecX39rFv
+QZBgA60VRNSK1WrwD68YrUfEasV6UPGEHirGmDYoYvVBJJiq8YrUzpLaNKb7x2xm
+9vv9/b7zmZ01ca95evb4NVNv+KFKvdWjsR17iHO5vUjAFi0UvEVCDut+sUWUhR1f
+jp8KXkGUgIg0QzINIBNGFBNJoixpRJWJbGAIZUwgxFjjo6YgDQKgKoqiQSoj05AI
+wKqKRENIFUx/cCGzQ7Y/6PCyGMomkURFVWVuIFimGsS8NDERhToxMNYhVBnkxmwr
+7Dp4OGyEWZrf4mt84uuO9z/6l7lFieoq0KimYUmTGJSJSaCpEBkaCjGBihRRJBiI
+OkMqUCRJNg1RI0BGRAYiphol3bnzussBpBPCdIIpkg1u1pBECVZ4ZGRQUdJdYZjZ
+QSPAuDovYNjZBvULxalCgNk5i5jPtizHhUscvyuROCPeH0mAb9AIZ/sCzDFcLjqS
+MWesM4UoOuXEAUZQk02mM85cwaak6YZCTc2UAGLENAFhJtEUCRuAIJPnCLPcoCV4
+AUR8UzrgEWyWb+Uwt3vYv5BzCwve+QLfZV0BgtzP7UzBQIYakpFKJYiBjqGhEygy
+SDEyVWyIqqQCABkVqSYTqvKIRDSFzGK3n53vJ93l3aN6BUEaZfk8VMi2HItYi/iX
+bMcJhb0uGqcw5EoXM+z7p4gP+4OU/yjckc/ssN8KclRc+Qo1oKcKrCDkt5nP7yqQ
+qmgif9w+vJ1XUCmDqsZ0VYESP2sD6roINECpijUJUAWZpoyogdw1bPJBZKoOgKwA
+SeRT8B+MMs9pLOQ1Obug4eTZTCiOLY+C0Z4ePT3DEkZEH5z24+uLM/Ibp35+KP7l
+5YqJcm+WJ7bXvyvlB/p2Da378JsZ75yJkWtyq053tp4uzO/YlrT11I7Yu+8/nl6y
+ITnm4T3j2dglB97w7Nn18ZsfnS6uvpq0cVJ6fb+S8NzvJ8Rf0J82R+Krf9sZznoa
+s7Z/UaCkT/zu8i9m36+oPlMmt4mrrvvquo5MO3zFyCq7vXz72ISTW9b3PD755xWf
+BXzzJoSSm34aOXNwR9P80J++XsdiAw07Etp2jDxVOyaY1Xn+0qrMzBGrBlW27i1J
+P5txMvX3snORKSva41emRVKuZcyio+vE+sYHvY8tGFDS8PbNoi0v+lwH4fo/OpyL
+HTG1jY8GKvM62Ka5TctLo/o+2DRz6saafivSR0tPLoqlG+I204aktKy3Bi+4aj6/
+PftE8/Osdff2msPjcm40Fw4ra41KstoiTnOyvXn7rNIB074q37lr4NnziXNqK2vA
+qIPbOpvazn9nfZC4dXyKdf/WkWs3yhvEiRfuHj88KLH31KqjraMG33lv05PCpX9t
+7zjybEnB0mWR8ZkVNSdp1Z0TuccLcmr3TWifaL2r7oeXdhb6ymKHrn58uyUvd82L
+cQMfzokuSvlycnXb2su7k0/0ObpnY8I4lLFrzNquAauXDInLvPK4pXPSw5aK2Jbo
+5dHx3gePbk5e5znklHjOSenl0/cPv5H6dXXWo+gpZ5fNKP3l01nVn6RMSawalNQ1
+MQV+O2PLnMORIUJl/4LZ6yNt+57ZlblL6/8G
+=o0bh
+-----END PGP MESSAGE-----
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/umarhadi
+
+==================================================================
