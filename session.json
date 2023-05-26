@@ -28,7 +28,9 @@
       true
     ]
   },
+  "themeName": "defaultTheme",
   "wallpaperFit": "fill",
+  "wallpaperImage": "/Users/Public/Pictures/Wallpapers/alone-in-the-desert.jpg",
   "windowStates": {
     "VideoPlayer__https://youtu.be/gQlMMD8auMs": {
       "position": {
