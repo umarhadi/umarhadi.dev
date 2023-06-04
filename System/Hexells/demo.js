@@ -1,1 +1,121 @@
-class Demo{constructor(e,t){if(this.canvas=e,this.gl=e.getContext("webgl",{alpha:!1,desynchronized:!0,powerPreference:"high-performance"}),null===this.gl)throw new Error("canvas.getContext returned null");this.brushRadius=16,this.stepPerFrame=1,this.isScreenMode=t,fetch("/System/Hexells/models.json").then((e=>e.json())).then((e=>{this.ca=new CA(this.gl,e,[160,160],(()=>this.setup(e)))}))}setup(e){this.shuffledModelIds=e.model_names.map(((e,t)=>[Math.random(),t])).sort().map((e=>e[1])),this.curModelIndex=this.shuffledModelIds[0],this.modelId=this.shuffledModelIds[this.curModelIndex],this.ca.paint(0,0,-1,this.modelId),this.guesture=null,setInterval((()=>this.switchModel(1)),2e4),requestAnimationFrame((()=>this.render()))}startGestue(e){this.gesture={d:0,l:0,prevPos:e,r:0,time:Date.now(),u:0}}touch(e){const[t,s]=e,i=this.gesture;if(i){const[h,a]=i.prevPos;i.l+=Math.max(h-t,0),i.r+=Math.max(t-h,0),i.u+=Math.max(a-s,0),i.d+=Math.max(s-a,0),i.prevPos=e}const h=getViewSize();this.ca.clearCircle(t,s,this.brushRadius,h)}endGestue(){if(this.gesture){if(Date.now()-this.gesture.time<1e3){const{l:e,r:t,u:s,d:i}=this.gesture;e>200&&Math.max(t,s,i)<.25*e?this.switchModel(-1):t>200&&Math.max(e,s,i)<.25*t&&this.switchModel(1)}this.gesture=null}}switchModel(e){const t=this.shuffledModelIds.length;this.curModelIndex=(this.curModelIndex+t+e)%t;const s=this.shuffledModelIds[this.curModelIndex];this.setModel(s)}setModel(e){this.modelId=e,this.ca.paint(0,0,-1,e),this.ca.disturb()}getViewSize(){return[globalThis.demoCanvasRect?.width||this.canvas.clientWidth||this.canvas.width,globalThis.demoCanvasRect?.height||this.canvas.clientHeight||this.canvas.height]}render(){for(let e=0;e<this.stepPerFrame;++e)this.ca.step();const{canvas:e}=this,t=globalThis.devicePixelRatio||1,[s,i]=this.getViewSize();e.width=Math.round(s*t),e.height=Math.round(i*t),twgl.bindFramebufferInfo(this.gl),this.ca.draw(this.getViewSize(),"color"),requestAnimationFrame((()=>this.render()))}}globalThis.Demo=Demo;
+class Demo {
+  constructor(canvas, isScreenMode) {
+    this.canvas = canvas;
+    this.gl = canvas.getContext("webgl", {
+      alpha: false,
+      desynchronized: true,
+      powerPreference: "high-performance"
+    });
+
+    if (this.gl === null) {
+      throw new Error("canvas.getContext returned null");
+    }
+
+    this.brushRadius = 16;
+    this.stepPerFrame = 1;
+
+    this.isScreenMode = isScreenMode;
+
+    fetch("/System/Hexells/models.json")
+      .then((r) => r.json())
+      .then((models) => {
+        this.ca = new CA(this.gl, models, [160, 160], () =>
+          this.setup(models)
+        );
+      });
+  }
+
+  setup(models) {
+    this.shuffledModelIds = models.model_names
+      .map((_, i) => [Math.random(), i])
+      .sort()
+      .map((p) => p[1]);
+    this.curModelIndex = this.shuffledModelIds[0];
+    this.modelId = this.shuffledModelIds[this.curModelIndex];
+    this.ca.paint(0, 0, -1, this.modelId);
+
+    this.guesture = null;
+
+    setInterval(() => this.switchModel(1), 20 * 1000);
+
+    requestAnimationFrame(() => this.render());
+  }
+
+  startGestue(pos) {
+    this.gesture = {
+      d: 0,
+      l: 0,
+      prevPos: pos,
+      r: 0,
+      time: Date.now(),
+      u: 0,
+    };
+  }
+
+  touch(xy) {
+    const [x, y] = xy;
+    const g = this.gesture;
+    if (g) {
+      const [x0, y0] = g.prevPos;
+      g.l += Math.max(x0 - x, 0);
+      g.r += Math.max(x - x0, 0);
+      g.u += Math.max(y0 - y, 0);
+      g.d += Math.max(y - y0, 0);
+      g.prevPos = xy;
+    }
+    const viewSize = getViewSize();
+    this.ca.clearCircle(x, y, this.brushRadius, viewSize);
+  }
+
+  endGestue() {
+    if (!this.gesture) {
+      return;
+    }
+    if (Date.now() - this.gesture.time < 1000) {
+      const { l, r, u, d } = this.gesture;
+      if (l > 200 && Math.max(r, u, d) < l * 0.25) {
+        this.switchModel(-1);
+      } else if (r > 200 && Math.max(l, u, d) < r * 0.25) {
+        this.switchModel(1);
+      }
+    }
+    this.gesture = null;
+  }
+
+  switchModel(swipe) {
+    const n = this.shuffledModelIds.length;
+    this.curModelIndex = (this.curModelIndex + n + swipe) % n;
+    const id = this.shuffledModelIds[this.curModelIndex];
+    this.setModel(id);
+  }
+
+  setModel(id) {
+    this.modelId = id;
+    this.ca.paint(0, 0, -1, id);
+    this.ca.disturb();
+  }
+
+  getViewSize() {
+    return [
+      globalThis.demoCanvasRect?.width || this.canvas.clientWidth || this.canvas.width,
+      globalThis.demoCanvasRect?.height || this.canvas.clientHeight || this.canvas.height
+    ];
+  }
+
+  render() {
+    for (let i = 0; i < this.stepPerFrame; ++i) {
+      this.ca.step();
+    }
+    const { canvas } = this;
+    const dpr = globalThis.devicePixelRatio || 1;
+    const [w, h] = this.getViewSize();
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+
+    twgl.bindFramebufferInfo(this.gl);
+    this.ca.draw(this.getViewSize(), "color");
+    requestAnimationFrame(() => this.render());
+  }
+}
+
+globalThis.Demo = Demo;

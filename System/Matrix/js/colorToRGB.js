@@ -1,1 +1,12 @@
-export default({space:t,values:r})=>{if("rgb"===t)return r;const[a,e,n]=r,u=e*Math.min(n,1-n),s=t=>{const r=(t+12*a)%12;return n-u*Math.max(-1,Math.min(r-3,9-r,1))};return[s(0),s(8),s(4)]};
+export default ({ space, values }) => {
+	if (space === "rgb") {
+		return values;
+	}
+	const [hue, saturation, lightness] = values;
+	const a = saturation * Math.min(lightness, 1 - lightness);
+	const f = (n) => {
+		const k = (n + hue * 12) % 12;
+		return lightness - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+	};
+	return [f(0), f(8), f(4)];
+};

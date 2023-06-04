@@ -1,4 +1,4 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[3269],{33269:function(e,t,n){n.r(t),n.d(t,{default:function(){return c}});var r=n(11527),i=n(6316),s=n(79416),a=n(44558),o=s.ZP.textarea.attrs({autoComplete:"off",enterKeyHint:"done",maxLength:a.Zv,rows:1,spellCheck:!1}).withConfig({componentId:"sc-b0aafb76-0"})`
+"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[3269],{33269:function(e,t,n){n.r(t),n.d(t,{default:function(){return c}});var r=n(11527),i=n(6316),a=n(79416),s=n(44558);var o=a.ZP.textarea.attrs({autoComplete:"off",enterKeyHint:"done",maxLength:s.Zv,rows:1,spellCheck:!1}).withConfig({componentId:"sc-b0aafb76-0"})`
   border: 1px solid rgb(100, 100, 100);
   font-family: inherit;
   font-size: 11.5px;
@@ -15,4 +15,4 @@
   user-select: text;
   white-space: break-spaces;
   z-index: 1;
-`,l=n(11523),u=n(50959),f=n(46428),c=e=>{let{name:t,path:n,renameFile:c}=e;const h=(0,u.useRef)(null),p=()=>c(n,h.current?.value),{formats:x,sizes:m}=(0,s.Fg)(),d=(0,u.useCallback)((e=>{if(e instanceof HTMLTextAreaElement){const{width:t}=(0,i.oc)(e.value,m.fileEntry.fontSize,x.systemFont);e.setAttribute("style","height: 1px"),e.setAttribute("style",`height: ${e.scrollHeight+2}px; width: ${t+22}px`)}}),[x.systemFont,m.fileEntry.fontSize]);return(0,u.useLayoutEffect)((()=>{d(h.current),h.current?.focus(a.eS),h.current?.setSelectionRange(0,t.length-(0,l.extname)(t).length)}),[t,d]),(0,r.jsx)(o,{ref:h,defaultValue:t,onBlurCapture:p,onClick:f.nK,onDragStart:f.nK,onKeyDown:e=>{let{key:t}=e;"Enter"===t&&p()},onKeyUp:e=>{d(e.target),(0,f.nK)(e)}})}}}]);
+`,l=n(11523),u=n(50959),f=n(46428);var c=e=>{let{name:t,path:n,renameFile:c}=e;const h=(0,u.useRef)(null),p=()=>c(n,h.current?.value),{formats:x,sizes:m}=(0,a.Fg)(),d=(0,u.useCallback)((e=>{if(e instanceof HTMLTextAreaElement){const{width:t}=(0,i.oc)(e.value,m.fileEntry.fontSize,x.systemFont);e.setAttribute("style","height: 1px"),e.setAttribute("style",`height: ${e.scrollHeight+2}px; width: ${t+22}px`)}}),[x.systemFont,m.fileEntry.fontSize]);return(0,u.useLayoutEffect)((()=>{d(h.current),h.current?.focus(s.eS),h.current?.setSelectionRange(0,t.length-(0,l.extname)(t).length)}),[t,d]),(0,r.jsx)(o,{ref:h,defaultValue:t,onBlurCapture:p,onClick:f.nK,onDragStart:f.nK,onKeyDown:e=>{let{key:t}=e;"Enter"===t&&p()},onKeyUp:e=>{d(e.target),(0,f.nK)(e)}})}}}]);

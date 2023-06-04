@@ -1,1 +1,309 @@
-import{loadImage,loadText,makeDoubleBuffer,makePass,makePassFBO}from"./utils.js";const extractEntries=(e,r)=>Object.fromEntries(Array.from(Object.entries(e)).filter((([e])=>r.includes(e)))),rippleTypes={box:0,circle:1},makeComputeDoubleBuffer=(e,r,t)=>makeDoubleBuffer(e,{width:t,height:r,wrapT:"clamp",type:"half float"}),numVerticesPerQuad=6,tlVert=[0,0],trVert=[0,1],blVert=[1,0],brVert=[1,1],quadVertices=[tlVert,trVert,brVert,tlVert,brVert,blVert];export default({regl:e,config:r,lkg:t})=>{const a=r.volumetric,s=a&&"none"!==r.effect?r.density:1,[l,o]=[r.numColumns,Math.floor(r.numColumns*s)],[i,n]=a?[l,o]:[1,1],f=i*n,p=[1/n,1/i],u=r.rippleTypeName in rippleTypes?rippleTypes[r.rippleTypeName]:-1,m=[Math.cos(r.slant),Math.sin(r.slant)],d=1/(Math.abs(Math.sin(2*r.slant))*(Math.sqrt(2)-1)+1),c="none"===r.effect,g={...extractEntries(r,["animationSpeed","glyphHeightToWidth","glyphSequenceLength","glyphTextureGridSize"]),numColumns:o,numRows:l,showDebugView:c},h=makeComputeDoubleBuffer(e,1,o),b=loadText("shaders/glsl/rainPass.intro.frag.glsl"),x={...g,...extractEntries(r,["fallSpeed","skipIntro"])},S=e({frag:e.prop("frag"),uniforms:{...x,previousIntroState:h.back},framebuffer:h.front}),y=makeComputeDoubleBuffer(e,l,o),T=loadText("shaders/glsl/rainPass.raindrop.frag.glsl"),M={...g,...extractEntries(r,["brightnessDecay","fallSpeed","raindropLength","loops","skipIntro"])},V=e({frag:e.prop("frag"),uniforms:{...M,introState:h.front,previousRaindropState:y.back},framebuffer:y.front}),P=makeComputeDoubleBuffer(e,l,o),k=loadText("shaders/glsl/rainPass.symbol.frag.glsl"),v={...g,...extractEntries(r,["cycleSpeed","cycleFrameSkip","loops"])},C=e({frag:e.prop("frag"),uniforms:{...v,raindropState:y.front,previousSymbolState:P.back},framebuffer:P.front}),D=makeComputeDoubleBuffer(e,l,o),w=loadText("shaders/glsl/rainPass.effect.frag.glsl"),I={...g,...extractEntries(r,["hasThunder","rippleScale","rippleSpeed","rippleThickness","loops"]),rippleType:u},B=e({frag:e.prop("frag"),uniforms:{...I,raindropState:y.front,previousEffectState:D.back},framebuffer:D.front}),E=Array(i).fill().map(((e,r)=>Array(n).fill().map(((e,t)=>Array(6).fill([t,r]))))),F=loadImage(e,r.glyphMSDFURL),z=loadImage(e,r.glintMSDFURL),R=loadImage(e,r.baseTextureURL),q=loadImage(e,r.glintTextureURL),A=loadText("shaders/glsl/rainPass.vert.glsl"),L=loadText("shaders/glsl/rainPass.frag.glsl"),O=makePassFBO(e,r.useHalfFloat),N={...g,...extractEntries(r,["forwardSpeed","glyphVerticalSpacing","baseBrightness","baseContrast","glintBrightness","glintContrast","hasBaseTexture","hasGlintTexture","brightnessThreshold","brightnessOverride","isolateCursor","isolateGlint","glyphEdgeCrop","isPolar"]),density:s,numQuadColumns:n,numQuadRows:i,quadSize:p,slantScale:d,slantVec:m,volumetric:a},U=e({blend:{enable:!0,func:{src:"one",dst:"one"}},vert:e.prop("vert"),frag:e.prop("frag"),uniforms:{...N,raindropState:y.front,symbolState:P.front,effectState:D.front,glyphMSDF:F.texture,glintMSDF:z.texture,baseTexture:R.texture,glintTexture:q.texture,msdfPxRange:4,glyphMSDFSize:[F.width(),F.height()],glintMSDFSize:[z.width(),z.height()],camera:e.prop("camera"),transform:e.prop("transform"),screenSize:e.prop("screenSize")},viewport:e.prop("viewport"),attributes:{aPosition:E,aCorner:Array(f).fill(quadVertices)},count:6*f,framebuffer:O}),j=[1,1],{mat4:G,vec3:Q}=glMatrix,H=G.create();a&&r.isometric?(G.rotateX(H,H,1*Math.PI/8),G.rotateY(H,H,1*Math.PI/4),G.translate(H,H,Q.fromValues(0,0,-1)),G.scale(H,H,Q.fromValues(1,1,2))):t.enabled?(G.translate(H,H,Q.fromValues(0,0,-1.1)),G.scale(H,H,Q.fromValues(1,1,1)),G.scale(H,H,Q.fromValues(.15,.15,.15))):G.translate(H,H,Q.fromValues(0,0,-1));G.create();const X=[];return makePass({primary:O},Promise.all([F.loaded,z.loaded,R.loaded,q.loaded,b.loaded,T.loaded,k.loaded,A.loaded,L.loaded]),((e,s)=>{O.resize(e,s);const l=e/s,[o,i]=[t.tileX,t.tileY],n=i*o,f=Math.floor(e/o),p=Math.floor(s/i);X.length=0;for(let e=0;e<i;e++)for(let s=0;s<o;s++){const i=s+e*o,u=G.create();if(a&&r.isometric)l>1?G.ortho(u,-1.5*l,1.5*l,-1.5,1.5,-1e3,1e3):G.ortho(u,-1.5,1.5,-1.5/l,1.5/l,-1e3,1e3);else if(t.enabled){G.perspective(u,Math.PI/180*t.fov,t.quiltAspect,1e-4,1e3);const e=-1;let r=Math.PI/180*t.viewCone*(i/(n-1)-.5);isNaN(r)&&(r=0);const a=e*Math.tan(r);G.translate(u,u,Q.fromValues(a,0,0)),u[8]=-a/(e*Math.tan(Math.PI/180*.5*t.fov)*t.quiltAspect)}else G.perspective(u,Math.PI/180*90,l,1e-4,1e3);const m={x:s*f,y:e*p,width:f,height:p};X.push({camera:u,viewport:m})}[j[0],j[1]]=l>1?[1,l]:[1/l,1]}),(()=>{S({frag:b.text()}),V({frag:T.text()}),C({frag:k.text()}),B({frag:w.text()}),e.clear({depth:1,color:[0,0,0,1],framebuffer:O});for(const e of X)U({...e,transform:H,screenSize:j,vert:A.text(),frag:L.text()})}))};
+import { loadImage, loadText, makeDoubleBuffer, makePass, makePassFBO } from "./utils.js";
+
+const extractEntries = (src, keys) => Object.fromEntries(Array.from(Object.entries(src)).filter(([key]) => keys.includes(key)));
+
+const rippleTypes = {
+	box: 0,
+	circle: 1,
+};
+
+// These compute buffers are used to compute the properties of cells in the grid.
+// They take turns being the source and destination of a "compute" shader.
+// The half float data type is crucial! It lets us store almost any real number,
+// whereas the default type limits us to integers between 0 and 255.
+
+// These double buffers are smaller than the screen, because their pixels correspond
+// with cells in the grid, and the cells' glyphs are much larger than a pixel.
+const makeComputeDoubleBuffer = (regl, height, width) =>
+	makeDoubleBuffer(regl, {
+		width,
+		height,
+		wrapT: "clamp",
+		type: "half float",
+	});
+
+const numVerticesPerQuad = 2 * 3;
+const tlVert = [0, 0];
+const trVert = [0, 1];
+const blVert = [1, 0];
+const brVert = [1, 1];
+const quadVertices = [tlVert, trVert, brVert, tlVert, brVert, blVert];
+
+export default ({ regl, config, lkg }) => {
+	// The volumetric mode multiplies the number of columns
+	// to reach the desired density, and then overlaps them
+	const volumetric = config.volumetric;
+	const density = volumetric && config.effect !== "none" ? config.density : 1;
+	const [numRows, numColumns] = [config.numColumns, Math.floor(config.numColumns * density)];
+
+	// The volumetric mode requires us to create a grid of quads,
+	// rather than a single quad for our geometry
+	const [numQuadRows, numQuadColumns] = volumetric ? [numRows, numColumns] : [1, 1];
+	const numQuads = numQuadRows * numQuadColumns;
+	const quadSize = [1 / numQuadColumns, 1 / numQuadRows];
+
+	// Various effect-related values
+	const rippleType = config.rippleTypeName in rippleTypes ? rippleTypes[config.rippleTypeName] : -1;
+	const slantVec = [Math.cos(config.slant), Math.sin(config.slant)];
+	const slantScale = 1 / (Math.abs(Math.sin(2 * config.slant)) * (Math.sqrt(2) - 1) + 1);
+	const showDebugView = config.effect === "none";
+
+	const commonUniforms = {
+		...extractEntries(config, ["animationSpeed", "glyphHeightToWidth", "glyphSequenceLength", "glyphTextureGridSize"]),
+		numColumns,
+		numRows,
+		showDebugView,
+	};
+
+	const introDoubleBuffer = makeComputeDoubleBuffer(regl, 1, numColumns);
+	const rainPassIntro = loadText("shaders/glsl/rainPass.intro.frag.glsl");
+	const introUniforms = {
+		...commonUniforms,
+		...extractEntries(config, ["fallSpeed", "skipIntro"]),
+	};
+	const intro = regl({
+		frag: regl.prop("frag"),
+		uniforms: {
+			...introUniforms,
+			previousIntroState: introDoubleBuffer.back,
+		},
+		framebuffer: introDoubleBuffer.front,
+	});
+	const raindropDoubleBuffer = makeComputeDoubleBuffer(regl, numRows, numColumns);
+	const rainPassRaindrop = loadText("shaders/glsl/rainPass.raindrop.frag.glsl");
+	const raindropUniforms = {
+		...commonUniforms,
+		...extractEntries(config, ["brightnessDecay", "fallSpeed", "raindropLength", "loops", "skipIntro"]),
+	};
+	const raindrop = regl({
+		frag: regl.prop("frag"),
+		uniforms: {
+			...raindropUniforms,
+			introState: introDoubleBuffer.front,
+			previousRaindropState: raindropDoubleBuffer.back,
+		},
+
+		framebuffer: raindropDoubleBuffer.front,
+	});
+
+	const symbolDoubleBuffer = makeComputeDoubleBuffer(regl, numRows, numColumns);
+	const rainPassSymbol = loadText("shaders/glsl/rainPass.symbol.frag.glsl");
+	const symbolUniforms = {
+		...commonUniforms,
+		...extractEntries(config, ["cycleSpeed", "cycleFrameSkip", "loops"]),
+	};
+	const symbol = regl({
+		frag: regl.prop("frag"),
+		uniforms: {
+			...symbolUniforms,
+			raindropState: raindropDoubleBuffer.front,
+			previousSymbolState: symbolDoubleBuffer.back,
+		},
+
+		framebuffer: symbolDoubleBuffer.front,
+	});
+
+	const effectDoubleBuffer = makeComputeDoubleBuffer(regl, numRows, numColumns);
+	const rainPassEffect = loadText("shaders/glsl/rainPass.effect.frag.glsl");
+	const effectUniforms = {
+		...commonUniforms,
+		...extractEntries(config, ["hasThunder", "rippleScale", "rippleSpeed", "rippleThickness", "loops"]),
+		rippleType,
+	};
+	const effect = regl({
+		frag: regl.prop("frag"),
+		uniforms: {
+			...effectUniforms,
+			raindropState: raindropDoubleBuffer.front,
+			previousEffectState: effectDoubleBuffer.back,
+		},
+
+		framebuffer: effectDoubleBuffer.front,
+	});
+
+	const quadPositions = Array(numQuadRows)
+		.fill()
+		.map((_, y) =>
+			Array(numQuadColumns)
+				.fill()
+				.map((_, x) => Array(numVerticesPerQuad).fill([x, y]))
+		);
+
+	// We render the code into an FBO using MSDFs: https://github.com/Chlumsky/msdfgen
+	const glyphMSDF = loadImage(regl, config.glyphMSDFURL);
+	const glintMSDF = loadImage(regl, config.glintMSDFURL);
+	const baseTexture = loadImage(regl, config.baseTextureURL);
+	const glintTexture = loadImage(regl, config.glintTextureURL);
+	const rainPassVert = loadText("shaders/glsl/rainPass.vert.glsl");
+	const rainPassFrag = loadText("shaders/glsl/rainPass.frag.glsl");
+	const output = makePassFBO(regl, config.useHalfFloat);
+	const renderUniforms = {
+		...commonUniforms,
+		...extractEntries(config, [
+			// vertex
+			"forwardSpeed",
+			"glyphVerticalSpacing",
+			// fragment
+			"baseBrightness",
+			"baseContrast",
+			"glintBrightness",
+			"glintContrast",
+			"hasBaseTexture",
+			"hasGlintTexture",
+			"brightnessThreshold",
+			"brightnessOverride",
+			"isolateCursor",
+			"isolateGlint",
+			"glyphEdgeCrop",
+			"isPolar",
+		]),
+		density,
+		numQuadColumns,
+		numQuadRows,
+		quadSize,
+		slantScale,
+		slantVec,
+		volumetric,
+	};
+	const render = regl({
+		blend: {
+			enable: true,
+			func: {
+				src: "one",
+				dst: "one",
+			},
+		},
+		vert: regl.prop("vert"),
+		frag: regl.prop("frag"),
+
+		uniforms: {
+			...renderUniforms,
+
+			raindropState: raindropDoubleBuffer.front,
+			symbolState: symbolDoubleBuffer.front,
+			effectState: effectDoubleBuffer.front,
+			glyphMSDF: glyphMSDF.texture,
+			glintMSDF: glintMSDF.texture,
+			baseTexture: baseTexture.texture,
+			glintTexture: glintTexture.texture,
+
+			msdfPxRange: 4.0,
+			glyphMSDFSize: [glyphMSDF.width(), glyphMSDF.height()],
+			glintMSDFSize: [glintMSDF.width(), glintMSDF.height()],
+
+			camera: regl.prop("camera"),
+			transform: regl.prop("transform"),
+			screenSize: regl.prop("screenSize"),
+		},
+
+		viewport: regl.prop("viewport"),
+
+		attributes: {
+			aPosition: quadPositions,
+			aCorner: Array(numQuads).fill(quadVertices),
+		},
+		count: numQuads * numVerticesPerQuad,
+
+		framebuffer: output,
+	});
+
+	// Camera and transform math for the volumetric mode
+	const screenSize = [1, 1];
+	const { mat4, vec3 } = glMatrix;
+	const transform = mat4.create();
+	if (volumetric && config.isometric) {
+		mat4.rotateX(transform, transform, (Math.PI * 1) / 8);
+		mat4.rotateY(transform, transform, (Math.PI * 1) / 4);
+		mat4.translate(transform, transform, vec3.fromValues(0, 0, -1));
+		mat4.scale(transform, transform, vec3.fromValues(1, 1, 2));
+	} else if (lkg.enabled) {
+		mat4.translate(transform, transform, vec3.fromValues(0, 0, -1.1));
+		mat4.scale(transform, transform, vec3.fromValues(1, 1, 1));
+		mat4.scale(transform, transform, vec3.fromValues(0.15, 0.15, 0.15));
+	} else {
+		mat4.translate(transform, transform, vec3.fromValues(0, 0, -1));
+	}
+	const camera = mat4.create();
+
+	const vantagePoints = [];
+
+	return makePass(
+		{
+			primary: output,
+		},
+		Promise.all([
+			glyphMSDF.loaded,
+			glintMSDF.loaded,
+			baseTexture.loaded,
+			glintTexture.loaded,
+			rainPassIntro.loaded,
+			rainPassRaindrop.loaded,
+			rainPassSymbol.loaded,
+			rainPassVert.loaded,
+			rainPassFrag.loaded,
+		]),
+		(w, h) => {
+			output.resize(w, h);
+			const aspectRatio = w / h;
+
+			const [numTileColumns, numTileRows] = [lkg.tileX, lkg.tileY];
+			const numVantagePoints = numTileRows * numTileColumns;
+			const tileWidth = Math.floor(w / numTileColumns);
+			const tileHeight = Math.floor(h / numTileRows);
+			vantagePoints.length = 0;
+			for (let row = 0; row < numTileRows; row++) {
+				for (let column = 0; column < numTileColumns; column++) {
+					const index = column + row * numTileColumns;
+					const camera = mat4.create();
+
+					if (volumetric && config.isometric) {
+						if (aspectRatio > 1) {
+							mat4.ortho(camera, -1.5 * aspectRatio, 1.5 * aspectRatio, -1.5, 1.5, -1000, 1000);
+						} else {
+							mat4.ortho(camera, -1.5, 1.5, -1.5 / aspectRatio, 1.5 / aspectRatio, -1000, 1000);
+						}
+					} else if (lkg.enabled) {
+						mat4.perspective(camera, (Math.PI / 180) * lkg.fov, lkg.quiltAspect, 0.0001, 1000);
+
+						const distanceToTarget = -1; // TODO: Get from somewhere else
+						let vantagePointAngle = (Math.PI / 180) * lkg.viewCone * (index / (numVantagePoints - 1) - 0.5);
+						if (isNaN(vantagePointAngle)) {
+							vantagePointAngle = 0;
+						}
+						const xOffset = distanceToTarget * Math.tan(vantagePointAngle);
+
+						mat4.translate(camera, camera, vec3.fromValues(xOffset, 0, 0));
+
+						camera[8] = -xOffset / (distanceToTarget * Math.tan((Math.PI / 180) * 0.5 * lkg.fov) * lkg.quiltAspect); // Is this right??
+					} else {
+						mat4.perspective(camera, (Math.PI / 180) * 90, aspectRatio, 0.0001, 1000);
+					}
+
+					const viewport = {
+						x: column * tileWidth,
+						y: row * tileHeight,
+						width: tileWidth,
+						height: tileHeight,
+					};
+					vantagePoints.push({ camera, viewport });
+				}
+			}
+			[screenSize[0], screenSize[1]] = aspectRatio > 1 ? [1, aspectRatio] : [1 / aspectRatio, 1];
+		},
+		() => {
+			intro({ frag: rainPassIntro.text() });
+			raindrop({ frag: rainPassRaindrop.text() });
+			symbol({ frag: rainPassSymbol.text() });
+			effect({ frag: rainPassEffect.text() });
+			regl.clear({
+				depth: 1,
+				color: [0, 0, 0, 1],
+				framebuffer: output,
+			});
+
+			for (const vantagePoint of vantagePoints) {
+				render({ ...vantagePoint, transform, screenSize, vert: rainPassVert.text(), frag: rainPassFrag.text() });
+			}
+		}
+	);
+};

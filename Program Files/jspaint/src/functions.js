@@ -1,1 +1,3592 @@
-const param_types={"eye-gaze-mode":"bool","vertical-color-box-mode":"bool","speech-recognition-mode":"bool",local:"string",session:"string",load:"string"},exclusive_params=["local","session","load"];function get_all_url_params(){const e={};location.hash.replace(/^#/,"").split(/,/).forEach((t=>{const o=t.indexOf(":");if(-1===o){e[t]=!0}else{const a=t.slice(0,o),n=t.slice(o+1);e[a]=decodeURIComponent(n)}}));for(const[t,o]of Object.entries(param_types))"bool"!==o||e[t]||(e[t]=!1);return e}function get_url_param(e){return get_all_url_params()[e]}function change_url_param(e,t,{replace_history_state:o=!1}={}){change_some_url_params({[e]:t},{replace_history_state:o})}function change_some_url_params(e,{replace_history_state:t=!1}={}){for(const t of exclusive_params)e[t]&&exclusive_params.forEach((o=>{o!==t&&(e[o]=null)}));set_all_url_params(Object.assign({},get_all_url_params(),e),{replace_history_state:t})}function set_all_url_params(e,{replace_history_state:t=!1}={}){let o="";for(const[t,a]of Object.entries(param_types))e[t]&&(o.length&&(o+=","),o+=encodeURIComponent(t),"bool"!==a&&(o+=":"+encodeURIComponent(e[t])));const a=`${location.origin}${location.pathname}#${o}`;try{t?history.replaceState(null,document.title,a):history.pushState(null,document.title,a)}catch(e){location.hash=o}$G.triggerHandler("change-url-params")}function update_magnified_canvas_size(){$canvas.css("width",main_canvas.width*magnification),$canvas.css("height",main_canvas.height*magnification),update_canvas_rect()}function update_canvas_rect(){canvas_bounding_client_rect=main_canvas.getBoundingClientRect(),update_helper_layer()}let helper_layer_update_queued,info_for_updating_pointer,$custom_zoom_window;function update_helper_layer(e){e&&isFinite(e.clientX)&&(info_for_updating_pointer={clientX:e.clientX,clientY:e.clientY,devicePixelRatio}),helper_layer_update_queued||(helper_layer_update_queued=!0,requestAnimationFrame((()=>{helper_layer_update_queued=!1,update_helper_layer_immediately()})))}function update_helper_layer_immediately(){if(info_for_updating_pointer){const e=info_for_updating_pointer.devicePixelRatio/devicePixelRatio;info_for_updating_pointer.clientX*=e,info_for_updating_pointer.clientY*=e,info_for_updating_pointer.devicePixelRatio=devicePixelRatio,pointer=to_canvas_coords(info_for_updating_pointer)}const e=magnification*window.devicePixelRatio;helper_layer||(helper_layer=new OnCanvasHelperLayer(0,0,main_canvas.width,main_canvas.height,!1,e));const t=Math.floor(Math.max($canvas_area.scrollLeft()/magnification-15,0)),o=Math.floor(Math.max($canvas_area.scrollTop()/magnification-15,0)),a=Math.floor(Math.min(t+$canvas_area.width()/magnification+30,main_canvas.width))-t,n=Math.floor(Math.min(o+$canvas_area.height()/magnification+30,main_canvas.height))-o,i=a*e,l=n*e;if(helper_layer.canvas.width===i&&helper_layer.canvas.height===l||(helper_layer.canvas.width=i,helper_layer.canvas.height=l,helper_layer.canvas.ctx.disable_image_smoothing(),helper_layer.width=a,helper_layer.height=n),helper_layer.x=t,helper_layer.y=o,helper_layer.position(),render_canvas_view(helper_layer.canvas,e,t,o,!0),thumbnail_canvas&&$thumbnail_window.is(":visible")){const e=parseFloat($canvas_area.css("padding-left")),t=parseFloat($canvas_area.css("padding-top")),o=main_canvas.clientWidth+e-$canvas_area[0].clientWidth,a=main_canvas.clientHeight+t-$canvas_area[0].clientHeight;let n=$canvas_area[0].scrollLeft/Math.max(1,o),i=$canvas_area[0].scrollTop/Math.max(1,a);n=Math.min(n,1),i=Math.min(i,1);let l=Math.floor(Math.max(n*(main_canvas.width-thumbnail_canvas.width),0)),r=Math.floor(Math.max(i*(main_canvas.height-thumbnail_canvas.height),0));render_canvas_view(thumbnail_canvas,1,l,r,!1)}}function render_canvas_view(e,t,o,a,n){update_fill_and_stroke_colors_and_lineWidth(selected_tool);const i=show_grid&&magnification>=4&&window.devicePixelRatio*magnification>=4&&n,l=e.ctx;l.clearRect(0,0,e.width,e.height),n||l.drawImage(main_canvas,o,a,e.width,e.height,0,0,e.width,e.height);var r=[...selected_tools];$("body").hasClass("dragging")&&!pointer_active&&(r=r.filter((e=>e.id===TOOL_CURVE||e.id===TOOL_POLYGON))),r.sort(((e,t)=>e.selectBox&&!t.selectBox?-1:!e.selectBox&&t.selectBox?1:0));var s=r.findIndex((e=>e.selectBox));s>=0&&(r=r.filter(((e,t)=>!e.selectBox||t==s))),r.forEach((e=>{e.drawPreviewUnderGrid&&pointer&&pointers.length<2&&(l.save(),e.drawPreviewUnderGrid(l,pointer.x,pointer.y,i,t,-o,-a),l.restore())})),selection&&(l.save(),l.scale(t,t),l.translate(-o,-a),l.drawImage(selection.canvas,selection.x,selection.y),l.restore(),n||selection.dragging||draw_selection_box(l,selection.x,selection.y,selection.width,selection.height,t,-o,-a)),textbox&&(l.save(),l.scale(t,t),l.translate(-o,-a),l.drawImage(textbox.canvas,textbox.x,textbox.y),l.restore(),n||textbox.dragging||draw_selection_box(l,textbox.x,textbox.y,textbox.width,textbox.height,t,-o,-a)),i&&draw_grid(l,t),r.forEach((e=>{e.drawPreviewAboveGrid&&pointer&&pointers.length<2&&(l.save(),e.drawPreviewAboveGrid(l,pointer.x,pointer.y,i,t,-o,-a),l.restore())}))}function update_disable_aa(){const e=window.devicePixelRatio*magnification,t=Math.floor(e)===e;$canvas_area.toggleClass("disable-aa-for-things-at-main-canvas-scale",e>=3||t)}function set_magnification(e,t){t=t??{x:$canvas_area.scrollLeft()/magnification,y:$canvas_area.scrollTop()/magnification};const o=from_canvas_coords(t);magnification=e,1!==e&&(return_to_magnification=e),update_magnified_canvas_size();const a=from_canvas_coords(t);$canvas_area[0].scrollBy({left:a.clientX-o.clientX,top:a.clientY-o.clientY,behavior:"instant"}),$G.triggerHandler("resize"),$G.trigger("option-changed")}let $file_load_from_url_window,dev_custom_zoom=!1;try{dev_custom_zoom="true"===localStorage.dev_custom_zoom}catch(e){}function show_custom_zoom_window(){$custom_zoom_window&&$custom_zoom_window.close();const e=new $DialogWindow(localize("Custom Zoom"));$custom_zoom_window=e,e.addClass("custom-zoom-window"),e.$main.append(`<div class='current-zoom'>${localize("Current zoom:")} <bdi>${100*magnification}%</bdi></div>`);const t=$(E("fieldset")).appendTo(e.$main);t.append(`\n\t\t<legend>${localize("Zoom to")}</legend>\n\t\t<div class="fieldset-body">\n\t\t\t<input type="radio" name="custom-zoom-radio" id="zoom-option-1" value="1"/><label for="zoom-option-1">100%</label>\n\t\t\t<input type="radio" name="custom-zoom-radio" id="zoom-option-2" value="2"/><label for="zoom-option-2">200%</label>\n\t\t\t<input type="radio" name="custom-zoom-radio" id="zoom-option-4" value="4"/><label for="zoom-option-4">400%</label>\n\t\t\t<input type="radio" name="custom-zoom-radio" id="zoom-option-6" value="6"/><label for="zoom-option-6">600%</label>\n\t\t\t<input type="radio" name="custom-zoom-radio" id="zoom-option-8" value="8"/><label for="zoom-option-8">800%</label>\n\t\t\t<input type="radio" name="custom-zoom-radio" id="zoom-option-really-custom" value="really-custom"/><label for="zoom-option-really-custom"><input type="number" min="10" max="1000" name="really-custom-zoom-input" class="inset-deep no-spinner" value=""/>%</label>\n\t\t</div>\n\t`);let o=!0;t.find("input[type=radio]").get().forEach((e=>{parseFloat(e.value)===magnification&&(e.checked=!0,o=!1)}));const a=t.find("input[value='really-custom']"),n=t.find("input[name='really-custom-zoom-input']");n.closest("label").on("click",(()=>{a.prop("checked",!0),n[0].focus()})),o&&(n.val(100*magnification),a.prop("checked",!0)),t.find("label").css({display:"block"}),e.$Button(localize("OK"),(()=>{let o,a=t.find("input[name='custom-zoom-radio']:checked").val();if("really-custom"===a){if(a=n.val(),`${a}`.match(/\dx$/)?o=parseFloat(a):`${a}`.match(/\d%?$/)&&(o=parseFloat(a)/100),isNaN(o))return void please_enter_a_number()}else o=parseFloat(a);set_magnification(o),e.close()}))[0].focus(),e.$Button(localize("Cancel"),(()=>{e.close()})),e.center()}function toggle_grid(){show_grid=!show_grid,update_helper_layer()}function toggle_thumbnail(){show_thumbnail=!show_thumbnail,show_thumbnail?(thumbnail_canvas||(thumbnail_canvas=make_canvas(108,92),thumbnail_canvas.style.width="100%",thumbnail_canvas.style.height="100%"),$thumbnail_window||($thumbnail_window=new $Window({title:localize("Thumbnail"),toolWindow:!0,resizable:!0,innerWidth:thumbnail_canvas.width+4,innerHeight:thumbnail_canvas.height+4,minInnerWidth:56,minInnerHeight:40,minOuterWidth:0,minOuterHeight:0}),$thumbnail_window.addClass("thumbnail-window"),$thumbnail_window.$content.append(thumbnail_canvas),$thumbnail_window.$content.addClass("inset-deep"),$thumbnail_window.$content.css({marginTop:"1px"}),$thumbnail_window.maximize=()=>{},new ResizeObserver((e=>{const t=e[0];let o,a;"devicePixelContentBoxSize"in t?(o=t.devicePixelContentBoxSize[0].inlineSize,a=t.devicePixelContentBoxSize[0].blockSize):"contentBoxSize"in t?(o=Math.round(t.contentBoxSize[0].inlineSize*devicePixelRatio),a=Math.round(t.contentBoxSize[0].blockSize*devicePixelRatio)):(o=Math.round(t.contentRect.width*devicePixelRatio),a=Math.round(t.contentRect.height*devicePixelRatio)),o&&a&&(thumbnail_canvas.width=o,thumbnail_canvas.height=a),update_helper_layer_immediately()})).observe(thumbnail_canvas,{box:["device-pixel-content-box"]})),$thumbnail_window.show(),$thumbnail_window.on("close",(e=>{e.preventDefault(),$thumbnail_window.hide(),show_thumbnail=!1}))):$thumbnail_window.hide(),update_helper_layer()}function reset_selected_colors(){selected_colors={foreground:"#000000",background:"#ffffff",ternary:""},$G.trigger("option-changed")}function reset_file(){system_file_handle=null,file_name=localize("untitled"),file_format="image/png",saved=!0,update_title()}function reset_canvas_and_history(){undos.length=0,redos.length=0,current_history_node=root_history_node=make_history_node({name:localize("New"),icon:get_help_folder_icon("p_blank.png")}),history_node_to_cancel_to=null,main_canvas.width=Math.max(1,my_canvas_width),main_canvas.height=Math.max(1,my_canvas_height),main_ctx.disable_image_smoothing(),main_ctx.fillStyle=selected_colors.background,main_ctx.fillRect(0,0,main_canvas.width,main_canvas.height),current_history_node.image_data=main_ctx.getImageData(0,0,main_canvas.width,main_canvas.height),$canvas_area.trigger("resize"),$G.triggerHandler("history-update")}function make_history_node({parent:e=null,futures:t=[],timestamp:o=Date.now(),soft:a=!1,image_data:n=null,selection_image_data:i=null,selection_x:l,selection_y:r,textbox_text:s,textbox_x:c,textbox_y:d,textbox_width:_,textbox_height:m,text_tool_font:p=null,tool_transparent_mode:u,foreground_color:h,background_color:g,ternary_color:f,name:b,icon:w=null}){return{parent:e,futures:t,timestamp:o,soft:a,image_data:n,selection_image_data:i,selection_x:l,selection_y:r,textbox_text:s,textbox_x:c,textbox_y:d,textbox_width:_,textbox_height:m,text_tool_font:p,tool_transparent_mode:u,foreground_color:h,background_color:g,ternary_color:f,name:b,icon:w}}function update_title(){document.title=`${file_name} - ${is_pride_month?"June Solidarity ":""}${localize("Paint")}`,is_pride_month&&$("link[rel~='icon']").attr("href","./images/icons/gay-es-paint-16x16-light-outline.png"),window.setRepresentedFilename&&window.setRepresentedFilename(system_file_handle??""),window.setDocumentEdited&&window.setDocumentEdited(!saved)}function get_uris(e){const t=e.split(/[\n\r]+/).filter((e=>"#"!==e[0]&&e));if(t.length>15)return[];const o=[];for(let e=0;e<t.length;e++)try{const a=new URL(t[e]);o.push(a.href)}catch(e){}return o}async function load_image_from_uri(e){const t=e.match(/^blob:/i),o=!e.match(/^(blob|data|file):/i),a=e.match(/^(http|https):\/\/((127\.0\.0\.1|localhost)|.*(\.(local|localdomain|domain|lan|home|host|corp|invalid)))\b/i);if(t&&-1===e.indexOf(`blob:${location.origin}`)){const e=new Error("can't load blob: URI from another domain");throw e.code="cross-origin-blob-uri",e}const n=o&&!a?[e,`https://cors.bridged.cc/${e}`,`https://jspaint-cors-proxy.herokuapp.com/${e}`,`https://web.archive.org/${e}`]:[e],i=[];for(let e=0;e<n.length;e+=1){const t=n[e];try{o&&$status_text.text("Downloading picture...");const a=({loaded:e,total:t})=>{o&&$status_text.text(`Downloading picture... (${Math.round(e/t*100)}%)`)};o&&console.log(`Try loading image from URI (${e+1}/${n.length}): "${t}"`);const l=await fetch(t);let r=l;if(!l.ok){i.push({status:l.status,statusText:l.statusText,url:t});continue}if(l.body){const e=l.headers.get("content-encoding"),t=l.headers.get(e?"x-file-size":"content-length");if(null===t)o&&console.log("Response size header unavailable. Progress won't be shown for this image request.");else{const e=parseInt(t,10);let o=0;r=new Response(new ReadableStream({start(t){const n=l.body.getReader();!function i(){n.read().then((({done:n,value:l})=>{n?t.close():(o+=l.byteLength,a({loaded:o,total:e}),t.enqueue(l),i())})).catch((e=>{console.error(e),t.error(e)}))}()}}))}}else o&&console.log("ReadableStream not yet supported in this browser. Progress won't be shown for image requests.");const s=await r.blob();o&&(console.log("Download complete."),$status_text.text("Download complete."));const c=await new Promise(((e,t)=>{read_image_file(s,((o,a)=>{o?t(o):e(a)}))}));return c}catch(l){i.push({url:t,error:l})}}o&&$status_text.text("Failed to download picture.");const l=new Error(`failed to fetch image from any of ${n.length} URI(s):\n  ${i.map((e=>(e.statusText?`${e.status} ${e.statusText} `:"")+e.url+(e.error?`\n    ${e.error}`:""))).join("\n  ")}`);throw l.code="access-failure",l.fails=i,l}function open_from_image_info(e,t,o,a,n){are_you_sure((({canvas_modified_while_loading:o}={})=>{deselect(),cancel(),a||($G.triggerHandler("session-update"),new_local_session()),reset_file(),reset_selected_colors(),reset_canvas_and_history(),set_magnification(default_magnification),main_ctx.copy(e.image||e.image_data),apply_file_format_and_palette_info(e),transparency=has_any_transparency(main_ctx),$canvas_area.trigger("resize"),current_history_node.name=localize("Open"),current_history_node.image_data=main_ctx.getImageData(0,0,main_canvas.width,main_canvas.height),current_history_node.icon=get_help_folder_icon("p_open.png"),!o&&n||$G.triggerHandler("session-update"),$G.triggerHandler("history-update"),e.source_blob instanceof File&&(file_name=e.source_blob.name,system_file_handle=e.source_blob.path),e.source_file_handle&&(system_file_handle=e.source_file_handle),saved=!0,update_title(),t&&t()}),o,n)}function open_from_file(e,t){e.name.match(/\.theme(pack)?$/i)?e.text().then(load_theme_from_text,(e=>{show_error_message(localize("Paint cannot open this file."),e)})):read_image_file(e,((o,a)=>{o?AnyPalette.loadPalette(e,((e,t)=>{e?show_file_format_errors({as_image_error:o,as_palette_error:e}):(palette=t.map((e=>e.toString())),$colorbox.rebuild_palette(),window.console&&console.log(`Loaded palette: ${palette.map((()=>"%c█")).join("")}`,...palette.map((e=>`color: ${e};`))))})):(a.source_file_handle=t,open_from_image_info(a))}))}function apply_file_format_and_palette_info(e){file_format=e.file_format,enable_palette_loading_from_indexed_images&&(e.palette?(window.console&&console.log(`Loaded palette from image file: ${e.palette.map((()=>"%c█")).join("")}`,...e.palette.map((e=>`color: ${e};`))),palette=e.palette,selected_colors.foreground=palette[0],selected_colors.background=28===palette.length?palette[14]:palette[1],$G.trigger("option-changed")):monochrome&&!e.monochrome&&(palette=default_palette,reset_selected_colors()),$colorbox.rebuild_palette(),monochrome=e.monochrome)}function load_theme_from_text(e){var t=parseThemeFileString(e);t?(applyCSSProperties(t,{recurseIntoIframes:!0}),window.themeCSSProperties=t,$G.triggerHandler("theme-load")):show_error_message(localize("Paint cannot open this file."))}function file_new(){are_you_sure((()=>{deselect(),cancel(),$G.triggerHandler("session-update"),new_local_session(),reset_file(),reset_selected_colors(),reset_canvas_and_history(),set_magnification(default_magnification),$G.triggerHandler("session-update")}))}async function file_open(){const{file:e,fileHandle:t}=await systemHooks.showOpenFileDialog({formats:image_formats});open_from_file(e,t)}function file_load_from_url(){$file_load_from_url_window&&$file_load_from_url_window.close();const e=(new $DialogWindow).addClass("horizontal-buttons");$file_load_from_url_window=e,e.title("Load from URL"),e.$main.html('\n\t\t<div style=\'padding: 10px;\'>\n\t\t\t<label style="display: block; margin-bottom: 5px;" for="url-input">Paste or type the web address of an image:</label>\n\t\t\t<input type="url" required value="" id="url-input" class="inset-deep" style="width: 300px;"/></label>\n\t\t</div>\n\t');const t=e.$main.find("#url-input");e.$Button(localize("Open"),(()=>{const o=get_uris(t.val());o.length>0?(e.close(),change_url_param("load",o[0])):show_error_message("Invalid URL. It must include a protocol (https:// or http://)")})),e.$Button(localize("Cancel"),(()=>{e.close()})),e.center(),t[0].focus()}dev_custom_zoom&&$((()=>{show_custom_zoom_window(),$custom_zoom_window.css({left:80,top:50,opacity:.5})}));let acknowledged_overwrite_capability=!1;const confirmed_overwrite_key="jspaint confirmed overwrite capable";try{acknowledged_overwrite_capability="true"===localStorage[confirmed_overwrite_key]}catch(e){acknowledged_overwrite_capability=Date.now()>=2e12}async function confirm_overwrite_capability(){if(acknowledged_overwrite_capability)return!0;const{$window:e,promise:t}=showMessageBox({messageHTML:'\n\t\t\t<p>JS Paint can now save over existing files.</p>\n\t\t\t<p>Do you want to overwrite the file?</p>\n\t\t\t<p>\n\t\t\t\t<input type="checkbox" id="dont-ask-me-again-checkbox"/>\n\t\t\t\t<label for="dont-ask-me-again-checkbox">Don\'t ask me again</label>\n\t\t\t</p>\n\t\t',buttons:[{label:localize("Yes"),value:"overwrite",default:!0},{label:localize("Cancel"),value:"cancel"}]});if("overwrite"===await t){acknowledged_overwrite_capability=e.$content.find("#dont-ask-me-again-checkbox").prop("checked");try{localStorage[confirmed_overwrite_key]=acknowledged_overwrite_capability}catch(e){}return!0}return!1}function file_save(e=(()=>{}),t=!0){deselect();const o=system_file_handle;if(!o||file_name.match(/\.(svg|pdf)$/i))return file_save_as(e,t);write_image_file(main_canvas,file_format,(async a=>{await systemHooks.writeBlobToHandle(o,a),t&&update_from_saved_file(a),e()}))}function file_save_as(e=(()=>{}),t=!0){deselect(),systemHooks.showSaveFileDialog({dialogTitle:localize("Save As"),formats:image_formats,defaultFileName:file_name,defaultPath:"string"==typeof system_file_handle?system_file_handle:null,defaultFileFormatID:file_format,getBlob:e=>new Promise((t=>{write_image_file(main_canvas,e,(e=>{t(e)}))})),savedCallbackUnreliable:({newFileName:o,newFileFormatID:a,newFileHandle:n,newBlob:i})=>{saved=!0,system_file_handle=n,file_name=o,file_format=a,update_title(),e(),t&&update_from_saved_file(i)}})}function are_you_sure(e,t,o){saved?e():o?showMessageBox({message:localize("You've modified the document while an existing document was loading.\nSave the new document?",file_name),buttons:[{label:localize("Yes"),value:"save",default:!0},{label:localize("No"),value:"discard"}]}).then((t=>{"save"===t?file_save((()=>{e()}),!1):"discard"===t?e({canvas_modified_while_loading:!0}):e()})):showMessageBox({message:localize("Save changes to %1?",file_name),buttons:[{label:localize("Yes"),value:"save",default:!0},{label:localize("No"),value:"discard"},{label:localize("Cancel"),value:"cancel"}]}).then((o=>{"save"===o?file_save((()=>{e()}),!1):"discard"===o?e():t?.()}))}function please_enter_a_number(){showMessageBox({message:localize("Please enter a number.")})}function show_error_message(e,t){const{$message:o}=showMessageBox({iconID:"error",message:e});if(t){const e=$("<details><summary><span>Details</span></summary></details>").appendTo(o);let a=t.stack;a?t.message&&-1===a.indexOf(t.message)?a=`${t.toString()}\n\n${a}`:t.name&&-1===a.indexOf(t.name)&&(a=`${t.name}\n\n${a}`):a=t.toString(),$(E("pre")).text(a).appendTo(e).css({background:"white",color:"#333",fontFamily:"monospace",width:"500px",maxWidth:"100%",overflow:"auto"})}t?window.console?.error?.(e,t):window.console?.error?.(e)}function show_resource_load_error_message(e){const{$window:t,$message:o}=showMessageBox({}),a=navigator.userAgent.toLowerCase().indexOf("firefox")>-1;"cross-origin-blob-uri"===e.code?o.html(`\n\t\t\t<p>Can't load image from address starting with "blob:".</p>\n\t\t\t${a?'<p>Try "Copy Image" instead of "Copy Image Location".</p>':'<p>Try "Copy image" instead of "Copy image address".</p>'}\n\t\t`):"html-not-image"===e.code?o.html("\n\t\t\t<p>Address points to a web page, not an image file.</p>\n\t\t\t<p>Try copying and pasting an image instead of a URL.</p>\n\t\t"):"decoding-failure"===e.code?o.html("\n\t\t\t<p>Address doesn't point to an image file of a supported format.</p>\n\t\t\t<p>Try copying and pasting an image instead of a URL.</p>\n\t\t"):"access-failure"===e.code?navigator.onLine?(o.html("\n\t\t\t\t<p>Failed to download image.</p>\n\t\t\t\t<p>Try copying and pasting an image instead of a URL.</p>\n\t\t\t"),e.fails&&$("<ul>").append(e.fails.map((({status:e,statusText:t,url:o})=>$("<li>").text(o).prepend($("<b>").text(`${e||""} ${t||"Failed"} `))))).appendTo(o)):o.html("\n\t\t\t\t<p>Failed to download image.</p>\n\t\t\t\t<p>You're offline. Connect to the internet and try again.</p>\n\t\t\t\t<p>Or copy and paste an image instead of a URL, if possible.</p>\n\t\t\t"):o.html("\n\t\t\t<p>Failed to load image from URL.</p>\n\t\t\t<p>Check your browser's devtools for details.</p>\n\t\t"),o.css({maxWidth:"500px"}),t.center()}function show_file_format_errors({as_image_error:e,as_palette_error:t}){let o=`\n\t\t<p>${localize("Paint cannot open this file.")}</p>\n\t`;e&&(o+=`\n\t\t\t<details>\n\t\t\t\t<summary>${localize("Bitmap Image")}</summary>\n\t\t\t\t<p>${localize("This is not a valid bitmap file, or its format is not currently supported.")}</p>\n\t\t\t</details>\n\t\t`);var a={"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;","/":"&#x2F;","`":"&#x60;","=":"&#x3D;"};const n=e=>String(e).replace(/[&<>"'`=/]/g,(e=>a[e])),i=t&&!e;if(t){let e="";e=t.errors?`<ul dir="ltr">${t.errors.map((e=>{const t=e.__PATCHED_LIB_TO_ADD_THIS__format;return t&&e.error?`<li><b>${n(`${t.name}`)}</b>: ${n((o=e.error.message,o.charAt(0).toUpperCase()+o.slice(1)))}</li>`:`<li>${n(e.message||e)}</li>`;var o})).join("\n")}</ul>`:`<p>${n(t.message||t)}</p>`,o+=`\n\t\t\t<details>\n\t\t\t\t<summary>${i?"Details":localize("Palette|*.pal|").split("|")[0]}</summary>\n\t\t\t\t<p>${localize("Unexpected file format.")}</p>\n\t\t\t\t${e}\n\t\t\t</details>\n\t\t`}showMessageBox({messageHTML:o})}let $about_paint_window;const $about_paint_content=$("#about-paint");function show_about_paint(){$about_paint_window&&$about_paint_window.close(),$about_paint_window=$Window({title:localize("About Paint"),resizable:!1,maximizeButton:!1,minimizeButton:!1}),$about_paint_window.addClass("about-paint squish"),is_pride_month&&$("#paint-32x32").attr("src","./images/icons/gay-es-paint-32x32-light-outline.png"),$about_paint_window.$content.append($about_paint_content.show()).css({padding:"15px"}),$about_paint_window.center(),$about_paint_window.center(),$about_paint_window.$Button(localize("OK"),(()=>{$about_paint_window.close()})).attr("id","close-about-paint").focus().css({float:"right",marginBottom:"10px"})}function exit_fullscreen_if_ios(){if($("body").hasClass("ios"))try{document.exitFullscreen?document.exitFullscreen():document.webkitExitFullscreen?document.webkitExitFullscreen():document.mozCancelFullScreen?document.mozCancelFullScreen():document.msExitFullscreen&&document.msExitFullscreen()}catch(e){}}function update_css_classes_for_conditional_messages(){$(".on-dev-host, .on-third-party-host, .on-official-host").hide(),location.hostname.match(/localhost|127.0.0.1/)?$(".on-dev-host").show():location.hostname.match(/jspaint.app/)?$(".on-official-host").show():$(".on-third-party-host").show(),$(".navigator-online, .navigator-offline").hide(),navigator.onLine?$(".navigator-online").show():$(".navigator-offline").show()}function paste_image_from_file(e){read_image_file(e,((e,t)=>{e?show_file_format_errors({as_image_error:e}):paste(t.image||make_canvas(t.image_data))}))}async function choose_file_to_paste(){const{file:e}=await systemHooks.showOpenFileDialog({formats:image_formats});e.type.match(/^image|application\/pdf/)?paste_image_from_file(e):show_error_message(localize("This is not a valid bitmap file, or its format is not currently supported."))}function paste(e){function t(){deselect(),select_tool(get_tool_by_id(TOOL_SELECT));const t=Math.max(0,Math.ceil($canvas_area.scrollLeft()/magnification)),o=Math.max(0,Math.ceil($canvas_area.scrollTop()/magnification));undoable({name:localize("Paste"),icon:get_help_folder_icon("p_paste.png"),soft:!0},(()=>{selection=new OnCanvasSelection(t,o,e.width,e.height,e)}))}e.width>main_canvas.width||e.height>main_canvas.height?showMessageBox({message:localize("The image in the clipboard is larger than the bitmap.")+"\n"+localize("Would you like the bitmap enlarged?"),iconID:"question",windowOptions:{icons:{16:"images/windows-16x16.png",32:"images/windows-32x32.png"}},buttons:[{label:localize("Yes"),value:"enlarge",default:!0},{label:localize("No"),value:"crop"},{label:localize("Cancel"),value:"cancel"}]}).then((o=>{"enlarge"===o?(resize_canvas_and_save_dimensions(Math.max(main_canvas.width,e.width),Math.max(main_canvas.height,e.height),{name:"Enlarge Canvas For Paste",icon:get_help_folder_icon("p_stretch_both.png")}),t(),$canvas_area.trigger("resize")):"crop"===o&&t()})):t()}function render_history_as_gif(){const e=$DialogWindow();e.title("Rendering GIF");const t=e.$main,o=$(E("progress")).appendTo(t).addClass("inset-deep"),a=$(E("span")).appendTo(t).css({width:"2.3em",display:"inline-block",textAlign:"center"});e.$main.css({padding:5});const n=e.$Button("Cancel",(()=>{e.close()})).focus();e.center();try{const i=main_canvas.width,l=main_canvas.height,r=new GIF({workerScript:"lib/gif.js/gif.worker.js",width:i,height:l});e.on("close",(()=>{r.abort()})),r.on("progress",(e=>{o.val(e),a.text(~~(100*e)+"%")})),r.on("finished",(o=>{e.title("Rendered GIF");const a=URL.createObjectURL(o);t.empty().append($(E("div")).addClass("inset-deep").append($(E("img")).attr({src:a,width:i,height:l}).css({display:"block"})).css({overflow:"auto",maxHeight:"70vh",maxWidth:"70vw"})),e.on("close",(()=>{URL.revokeObjectURL(a)})),e.$Button("Upload to Imgur",(()=>{e.close(),sanity_check_blob(o,(()=>{show_imgur_uploader(o)}))})).focus(),e.$Button(localize("Save"),(()=>{e.close(),sanity_check_blob(o,(()=>{const e=`${file_name.replace(/\.(bmp|dib|a?png|gif|jpe?g|jpe|jfif|tiff?|webp|raw)$/i,"")} history.gif`;systemHooks.showSaveFileDialog({dialogTitle:localize("Save As"),getBlob:()=>o,defaultFileName:e,defaultPath:"string"==typeof system_file_handle?`${system_file_handle.replace(/[/\\][^/\\]*/,"")}/${e}`:null,defaultFileFormatID:"image/gif",formats:[{formatID:"image/gif",mimeType:"image/gif",name:localize("Animated GIF (*.gif)").replace(/\s+\([^(]+$/,""),nameWithExtensions:localize("Animated GIF (*.gif)"),extensions:["gif"]}]})}))})),n.appendTo(e.$buttons),e.center()}));const s=make_canvas(i,l),c=[...undos,current_history_node];for(const e of c){if(s.ctx.clearRect(0,0,s.width,s.height),s.ctx.putImageData(e.image_data,0,0),e.selection_image_data){const t=make_canvas(e.selection_image_data);s.ctx.drawImage(t,e.selection_x,e.selection_y)}r.addFrame(s,{delay:200,copy:!0})}r.render()}catch(t){e.close(),show_error_message("Failed to render GIF.",t)}}function go_to_history_node(e,t,o){const a=current_history_node;if(!e.image_data)return void(t||(show_error_message("History entry has no image data."),window.console&&console.log("Target history entry has no image data:",e)));if(current_history_node=e,deselect(!0),t||cancel(!0),saved=!1,update_title(),main_ctx.copy(e.image_data),e.selection_image_data&&(selection&&selection.destroy(),e.name===localize("Free-Form Select")?select_tool(get_tool_by_id(TOOL_FREE_FORM_SELECT)):select_tool(get_tool_by_id(TOOL_SELECT)),selection=new OnCanvasSelection(e.selection_x,e.selection_y,e.selection_image_data.width,e.selection_image_data.height,e.selection_image_data)),null!=e.textbox_text){textbox&&textbox.destroy();for(const[t,o]of Object.entries(e.text_tool_font))text_tool_font[t]=o;selected_colors.foreground=e.foreground_color,selected_colors.background=e.background_color,tool_transparent_mode=e.tool_transparent_mode,$G.trigger("option-changed"),select_tool(get_tool_by_id(TOOL_TEXT)),textbox=new OnCanvasTextBox(e.textbox_x,e.textbox_y,e.textbox_width,e.textbox_height,e.textbox_text)}const n=get_history_ancestors(e);undos=[...n],undos.reverse();const i=redos.length>0?[redos[0],...get_history_ancestors(redos[0])]:[a,...get_history_ancestors(a)];redos.length=0;let l=e;for(;l.futures.length>0;){const e=[...l.futures];e.sort(((e,t)=>i.indexOf(e)>-1?-1:i.indexOf(t)>-1?1:0)),l=e[0],redos.unshift(l)}$canvas_area.trigger("resize"),$G.triggerHandler("session-update"),$G.triggerHandler("history-update")}function undoable({name:e,icon:t,use_loose_canvas_changes:o,soft:a},n){saved=!1,update_title();const i=current_history_node;n&&n(),current_history_node!==i&&(show_error_message(`History node switched during undoable callback for ${e}. This shouldn't happen.`),window.console&&console.log(`History node switched during undoable callback for ${e}, from`,i,"to",current_history_node));const l=main_ctx.getImageData(0,0,main_canvas.width,main_canvas.height);redos.length=0,undos.push(current_history_node);const r=make_history_node({image_data:l,selection_image_data:selection&&selection.canvas.ctx.getImageData(0,0,selection.canvas.width,selection.canvas.height),selection_x:selection&&selection.x,selection_y:selection&&selection.y,textbox_text:textbox&&textbox.$editor.val(),textbox_x:textbox&&textbox.x,textbox_y:textbox&&textbox.y,textbox_width:textbox&&textbox.width,textbox_height:textbox&&textbox.height,text_tool_font:JSON.parse(JSON.stringify(text_tool_font)),tool_transparent_mode,foreground_color:selected_colors.foreground,background_color:selected_colors.background,ternary_color:selected_colors.ternary,parent:current_history_node,name:e,icon:t,soft:a});current_history_node.futures.push(r),current_history_node=r,$G.triggerHandler("history-update"),$G.triggerHandler("session-update")}function make_or_update_undoable(e,t){0===current_history_node.futures.length&&e.match(current_history_node)?(t(),current_history_node.image_data=main_ctx.getImageData(0,0,main_canvas.width,main_canvas.height),current_history_node.selection_image_data=selection&&selection.canvas.ctx.getImageData(0,0,selection.canvas.width,selection.canvas.height),current_history_node.selection_x=selection&&selection.x,current_history_node.selection_y=selection&&selection.y,e.update_name&&(current_history_node.name=e.name),$G.triggerHandler("history-update")):undoable(e,t)}function undo(){if(undos.length<1)return!1;redos.push(current_history_node);let e=undos.pop();for(;e.soft&&undos.length;)redos.push(e),e=undos.pop();return go_to_history_node(e),!0}let $document_history_prompt_window,$document_history_window;function redo(){if(redos.length<1)return $document_history_prompt_window&&$document_history_prompt_window.close(),$document_history_window&&!$document_history_window.closed||($document_history_prompt_window=showMessageBox({title:"Redo",messageHTML:"To view all branches of the history tree, click <b>Edit > History</b>.",iconID:"info"}).$window),!1;undos.push(current_history_node);let e=redos.pop();for(;e.soft&&redos.length;)undos.push(e),e=redos.pop();return go_to_history_node(e),!0}function get_history_ancestors(e){const t=[];for(e=e.parent;e;e=e.parent)t.push(e);return t}function show_document_history(){$document_history_prompt_window&&$document_history_prompt_window.close(),$document_history_window&&$document_history_window.close();const e=$document_history_window=new $Window({title:"Document History",resizable:!1,maximizeButton:!1,minimizeButton:!1});e.addClass("history-window squish"),e.$content.html('\n\t\t<label>\n\t\t\t<select id="history-view-mode" class="inset-deep">\n\t\t\t\t<option value="linear">Linear timeline</option>\n\t\t\t\t<option value="tree">Tree</option>\n\t\t\t</select>\n\t\t</label>\n\t\t<div class="history-view" tabIndex="0"></div>\n\t');const t=e.$content.find(".history-view");t.focus();let o,a=0,n=[],i=e.$content.find("#history-view-mode");i.css({margin:"10px"});let l=i.val();function r(e){const i=$('\n\t\t\t<div class="history-entry">\n\t\t\t\t<div class="history-entry-icon-area"></div>\n\t\t\t\t<div class="history-entry-name"></div>\n\t\t\t</div>\n\t\t');if(i.find(".history-entry-name").text((e.name||"Unknown")+(e===root_history_node?" (Start of History)":"")),i.find(".history-entry-icon-area").append(e.icon),"tree"===l){let t=0;for(let o=e.parent;o;o=o.parent)t++;i.css({marginInlineStart:8*t+"px"})}if(e===current_history_node)i.addClass("current"),o=i,requestAnimationFrame((()=>{t[0].scrollTop=Math.min(i[0].offsetTop,Math.max(a,i[0].offsetTop-t[0].clientHeight+i.outerHeight()))}));else{get_history_ancestors(current_history_node).indexOf(e)>-1&&i.addClass("ancestor-of-current")}for(const t of e.futures)r(t);i.on("click",(()=>{go_to_history_node(e)})),i.history_node=e,n.push(i)}i.on("change",(()=>{l=i.val(),s()}));const s=()=>{a=t.scrollTop(),t.empty(),n=[],r(root_history_node),"linear"===l?n.sort(((e,t)=>e.history_node.timestamp<t.history_node.timestamp?-1:t.history_node.timestamp<e.history_node.timestamp?1:0)):n.reverse(),n.forEach((e=>{t.append(e)}))};s();const c=e=>{const t=n.indexOf(o)+e;n[t]&&n[t].click()};t.on("keydown",(e=>{e.ctrlKey||e.altKey||e.shiftKey||e.metaKey||("ArrowDown"===e.key||"Down"===e.key?(c(1),e.preventDefault()):"ArrowUp"!==e.key&&"Up"!==e.key||(c(-1),e.preventDefault()))})),$G.on("history-update",s),e.on("close",(()=>{$G.off("history-update",s)})),e.center()}function cancel(e,t){if(!history_node_to_cancel_to)return;const o=t&&current_history_node.parent&&current_history_node!==history_node_to_cancel_to&&0===current_history_node.futures.length?current_history_node:null;$G.triggerHandler("pointerup",["canceling",t]);for(const e of selected_tools)e.cancel&&e.cancel();if(!e&&(go_to_history_node(history_node_to_cancel_to,!0),o)){const e=o.parent.futures.indexOf(o);-1===e?(show_error_message("History node not found. Please report this bug."),console.log("history_node_to_discard",o),console.log("current_history_node",current_history_node),console.log("history_node_to_discard.parent",o.parent)):(o.parent.futures.splice(e,1),$G.triggerHandler("history-update"))}history_node_to_cancel_to=null,update_helper_layer()}function meld_selection_into_canvas(e){selection.draw(),selection.destroy(),selection=null,e||undoable({name:"Deselect",icon:get_icon_for_tool(get_tool_by_id(TOOL_SELECT)),use_loose_canvas_changes:!0},(()=>{}))}function meld_textbox_into_canvas(e){textbox.$editor.val()&&!e?(undoable({name:localize("Text"),icon:get_icon_for_tool(get_tool_by_id(TOOL_TEXT)),soft:!0},(()=>{})),undoable({name:"Finish Text",icon:get_icon_for_tool(get_tool_by_id(TOOL_TEXT))},(()=>{main_ctx.drawImage(textbox.canvas,textbox.x,textbox.y),textbox.destroy(),textbox=null}))):(textbox.destroy(),textbox=null)}function deselect(e){selection&&meld_selection_into_canvas(e),textbox&&meld_textbox_into_canvas(e);for(const e of selected_tools)e.end&&e.end(main_ctx)}function delete_selection(e={}){selection&&undoable({name:e.name||localize("Clear Selection"),icon:e.icon||get_help_folder_icon("p_delete.png")},(()=>{selection.destroy(),selection=null}))}function select_all(){deselect(),select_tool(get_tool_by_id(TOOL_SELECT)),undoable({name:localize("Select All"),icon:get_icon_for_tool(get_tool_by_id(TOOL_SELECT)),soft:!0},(()=>{selection=new OnCanvasSelection(0,0,main_canvas.width,main_canvas.height)}))}const ctrlOrCmd=/(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)?"⌘":"Ctrl",recommendationForClipboardAccess=`Please use the keyboard: ${ctrlOrCmd}+C to copy, ${ctrlOrCmd}+X to cut, ${ctrlOrCmd}+V to paste. If keyboard is not an option, try using Chrome version 76 or higher.`;function try_exec_command(e){return document.queryCommandEnabled(e)?(document.execCommand(e),navigator.userAgent.includes("Firefox")&&"paste"!==e?void 0:show_error_message(`That ${e} probably didn't work. ${recommendationForClipboardAccess}`)):show_error_message(`Cannot perform ${e}. ${recommendationForClipboardAccess}`)}function getSelectionText(){let e="";const t=document.activeElement,o=t?t.tagName.toLowerCase():null;return"textarea"==o||"input"==o&&/^(?:text|search|password|tel|url)$/i.test(t.type)&&"number"==typeof t.selectionStart?e=t.value.slice(t.selectionStart,t.selectionEnd):window.getSelection&&(e=window.getSelection().toString()),e}function edit_copy(e){const t=getSelectionText();if(t.length>0){if(!navigator.clipboard||!navigator.clipboard.writeText){if(e)return try_exec_command("copy");throw new Error(`${localize("Error getting the Clipboard Data!")} ${recommendationForClipboardAccess}`)}navigator.clipboard.writeText(t)}else if(selection&&selection.canvas){if(!navigator.clipboard||!navigator.clipboard.write){if(e)return try_exec_command("copy");throw new Error(`${localize("Error getting the Clipboard Data!")} ${recommendationForClipboardAccess}`)}selection.canvas.toBlob((e=>{sanity_check_blob(e,(()=>{navigator.clipboard.write([new ClipboardItem(Object.defineProperty({},e.type,{value:e,enumerable:!0}))]).then((()=>{window.console&&console.log("Copied image to the clipboard.")}),(e=>{show_error_message("Failed to copy to the Clipboard.",e)}))}))}))}}function edit_cut(e){if(!navigator.clipboard||!navigator.clipboard.write){if(e)return try_exec_command("cut");throw new Error(`${localize("Error getting the Clipboard Data!")} ${recommendationForClipboardAccess}`)}edit_copy(),delete_selection({name:localize("Cut"),icon:get_help_folder_icon("p_cut.png")})}async function edit_paste(e){if(document.activeElement instanceof HTMLInputElement||document.activeElement instanceof HTMLTextAreaElement){if(!navigator.clipboard||!navigator.clipboard.readText){if(e)return try_exec_command("paste");throw new Error(`${localize("Error getting the Clipboard Data!")} ${recommendationForClipboardAccess}`)}const t=await navigator.clipboard.readText();document.execCommand("InsertText",!1,t)}else{if(!navigator.clipboard||!navigator.clipboard.read){if(e)return try_exec_command("paste");throw new Error(`${localize("Error getting the Clipboard Data!")} ${recommendationForClipboardAccess}`)}try{const e=await navigator.clipboard.read();paste_image_from_file(await e[0].getType("image/png"))}catch(e){if("NotFoundError"===e.name)try{const e=await navigator.clipboard.readText();if(e){const t=get_uris(e);t.length>0?load_image_from_uri(t[0]).then((e=>{paste(e.image||make_canvas(e.image_data))}),(e=>{show_resource_load_error_message(e)})):show_error_message("The information on the Clipboard can't be inserted into Paint.")}else show_error_message("The information on the Clipboard can't be inserted into Paint.")}catch(e){show_error_message(localize("Error getting the Clipboard Data!"),e)}else show_error_message(localize("Error getting the Clipboard Data!"),e)}}}function image_invert_colors(){apply_image_transformation({name:localize("Invert Colors"),icon:get_help_folder_icon("p_invert.png")},((e,t,o,a)=>{const n=monochrome&&detect_monochrome(t);monochrome&&n.isMonochrome?invert_monochrome(t,a,n):invert_rgb(t,a)}))}function clear(){deselect(),cancel(),undoable({name:localize("Clear Image"),icon:get_help_folder_icon("p_blank.png")},(()=>{saved=!1,update_title(),transparency?main_ctx.clearRect(0,0,main_canvas.width,main_canvas.height):(main_ctx.fillStyle=selected_colors.background,main_ctx.fillRect(0,0,main_canvas.width,main_canvas.height))}))}let cleanup_bitmap_view=()=>{};function view_bitmap(){let e;cleanup_bitmap_view(),bitmap_view_div=document.createElement("div"),bitmap_view_div.classList.add("bitmap-view","inset-deep"),document.body.appendChild(bitmap_view_div),$(bitmap_view_div).css({display:"flex",alignItems:"center",justifyContent:"center",position:"fixed",top:"0",left:"0",width:"100%",height:"100%",zIndex:"9999",background:"var(--Background)"}),bitmap_view_div.requestFullscreen?bitmap_view_div.requestFullscreen():bitmap_view_div.webkitRequestFullscreen&&bitmap_view_div.webkitRequestFullscreen();let t=!1,o=setInterval((()=>{document.fullscreenElement===bitmap_view_div||document.webkitFullscreenElement===bitmap_view_div?t=!0:t&&cleanup_bitmap_view()}),100);function a(){document.fullscreenElement!==bitmap_view_div&&document.webkitFullscreenElement!==bitmap_view_div&&cleanup_bitmap_view()}cleanup_bitmap_view=()=>{document.removeEventListener("fullscreenchange",a,{once:!0}),document.removeEventListener("webkitfullscreenchange",a,{once:!0}),document.removeEventListener("keydown",i),document.removeEventListener("mousedown",l),setTimeout((()=>{document.removeEventListener("contextmenu",r)}),100),URL.revokeObjectURL(e),clearInterval(o),document.fullscreenElement!==bitmap_view_div&&document.webkitFullscreenElement!==bitmap_view_div||(document.exitFullscreen?document.exitFullscreen():document.msExitFullscreen?document.msExitFullscreen():document.mozCancelFullScreen?document.mozCancelFullScreen():document.webkitExitFullscreen&&document.webkitExitFullscreen()),bitmap_view_div.remove(),cleanup_bitmap_view=()=>{}},document.addEventListener("fullscreenchange",a,{once:!0}),document.addEventListener("webkitfullscreenchange",a,{once:!0}),document.addEventListener("keydown",i),document.addEventListener("mousedown",l),document.addEventListener("contextmenu",r);let n=!1;function i(e){n=n||e.repeat&&("f"===e.key||"F"===e.key),e.repeat||(!n||"f"!==e.key&&"F"!==e.key?(e.preventDefault(),cleanup_bitmap_view()):n=!1)}function l(e){cleanup_bitmap_view()}function r(e){e.preventDefault(),cleanup_bitmap_view()}main_canvas.toBlob((t=>{e=URL.createObjectURL(t);const o=document.createElement("img");o.src=e,bitmap_view_div.appendChild(o)}),"image/png")}function get_tool_by_id(e){for(let t=0;t<tools.length;t++)if(tools[t].id==e)return tools[t];for(let t=0;t<extra_tools.length;t++)if(extra_tools[t].id==e)return extra_tools[t]}function select_tools(e){for(let t=0;t<e.length;t++)select_tool(e[t],t>0);update_helper_layer()}function select_tool(e,t){if(deselect(),1===selected_tools.length&&selected_tool.deselect||(return_to_tools=[...selected_tools]),t){const t=selected_tools.indexOf(e);-1===t?(selected_tools.push(e),selected_tools.sort(((e,t)=>tools.indexOf(e)<tools.indexOf(t)?-1:tools.indexOf(e)>tools.indexOf(t)?1:0))):selected_tools.splice(t,1),selected_tools.length>0?selected_tool=selected_tools[selected_tools.length-1]:(selected_tool=default_tool,selected_tools=[selected_tool])}else selected_tool=e,selected_tools=[e];e.preload&&e.preload(),$toolbox.update_selected_tool()}function has_any_transparency(e){const t=e.getImageData(0,0,main_canvas.width,main_canvas.height);for(let e=0,o=t.data.length;e<o;e+=4)if(t.data[e+3]<253)return!0;return!1}function detect_monochrome(e){const t=e.getImageData(0,0,e.canvas.width,e.canvas.height),o=new Uint32Array(t.data.buffer),a=[],n=[];let i=!1;for(let e=0,l=o.length;e<l;e+=1)if(t.data[4*e+3]>1){if(!a.includes(o[e])){if(!(a.length<2))return{isMonochrome:!1};a.push(o[e]),n.push(t.data.slice(4*e,4*(e+1)))}}else i=!0;return{isMonochrome:!0,presentNonTransparentRGBAs:n,presentNonTransparentUint32s:a,monochromeWithTransparency:i}}function make_monochrome_pattern(e,t=[0,0,0,255],o=[255,255,255,255]){const a=Array.from({length:64},((e,t)=>{const o=t^t>>3;return((4&t)>>2|(4&o)>>1|(2&t)<<1|(2&o)<<2|(1&t)<<4|(1&o)<<5)/64})),n=document.createElement("canvas"),i=n.getContext("2d");n.width=8,n.height=8;const l=main_ctx.createImageData(n.width,n.height);for(let i=0;i<n.width;i+=1)for(let r=0;r<n.height;r+=1){const n=e>a[(7&i)+((7&r)<<3)],s=4*(r*l.width+i);l.data[s+0]=n?o[0]:t[0],l.data[s+1]=n?o[1]:t[1],l.data[s+2]=n?o[2]:t[2],l.data[s+3]=(n?o[3]:t[3])??255}return i.putImageData(l,0,0),main_ctx.createPattern(n,"repeat")}function make_monochrome_palette(e=[0,0,0,255],t=[255,255,255,255]){const o=[];for(let a=0;a<14;a++){let n=a/28;o.push(make_monochrome_pattern(n,e,t))}for(let a=0;a<14;a++){let n=1-a/28;o.push(make_monochrome_pattern(n,e,t))}return o}function make_stripe_pattern(e,t,o=4){const a=t.map(get_rgba_from_color),n=document.createElement("canvas"),i=n.getContext("2d");n.width=t.length*o,n.height=t.length*o;const l=main_ctx.createImageData(n.width,n.height);for(let i=0;i<n.width;i+=1)for(let r=0;r<n.height;r+=1){const n=4*(r*l.width+i),s=e?i-r:i+r,c=a[Math.floor((s+1e3)/o)%t.length];l.data[n+0]=c[0],l.data[n+1]=c[1],l.data[n+2]=c[2],l.data[n+3]=c[3]}return i.putImageData(l,0,0),main_ctx.createPattern(n,"repeat")}function switch_to_polychrome_palette(){}function make_opaque(){undoable({name:"Make Opaque",icon:get_help_folder_icon("p_make_opaque.png")},(()=>{main_ctx.save(),main_ctx.globalCompositeOperation="destination-atop",main_ctx.fillStyle=selected_colors.background,main_ctx.fillRect(0,0,main_canvas.width,main_canvas.height),main_ctx.fillStyle="white",main_ctx.fillRect(0,0,main_canvas.width,main_canvas.height),main_ctx.restore()}))}function resize_canvas_without_saving_dimensions(e,t,o={}){const a=Math.max(1,e),n=Math.max(1,t);main_canvas.width===a&&main_canvas.height===n||undoable({name:o.name||"Resize Canvas",icon:o.icon||get_help_folder_icon("p_stretch_both.png")},(()=>{try{const e=main_ctx.getImageData(0,0,a,n);main_canvas.width=a,main_canvas.height=n,main_ctx.disable_image_smoothing(),transparency||(main_ctx.fillStyle=selected_colors.background,main_ctx.fillRect(0,0,main_canvas.width,main_canvas.height));const t=make_canvas(e);main_ctx.drawImage(t,0,0)}catch(e){return void("NS_ERROR_FAILURE"===e.name?show_error_message(localize("Insufficient memory to perform operation."),e):show_error_message(localize("An unknown error has occurred."),e))}$canvas_area.trigger("resize")}))}function resize_canvas_and_save_dimensions(e,t,o={}){resize_canvas_without_saving_dimensions(e,t,o),storage.set({width:main_canvas.width,height:main_canvas.height},(()=>{}))}function image_attributes(){image_attributes.$window&&image_attributes.$window.close();const e=image_attributes.$window=new $DialogWindow(localize("Attributes"));e.addClass("attributes-window");const t=e.$main,o={[localize("File last saved:")]:localize("Not Available"),[localize("Size on disk:")]:localize("Not Available"),[localize("Resolution:")]:"72 x 72 dots per inch"},a=$(E("table")).appendTo(t);for(const e in o){const t=$(E("tr")).appendTo(a),n=($(E("td")).appendTo(t).text(e),$(E("td")).appendTo(t).text(o[e]));-1!==o[e].indexOf("72")&&n.css("direction","ltr")}const n={px:1,in:72,cm:28.3465};let i=image_attributes.unit=image_attributes.unit||"px",l=main_canvas.width,r=main_canvas.height;const s=$(E("label")).appendTo(t).text(localize("Width:")),c=$(E("label")).appendTo(t).text(localize("Height:")),d=$(E("input")).attr({type:"number",min:1}).addClass("no-spinner inset-deep").appendTo(s),_=$(E("input")).attr({type:"number",min:1}).addClass("no-spinner inset-deep").appendTo(c);t.find("input").css({width:"40px"}).on("change keyup keydown keypress pointerdown pointermove paste drop",(()=>{l=d.val()*n[i],r=_.val()*n[i]}));const m=$(E("fieldset")).appendTo(t).append(`\n\t\t<legend>${localize("Units")}</legend>\n\t\t<div class="fieldset-body">\n\t\t\t<input type="radio" name="units" id="unit-in" value="in"><label for="unit-in">${localize("Inches")}</label>\n\t\t\t<input type="radio" name="units" id="unit-cm" value="cm"><label for="unit-cm">${localize("Cm")}</label>\n\t\t\t<input type="radio" name="units" id="unit-px" value="px"><label for="unit-px">${localize("Pixels")}</label>\n\t\t</div>\n\t`);m.find(`[value=${i}]`).attr({checked:!0}),m.on("change",(()=>{const e=m.find(":checked").val();d.val(l/n[e]),_.val(r/n[e]),i=e})).triggerHandler("change");const p=$(E("fieldset")).appendTo(t).append(`\n\t\t<legend>${localize("Colors")}</legend>\n\t\t<div class="fieldset-body">\n\t\t\t<input type="radio" name="colors" id="attribute-monochrome" value="monochrome"><label for="attribute-monochrome">${localize("Black and white")}</label>\n\t\t\t<input type="radio" name="colors" id="attribute-polychrome" value="polychrome"><label for="attribute-polychrome">${localize("Colors")}</label>\n\t\t</div>\n\t`);p.find(`[value=${monochrome?"monochrome":"polychrome"}]`).attr({checked:!0});const u=$(E("fieldset")).appendTo(t).append(`\n\t\t<legend>${localize("Transparency")}</legend>\n\t\t<div class="fieldset-body">\n\t\t\t<input type="radio" name="transparency" id="attribute-transparent" value="transparent"><label for="attribute-transparent">${localize("Transparent")}</label>\n\t\t\t<input type="radio" name="transparency" id="attribute-opaque" value="opaque"><label for="attribute-opaque">${localize("Opaque")}</label>\n\t\t</div>\n\t`);u.find(`[value=${transparency?"transparent":"opaque"}]`).attr({checked:!0}),e.$Button(localize("OK"),(()=>{const e=u.find(":checked").val(),t=p.find(":checked").val(),o=m.find(":checked").val(),a=monochrome;let i;image_attributes.unit=o,transparency="transparent"==e,monochrome="monochrome"==t,monochrome!=a&&(selection&&meld_selection_into_canvas(),i=detect_monochrome(main_ctx),monochrome?i.isMonochrome&&2===i.presentNonTransparentRGBAs.length?palette=make_monochrome_palette(...i.presentNonTransparentRGBAs):palette=monochrome_palette:palette=polychrome_palette,selected_colors.foreground=palette[0],selected_colors.background=palette[14],selected_colors.ternary="",$colorbox.rebuild_palette(),$G.trigger("option-changed"));const l=n[o];resize_canvas_and_save_dimensions(~~(d.val()*l),~~(_.val()*l)),!transparency&&has_any_transparency(main_ctx)&&make_opaque(),monochrome!=a&&monochrome&&!i.isMonochrome&&show_convert_to_black_and_white(),image_attributes.$window.close()}))[0].focus(),e.$Button(localize("Cancel"),(()=>{image_attributes.$window.close()})),e.$Button(localize("Default"),(()=>{l=default_canvas_width,r=default_canvas_height,d.val(l/n[i]),_.val(r/n[i])})),image_attributes.$window.center()}function show_convert_to_black_and_white(){const e=new $DialogWindow("Convert to Black and White");e.addClass("convert-to-black-and-white"),e.$main.append("<fieldset><legend>Threshold:</legend><input type='range' min='0' max='1' step='0.01' value='0.5'></fieldset>");const t=e.$main.find("input[type='range']"),o=make_canvas(main_canvas);let a;const n=()=>{make_or_update_undoable({name:"Make Monochrome",match:e=>"Make Monochrome"===e.name,icon:get_help_folder_icon("p_monochrome.png")},(()=>{a=t.val(),main_ctx.copy(o),threshold_black_and_white(main_ctx,a)}))};n(),t.on("input",debounce(n,100)),e.$Button(localize("OK"),(()=>{e.close()})).focus(),e.$Button(localize("Cancel"),(()=>{"Make Monochrome"===current_history_node.name?undo():undoable({name:"Cancel Make Monochrome",icon:get_help_folder_icon("p_color.png")},(()=>{main_ctx.copy(o)})),e.close()})),e.center()}function image_flip_and_rotate(){const e=new $DialogWindow(localize("Flip and Rotate"));e.addClass("flip-and-rotate");const t=$(E("fieldset")).appendTo(e.$main);t.append(`\n\t\t<legend>${localize("Flip or rotate")}</legend>\n\t\t<div class="radio-wrapper">\n\t\t\t<input\n\t\t\t\ttype="radio"\n\t\t\t\tname="flip-or-rotate"\n\t\t\t\tid="flip-horizontal"\n\t\t\t\tvalue="flip-horizontal"\n\t\t\t\taria-keyshortcuts="Alt+F"\n\t\t\t\tchecked\n\t\t\t/><label for="flip-horizontal">${display_hotkey(localize("&Flip horizontal"))}</label>\n\t\t</div>\n\t\t<div class="radio-wrapper">\n\t\t\t<input\n\t\t\t\ttype="radio"\n\t\t\t\tname="flip-or-rotate"\n\t\t\t\tid="flip-vertical"\n\t\t\t\tvalue="flip-vertical"\n\t\t\t\taria-keyshortcuts="Alt+V"\n\t\t\t/><label for="flip-vertical">${display_hotkey(localize("Flip &vertical"))}</label>\n\t\t</div>\n\t\t<div class="radio-wrapper">\n\t\t\t<input\n\t\t\t\ttype="radio"\n\t\t\t\tname="flip-or-rotate"\n\t\t\t\tid="rotate-by-angle"\n\t\t\t\tvalue="rotate-by-angle"\n\t\t\t\taria-keyshortcuts="Alt+R"\n\t\t\t/><label for="rotate-by-angle">${display_hotkey(localize("&Rotate by angle"))}</label>\n\t\t</div>\n\t`);const o=$(E("div")).appendTo(t);o.addClass("sub-options");for(const e of["&90°","&180°","&270°"]){const t=parseInt(remove_hotkey(e),10);o.append(`\n\t\t\t<div class="radio-wrapper">\n\t\t\t\t<input\n\t\t\t\t\ttype="radio"\n\t\t\t\t\tname="rotate-by-angle"\n\t\t\t\t\tvalue="${t}"\n\t\t\t\t\tid="rotate-${t}"\n\t\t\t\t\taria-keyshortcuts="Alt+${get_hotkey(e).toUpperCase()}"\n\t\t\t\t/><label\n\t\t\t\t\tfor="rotate-${t}"\n\t\t\t\t>${display_hotkey(e)}</label>\n\t\t\t</div>\n\t\t`)}o.append(`\n\t\t<div class="radio-wrapper">\n\t\t\t<input\n\t\t\t\ttype="radio"\n\t\t\t\tname="rotate-by-angle"\n\t\t\t\tvalue="arbitrary"\n\t\t\t/><input\n\t\t\t\ttype="number"\n\t\t\t\tmin="-360"\n\t\t\t\tmax="360"\n\t\t\t\tname="rotate-by-arbitrary-angle"\n\t\t\t\tid="custom-degrees"\n\t\t\t\tvalue=""\n\t\t\t\tclass="no-spinner inset-deep"\n\t\t\t\tstyle="width: 50px"\n\t\t\t/>\n\t\t\t<label for="custom-degrees">${localize("Degrees")}</label>\n\t\t</div>\n\t`),o.find("#rotate-90").attr({checked:!0}),o.find("input").attr({disabled:!0}),t.find("input").on("change",(()=>{const e=t.find("input[name='flip-or-rotate']:checked").val();o.find("input").attr({disabled:"rotate-by-angle"!==e})})),o.find(".radio-wrapper").on("click",(e=>{t.find("input[value='rotate-by-angle']").prop("checked",!0),t.find("input").triggerHandler("change");const o=$(e.target).closest(".radio-wrapper"),a=o.find("input[type='number']")[0];a&&a.focus(),o.find("input[type='radio']").prop("checked",!0)})),t.find("input[name='rotate-by-arbitrary-angle']").on("input",(()=>{t.find("input[value='rotate-by-angle']").prop("checked",!0),t.find("input[value='arbitrary']").prop("checked",!0)})),e.$Button(localize("OK"),(()=>{switch(t.find("input[name='flip-or-rotate']:checked").val()){case"flip-horizontal":flip_horizontal();break;case"flip-vertical":flip_vertical();break;case"rotate-by-angle":{let e=t.find("input[name='rotate-by-angle']:checked").val();"arbitrary"===e&&(e=t.find("input[name='rotate-by-arbitrary-angle']").val());const o=parseFloat(e)/360*TAU;if(isNaN(o))return void please_enter_a_number();rotate(o);break}}$canvas_area.trigger("resize"),e.close()}))[0].focus(),e.$Button(localize("Cancel"),(()=>{e.close()})),e.center(),handle_keyshortcuts_alt_only(e)}function image_stretch_and_skew(){const e=new $DialogWindow(localize("Stretch and Skew"));e.addClass("stretch-and-skew");const t=$(E("fieldset")).appendTo(e.$main);t.append(`<legend>${localize("Stretch")}</legend><table></table>`);const o=$(E("fieldset")).appendTo(e.$main);o.append(`<legend>${localize("Skew")}</legend><table></table>`);const a=(e,t,o,a,n,i,l)=>{const r=$(E("tr")).appendTo(e),s=$(E("img")).attr({src:`images/transforms/${t}.png`,width:32,height:32}).css({marginRight:"20px"}),c=("input"+Math.random()+Math.random()).replace(/\./,""),d=$(E("input")).attr({type:"number",min:i,max:l,value:a,id:c,"aria-keyshortcuts":`Alt+${get_hotkey(o).toUpperCase()}`}).css({width:"40px"}).addClass("no-spinner inset-deep");return $(E("td")).appendTo(r).append(s),$(E("td")).appendTo(r).append($(E("label")).html(display_hotkey(o)).attr("for",c)),$(E("td")).appendTo(r).append(d),$(E("td")).appendTo(r).text(n),d},n=a(t.find("table"),"stretch-x",localize("&Horizontal:"),100,"%",1,5e3),i=a(t.find("table"),"stretch-y",localize("&Vertical:"),100,"%",1,5e3),l=a(o.find("table"),"skew-x",localize("H&orizontal:"),0,localize("Degrees"),-90,90),r=a(o.find("table"),"skew-y",localize("V&ertical:"),0,localize("Degrees"),-90,90);e.$Button(localize("OK"),(()=>{const t=parseFloat(n.val())/100,o=parseFloat(i.val())/100,a=parseFloat(l.val())/360*TAU,s=parseFloat(r.val())/360*TAU;if(isNaN(t)||isNaN(o)||isNaN(a)||isNaN(s))please_enter_a_number();else{try{stretch_and_skew(t,o,a,s)}catch(e){return void("NS_ERROR_FAILURE"===e.name?show_error_message(localize("Insufficient memory to perform operation."),e):show_error_message(localize("An unknown error has occurred."),e))}$canvas_area.trigger("resize"),e.close()}}))[0].focus(),e.$Button(localize("Cancel"),(()=>{e.close()})),e.center(),handle_keyshortcuts_alt_only(e)}function handle_keyshortcuts_alt_only(e){e.on("keydown",(t=>{if(t.altKey&&!t.ctrlKey&&!t.metaKey&&!t.shiftKey){let o=e.find(`[aria-keyshortcuts="Alt+${t.key.toUpperCase()}"]`)[0];o&&(t.preventDefault(),t.stopPropagation(),o.disabled&&(o=o.closest(".radio-wrapper")),o.click(),o.focus())}}))}function save_as_prompt({dialogTitle:e=localize("Save As"),defaultFileName:t="",defaultFileFormatID:o,formats:a,promptForName:n=!0}){return new Promise((i=>{const l=new $DialogWindow(e);l.addClass("save-as"),l.$content.attr("tabIndex",null),n&&l.$main.append('\n\t\t\t\t<label>\n\t\t\t\t\tFile name:\n\t\t\t\t\t<input type="text" class="file-name inset-deep"/>\n\t\t\t\t</label>\n\t\t\t'),l.$main.append('\n\t\t\t<label>\n\t\t\t\tSave as type:\n\t\t\t\t<select class="file-type-select inset-deep"></select>\n\t\t\t</label>\n\t\t');const r=l.$main.find(".file-type-select"),s=l.$main.find(".file-name");for(const e of a)r.append($("<option>").val(e.formatID).text(e.nameWithExtensions));n&&s.val(t);const c=()=>{const e=r.val();for(const t of a)if(t.formatID===e)return t},d=()=>{const e=(n?s.val():t).match(/\.([\w\d]+)$/);if(e){const t=c(),o=e[1].toLowerCase();if(t&&t.extensions.includes(o))return;for(const e of a)e.extensions.includes(o)&&r.val(e.formatID)}};n&&s.on("input",d),o&&a.some((e=>e.formatID===o))?r.val(o):d();const _=e=>{if(!n)return;let t=s.val();const o=c();if(!o)return;const a=o.extensions,i=a[0],l=t.replace(/\.(\w{1,3}|apng|jpeg|jfif|tiff|webp|psppalette|sketchpalette|gimp|colors|scss|sass|less|styl|html|theme|themepack)$/i,""),r=l!==t,d=t.slice(l.length+1).toLowerCase();(e||r)&&-1===a.indexOf(d)&&(t=`${l}.${i}`,s.val(t))};r.on("change",(()=>{_(!1)})),_(!1);const m=l.$Button(localize("Save"),(()=>{l.close(),_(!0),i({newFileName:n?s.val():t,newFileFormatID:r.val()})}));l.$Button(localize("Cancel"),(()=>{l.close()})),l.center(),(window.innerWidth<500||window.innerHeight<700)&&l.css({top:20}),n?s.focus().select():m.focus()}))}function write_image_file(e,t,o){const a=t.match(/^image\/(?:x-)?bmp\s*(?:-(\d+)bpp)?/);if(a){const t=encodeBMP(e.ctx.getImageData(0,0,e.width,e.height),parseInt(a[1]||"24",10)),n=new Blob([t]);sanity_check_blob(n,(()=>{o(n)}))}else if("image/png"===t){const t=e.ctx.getImageData(0,0,e.width,e.height),a=UPNG.encode([t.data.buffer],t.width,t.height),n=new Blob([a]);sanity_check_blob(n,(()=>{o(n)}))}else if("image/tiff"===t){const t=e.ctx.getImageData(0,0,e.width,e.height),a={t305:["jspaint (UTIF.js)"]},n=UTIF.encodeImage(t.data.buffer,t.width,t.height,a),i=new Blob([n]);sanity_check_blob(i,(()=>{o(i)}))}else e.toBlob((e=>{sanity_check_blob(e,(()=>{o(e)}),[137,80,78,71,13,10,26,10],"image/png"===t)}),t)}function read_image_file(e,t){let o,a,n=!1;e.arrayBuffer().then((i=>{const l={png:[137,80,78,71,13,10,26,10],bmp:[66,77],jpeg:[255,216,255],gif:[71,73,70,56],webp:[87,69,66,80],tiff_be:[77,77,0,42],tiff_le:[73,73,42,0],ico:[0,0,1,0],cur:[0,0,2,0],icns:[105,99,110,115]},r=new Uint8Array(i);let s;for(const[e,t]of Object.entries(l)){t.every(((e,t)=>e===r[t]))&&(s=e)}if(s||String.fromCharCode(...r.slice(0,1024)).includes("%PDF")&&(s="pdf"),"bmp"===s){const{colorTable:l,bitsPerPixel:r,imageData:s}=decodeBMP(i);o=24===r?"image/bmp":`image/bmp;bpp=${r}`,l.length>=2&&(2===l.length?(a=make_monochrome_palette(...l.map((e=>[e.r,e.g,e.b,255]))),n=!0):(a=l.map((e=>`rgb(${e.r}, ${e.g}, ${e.b})`)),n=!1)),t(null,{file_format:o,monochrome:n,palette:a,image_data:s,source_blob:e})}else if("png"===s){const l=UPNG.decode(i),r=UPNG.toRGBA8(l)[0],{width:s,height:c,tabs:d,ctype:_}=l;if(d.PLTE&&d.PLTE.length>=6&&3===_)if(6===d.PLTE.length)a=make_monochrome_palette([...d.PLTE.slice(0,3),d.tRNS?.[0]??255],[...d.PLTE.slice(3,6),d.tRNS?.[1]??255]),n=!0;else{a=new Array(d.PLTE.length/3);for(let e=0;e<a.length;e++)d.tRNS&&d.tRNS.length>=e+1?a[e]=`rgba(${d.PLTE[3*e+0]}, ${d.PLTE[3*e+1]}, ${d.PLTE[3*e+2]}, ${d.tRNS[e]/255})`:a[e]=`rgb(${d.PLTE[3*e+0]}, ${d.PLTE[3*e+1]}, ${d.PLTE[3*e+2]})`;n=!1}o="image/png";const m=new ImageData(new Uint8ClampedArray(r),s,c);t(null,{file_format:o,monochrome:n,palette:a,image_data:m,source_blob:e})}else if("tiff_be"===s||"tiff_le"===s){var c=UTIF.decode(i),d=c,_=0,m=d[0];c[0].subIFD&&(d=d.concat(c[0].subIFD));for(var p=0;p<d.length;p++){var u=d[p];if(!(null==u.t258||u.t258.length<3)){var h=u.t256*u.t257;h>_&&(_=h,m=u)}}UTIF.decodeImage(i,m,c);var g=UTIF.toRGBA8(m),f=new ImageData(new Uint8ClampedArray(g.buffer),m.width,m.height);o="image/tiff",t(null,{file_format:o,monochrome:n,palette:a,image_data:f,source_blob:e})}else if("pdf"===s){o="application/pdf";const l=window["pdfjs-dist/build/pdf"];l.GlobalWorkerOptions.workerSrc="lib/pdf.js/build/pdf.worker.js";const r=new Uint8Array(i);l.getDocument({data:r,cMapUrl:"lib/pdf.js/web/cmaps/",cMapPacked:!0}).promise.then((i=>{console.log("PDF loaded");i.getPage(1).then((i=>{console.log("Page loaded");var l=i.getViewport({scale:1.5}),r=make_canvas(l.width,l.height),s={canvasContext:r.ctx,viewport:l};i.render(s).promise.then((()=>{console.log("Page rendered");const i=r.ctx.getImageData(0,0,r.width,r.height);t(null,{file_format:o,monochrome:n,palette:a,image_data:i,source_blob:e})}))}))}),(e=>{t(new Error(`Failed to load PDF. ${e}`))}))}else{n=!1,o={png:"image/png",webp:"image/webp",jpeg:"image/jpeg",gif:"image/gif",tiff_be:"image/tiff",tiff_le:"image/tiff",ico:"image/x-icon",cur:"image/x-win-bitmap",icns:"image/icns"}[s]||e.type;const i=URL.createObjectURL(e),l=new Image,r=()=>{URL.revokeObjectURL(i),e.text().then((e=>{const o=new Error("failed to decode blob as an image");o.code=e.match(/^\s*<!doctype\s+html/i)?"html-not-image":"decoding-failure",t(o)}),(e=>{const o=new Error("failed to decode blob as image or text");o.code="decoding-failure",t(o)}))};l.onload=()=>{URL.revokeObjectURL(i),l.complete&&void 0!==l.naturalWidth&&0!==l.naturalWidth?t(null,{file_format:o,monochrome:n,palette:a,image:l,source_blob:e}):r()},l.onerror=r,l.src=i}}),(e=>{t(e)}))}function update_from_saved_file(e){read_image_file(e,((e,t)=>{if(e)return void show_error_message("The file has been saved, however... "+localize("Paint cannot read this file."),e);apply_file_format_and_palette_info(t);const o=image_formats.find((({mimeType:e})=>e===t.file_format));undoable({name:`${localize("Save As")} ${o?o.name:t.file_format}`,icon:get_help_folder_icon("p_save.png")},(()=>{main_ctx.copy(t.image||t.image_data)}))}))}function save_selection_to_file(){selection&&selection.canvas&&systemHooks.showSaveFileDialog({dialogTitle:localize("Save As"),defaultName:"selection.png",defaultFileFormatID:"image/png",formats:image_formats,getBlob:e=>new Promise((t=>{write_image_file(selection.canvas,e,(e=>{t(e)}))}))})}function sanity_check_blob(e,t,o,a=!0){e.size>0?o?e.arrayBuffer().then((e=>{const n=new Uint8Array(e);o.every(((e,t)=>e===n[t]))===a?t():showMessageBox({message:"Your browser does not support writing images in this file format.",iconID:"error"})}),(e=>{show_error_message(localize("An unknown error has occurred."),e)})):t():show_error_message(localize("Failed to save document."))}function show_multi_user_setup_dialog(e){const t=$DialogWindow().title("Multi-User Setup").addClass("horizontal-buttons");t.$main.html(`\n\t\t${e?"<p>This will make the current document public.</p>":""}\n\t\t<p>\n\t\t\t\x3c!-- Choose a name for the multi-user session, included in the URL for sharing: --\x3e\n\t\t\tEnter the session name that will be used in the URL for sharing:\n\t\t</p>\n\t\t<p>\n\t\t\t<label>\n\t\t\t\t<span class="partial-url-label">jspaint.app/#session:</span>\n\t\t\t\t<input\n\t\t\t\t\ttype="text"\n\t\t\t\t\tid="session-name"\n\t\t\t\t\taria-label="session name"\n\t\t\t\t\tpattern="[-0-9A-Za-z\\u00c0-\\u00d6\\u00d8-\\u00f6\\u00f8-\\u02af\\u1d00-\\u1d25\\u1d62-\\u1d65\\u1d6b-\\u1d77\\u1d79-\\u1d9a\\u1e00-\\u1eff\\u2090-\\u2094\\u2184-\\u2184\\u2488-\\u2490\\u271d-\\u271d\\u2c60-\\u2c7c\\u2c7e-\\u2c7f\\ua722-\\ua76f\\ua771-\\ua787\\ua78b-\\ua78c\\ua7fb-\\ua7ff\\ufb00-\\ufb06]+"\n\t\t\t\t\ttitle="Numbers, letters, and hyphens are allowed."\n\t\t\t\t\tclass="inset-deep"\n\t\t\t\t>\n\t\t\t</label>\n\t\t</p>\n\t`);const o=t.$main.find("#session-name");t.$main.css({maxWidth:"500px"}),t.$Button("Start",(()=>{let a=o.val().trim();""==a?show_error_message("The session name cannot be empty."):o.is(":invalid")?show_error_message("The session name must be made from only numbers, letters, and hyphens."):(e?change_url_param("session",a):window.open(`${location.origin}${location.pathname}#session:${a}`),t.close())})),t.$Button(localize("Cancel"),(()=>{t.close()})),t.center(),o.focus()}
+
+// expresses order in the URL as well as type
+const param_types = {
+	// settings
+	"eye-gaze-mode": "bool",
+	"vertical-color-box-mode": "bool",
+	"speech-recognition-mode": "bool",
+	// sessions
+	"local": "string",
+	"session": "string",
+	"load": "string",
+};
+
+const exclusive_params = [
+	"local",
+	"session",
+	"load",
+];
+
+function get_all_url_params() {
+	const params = {};
+	location.hash.replace(/^#/, "").split(/,/).forEach((param_decl) => {
+		// colon is used in param value for URLs so split(":") isn't good enough
+		const colon_index = param_decl.indexOf(":");
+		if (colon_index === -1) {
+			// boolean value, implicitly true because it's in the URL
+			const param_name = param_decl;
+			params[param_name] = true;
+		} else {
+			const param_name = param_decl.slice(0, colon_index);
+			const param_value = param_decl.slice(colon_index + 1);
+			params[param_name] = decodeURIComponent(param_value);
+		}
+	});
+	for (const [param_name, param_type] of Object.entries(param_types)) {
+		if (param_type === "bool" && !params[param_name]) {
+			params[param_name] = false;
+		}
+	}
+	return params;
+}
+
+function get_url_param(param_name) {
+	return get_all_url_params()[param_name];
+}
+
+function change_url_param(param_name, value, { replace_history_state = false } = {}) {
+	change_some_url_params({ [param_name]: value }, { replace_history_state });
+}
+
+function change_some_url_params(updates, { replace_history_state = false } = {}) {
+	for (const exclusive_param of exclusive_params) {
+		if (updates[exclusive_param]) {
+			exclusive_params.forEach((param) => {
+				if (param !== exclusive_param) {
+					updates[param] = null; // must be enumerated (for Object.assign) but falsy, to get removed from the URL
+				}
+			});
+		}
+	}
+	set_all_url_params(Object.assign({}, get_all_url_params(), updates), { replace_history_state });
+}
+
+function set_all_url_params(params, { replace_history_state = false } = {}) {
+
+	let new_hash = "";
+	for (const [param_name, param_type] of Object.entries(param_types)) {
+		if (params[param_name]) {
+			if (new_hash.length) {
+				new_hash += ",";
+			}
+			new_hash += encodeURIComponent(param_name);
+			if (param_type !== "bool") {
+				new_hash += ":" + encodeURIComponent(params[param_name]);
+			}
+		}
+	}
+	// Note: gets rid of query string (?) portion of the URL
+	// This is desired for upgrading backwards compatibility URLs;
+	// may not be desired for future cases.
+	const new_url = `${location.origin}${location.pathname}#${new_hash}`;
+	try {
+		// can fail when running from file: protocol
+		if (replace_history_state) {
+			history.replaceState(null, document.title, new_url);
+		} else {
+			history.pushState(null, document.title, new_url);
+		}
+	} catch (error) {
+		location.hash = new_hash;
+	}
+
+	$G.triggerHandler("change-url-params");
+}
+
+function update_magnified_canvas_size() {
+	$canvas.css("width", main_canvas.width * magnification);
+	$canvas.css("height", main_canvas.height * magnification);
+
+	update_canvas_rect();
+}
+
+function update_canvas_rect() {
+	canvas_bounding_client_rect = main_canvas.getBoundingClientRect();
+
+	update_helper_layer();
+}
+
+let helper_layer_update_queued;
+let info_for_updating_pointer; // for updating the brush preview when the mouse stays in the same place,
+// but its coordinates in the document change due to scrolling or browser zooming (handled with scroll and resize events)
+function update_helper_layer(e) {
+	// e should be passed for pointer events, but not scroll or resize events
+	// e may be a synthetic event without clientX/Y, so ignore that (using isFinite)
+	// e may also be a timestamp from requestAnimationFrame callback; ignore that
+	if (e && isFinite(e.clientX)) {
+		info_for_updating_pointer = { clientX: e.clientX, clientY: e.clientY, devicePixelRatio };
+	}
+	if (helper_layer_update_queued) {
+		// window.console && console.log("update_helper_layer - nah, already queued");
+		return;
+	} else {
+		// window.console && console.log("update_helper_layer");
+	}
+	helper_layer_update_queued = true;
+	requestAnimationFrame(() => {
+		helper_layer_update_queued = false;
+		update_helper_layer_immediately();
+	});
+}
+function update_helper_layer_immediately() {
+	// window.console && console.log("Update helper layer NOW");
+	if (info_for_updating_pointer) {
+		const rescale = info_for_updating_pointer.devicePixelRatio / devicePixelRatio;
+		info_for_updating_pointer.clientX *= rescale;
+		info_for_updating_pointer.clientY *= rescale;
+		info_for_updating_pointer.devicePixelRatio = devicePixelRatio;
+		pointer = to_canvas_coords(info_for_updating_pointer);
+	}
+
+	const scale = magnification * window.devicePixelRatio;
+
+	if (!helper_layer) {
+		helper_layer = new OnCanvasHelperLayer(0, 0, main_canvas.width, main_canvas.height, false, scale);
+	}
+
+	const margin = 15;
+	const viewport_x = Math.floor(Math.max($canvas_area.scrollLeft() / magnification - margin, 0));
+	// Nevermind, canvas, isn't aligned to the right in RTL layout!
+	// const viewport_x =
+	// 	get_direction() === "rtl" ?
+	// 		// Note: $canvas_area.scrollLeft() can return negative numbers for RTL layout
+	// 		Math.floor(Math.max(($canvas_area.scrollLeft() - $canvas_area.innerWidth()) / magnification + canvas.width - margin, 0)) :
+	// 		Math.floor(Math.max($canvas_area.scrollLeft() / magnification - margin, 0));
+	const viewport_y = Math.floor(Math.max($canvas_area.scrollTop() / magnification - margin, 0));
+	const viewport_x2 = Math.floor(Math.min(viewport_x + $canvas_area.width() / magnification + margin * 2, main_canvas.width));
+	const viewport_y2 = Math.floor(Math.min(viewport_y + $canvas_area.height() / magnification + margin * 2, main_canvas.height));
+	const viewport_width = viewport_x2 - viewport_x;
+	const viewport_height = viewport_y2 - viewport_y;
+	const resolution_width = viewport_width * scale;
+	const resolution_height = viewport_height * scale;
+	if (
+		helper_layer.canvas.width !== resolution_width ||
+		helper_layer.canvas.height !== resolution_height
+	) {
+		helper_layer.canvas.width = resolution_width;
+		helper_layer.canvas.height = resolution_height;
+		helper_layer.canvas.ctx.disable_image_smoothing();
+		helper_layer.width = viewport_width;
+		helper_layer.height = viewport_height;
+	}
+	helper_layer.x = viewport_x;
+	helper_layer.y = viewport_y;
+	helper_layer.position();
+
+	render_canvas_view(helper_layer.canvas, scale, viewport_x, viewport_y, true);
+
+	if (thumbnail_canvas && $thumbnail_window.is(":visible")) {
+		// The thumbnail can be bigger or smaller than the viewport, depending on the magnification and thumbnail window size.
+		// So can the document.
+		// Ideally it should show the very corner if scrolled all the way to the corner,
+		// so that you can get a thumbnail of any location just by scrolling.
+		// But it's impossible if the thumbnail is smaller than the viewport. You have to resize the thumbnail window in that case.
+		// (And if the document is smaller than the viewport, there's no scrolling to indicate where you want to get a thumbnail of.)
+		// It gets clipped to the top left portion of the viewport if the thumbnail is too small.
+
+		// This works except for if there's a selection, it affects the scrollable area, and it shouldn't affect this calculation.
+		// const scroll_width = $canvas_area[0].scrollWidth - $canvas_area[0].clientWidth;
+		// const scroll_height = $canvas_area[0].scrollHeight - $canvas_area[0].clientHeight;
+
+		// These padding terms are negligible in comparison to the margin reserved for canvas handles,
+		// which I'm not accounting for (except for clamping below).
+		const padding_left = parseFloat($canvas_area.css("padding-left"));
+		const padding_top = parseFloat($canvas_area.css("padding-top"));
+		const scroll_width = main_canvas.clientWidth + padding_left - $canvas_area[0].clientWidth;
+		const scroll_height = main_canvas.clientHeight + padding_top - $canvas_area[0].clientHeight;
+		// Don't divide by less than one, or the thumbnail with disappear off to the top/left (or completely for NaN).
+		let scroll_x_fraction = $canvas_area[0].scrollLeft / Math.max(1, scroll_width);
+		let scroll_y_fraction = $canvas_area[0].scrollTop / Math.max(1, scroll_height);
+		// If the canvas is larger than the document view, but not by much, and you scroll to the bottom or right,
+		// the margin for the canvas handles can lead to the thumbnail being cut off or even showing
+		// just blank space without this clamping (due to the not quite accurate scrollable area calculation).
+		scroll_x_fraction = Math.min(scroll_x_fraction, 1);
+		scroll_y_fraction = Math.min(scroll_y_fraction, 1);
+
+		let viewport_x = Math.floor(Math.max(scroll_x_fraction * (main_canvas.width - thumbnail_canvas.width), 0));
+		let viewport_y = Math.floor(Math.max(scroll_y_fraction * (main_canvas.height - thumbnail_canvas.height), 0));
+
+		render_canvas_view(thumbnail_canvas, 1, viewport_x, viewport_y, false); // devicePixelRatio?
+	}
+}
+
+function render_canvas_view(hcanvas, scale, viewport_x, viewport_y, is_helper_layer) {
+	update_fill_and_stroke_colors_and_lineWidth(selected_tool);
+
+	const grid_visible = show_grid && magnification >= 4 && (window.devicePixelRatio * magnification) >= 4 && is_helper_layer;
+
+	const hctx = hcanvas.ctx;
+
+	hctx.clearRect(0, 0, hcanvas.width, hcanvas.height);
+
+	if (!is_helper_layer) {
+		// Draw the actual document canvas (for the thumbnail)
+		// (For the main canvas view, the helper layer is separate from (and overlaid on top of) the document canvas)
+		hctx.drawImage(main_canvas, viewport_x, viewport_y, hcanvas.width, hcanvas.height, 0, 0, hcanvas.width, hcanvas.height);
+	}
+
+	var tools_to_preview = [...selected_tools];
+
+	// Don't preview tools while dragging components/component windows
+	// (The magnifier preview is especially confusing looking together with the component preview!)
+	if ($("body").hasClass("dragging") && !pointer_active) {
+		// tools_to_preview.length = 0;
+		// Curve and Polygon tools have a persistent state over multiple gestures,
+		// which is, as of writing, part of the "tool preview"; it's ugly,
+		// but at least they don't have ALSO a brush like preview, right?
+		// so we can just allow those thru
+		tools_to_preview = tools_to_preview.filter((tool) =>
+			tool.id === TOOL_CURVE ||
+			tool.id === TOOL_POLYGON
+		);
+	}
+
+	// the select box previews draw the document canvas onto the preview canvas
+	// so they have something to invert within the preview canvas
+	// but this means they block out anything earlier
+	// NOTE: sort Select after Free-Form Select,
+	// Brush after Eraser, as they are from the toolbar ordering
+	tools_to_preview.sort((a, b) => {
+		if (a.selectBox && !b.selectBox) {
+			return -1;
+		}
+		if (!a.selectBox && b.selectBox) {
+			return 1;
+		}
+		return 0;
+	});
+	// two select box previews would just invert and cancel each other out
+	// so only render one if there's one or more
+	var select_box_index = tools_to_preview.findIndex((tool) => tool.selectBox);
+	if (select_box_index >= 0) {
+		tools_to_preview = tools_to_preview.filter((tool, index) => !tool.selectBox || index == select_box_index);
+	}
+
+	tools_to_preview.forEach((tool) => {
+		if (tool.drawPreviewUnderGrid && pointer && pointers.length < 2) {
+			hctx.save();
+			tool.drawPreviewUnderGrid(hctx, pointer.x, pointer.y, grid_visible, scale, -viewport_x, -viewport_y);
+			hctx.restore();
+		}
+	});
+
+	if (selection) {
+		hctx.save();
+
+		hctx.scale(scale, scale);
+		hctx.translate(-viewport_x, -viewport_y);
+
+		hctx.drawImage(selection.canvas, selection.x, selection.y);
+
+		hctx.restore();
+
+		if (!is_helper_layer && !selection.dragging) {
+			// Draw the selection outline (for the thumbnail)
+			// (The main canvas view has the OnCanvasSelection object which has its own outline)
+			draw_selection_box(hctx, selection.x, selection.y, selection.width, selection.height, scale, -viewport_x, -viewport_y);
+		}
+	}
+
+	if (textbox) {
+		hctx.save();
+
+		hctx.scale(scale, scale);
+		hctx.translate(-viewport_x, -viewport_y);
+
+		hctx.drawImage(textbox.canvas, textbox.x, textbox.y);
+
+		hctx.restore();
+
+		if (!is_helper_layer && !textbox.dragging) {
+			// Draw the textbox outline (for the thumbnail)
+			// (The main canvas view has the OnCanvasTextBox object which has its own outline)
+			draw_selection_box(hctx, textbox.x, textbox.y, textbox.width, textbox.height, scale, -viewport_x, -viewport_y);
+		}
+	}
+
+	if (grid_visible) {
+		draw_grid(hctx, scale);
+	}
+
+	tools_to_preview.forEach((tool) => {
+		if (tool.drawPreviewAboveGrid && pointer && pointers.length < 2) {
+			hctx.save();
+			tool.drawPreviewAboveGrid(hctx, pointer.x, pointer.y, grid_visible, scale, -viewport_x, -viewport_y);
+			hctx.restore();
+		}
+	});
+}
+function update_disable_aa() {
+	const dots_per_canvas_px = window.devicePixelRatio * magnification;
+	const round = Math.floor(dots_per_canvas_px) === dots_per_canvas_px;
+	$canvas_area.toggleClass("disable-aa-for-things-at-main-canvas-scale", dots_per_canvas_px >= 3 || round);
+}
+
+function set_magnification(new_scale, anchor_point) {
+	// anchor_point is optional, and uses canvas coordinates;
+	// the default is the top-left of the $canvas_area viewport
+
+	// How this works is, you imagine "what if it was zoomed, where would the anchor point be?"
+	// Then to make it end up where it started, you simply shift the viewport by the difference.
+	// And actually you don't have to "imagine" zooming, you can just do the zoom.
+
+	anchor_point = anchor_point ?? {
+		x: $canvas_area.scrollLeft() / magnification,
+		y: $canvas_area.scrollTop() / magnification,
+	};
+	const anchor_on_page = from_canvas_coords(anchor_point);
+
+	magnification = new_scale;
+	if (new_scale !== 1) {
+		return_to_magnification = new_scale;
+	}
+	update_magnified_canvas_size(); // also updates canvas_bounding_client_rect used by from_canvas_coords()
+
+	const anchor_after_zoom = from_canvas_coords(anchor_point);
+	// Note: scrollBy() not scrollTo()
+	$canvas_area[0].scrollBy({
+		left: anchor_after_zoom.clientX - anchor_on_page.clientX,
+		top: anchor_after_zoom.clientY - anchor_on_page.clientY,
+		behavior: "instant",
+	});
+
+	$G.triggerHandler("resize"); // updates handles & grid
+	$G.trigger("option-changed"); // updates options area
+}
+
+let $custom_zoom_window;
+
+let dev_custom_zoom = false;
+try {
+	dev_custom_zoom = localStorage.dev_custom_zoom === "true";
+	// eslint-disable-next-line no-empty
+} catch (error) { }
+if (dev_custom_zoom) {
+	$(() => {
+		show_custom_zoom_window();
+		$custom_zoom_window.css({
+			left: 80,
+			top: 50,
+			opacity: 0.5,
+		});
+	});
+}
+
+function show_custom_zoom_window() {
+	if ($custom_zoom_window) {
+		$custom_zoom_window.close();
+	}
+	const $w = new $DialogWindow(localize("Custom Zoom"));
+	$custom_zoom_window = $w;
+	$w.addClass("custom-zoom-window");
+
+	// @TODO: update when zoom changes
+	$w.$main.append(`<div class='current-zoom'>${localize("Current zoom:")} <bdi>${magnification * 100}%</bdi></div>`);
+
+	const $fieldset = $(E("fieldset")).appendTo($w.$main);
+	$fieldset.append(`
+		<legend>${localize("Zoom to")}</legend>
+		<div class="fieldset-body">
+			<input type="radio" name="custom-zoom-radio" id="zoom-option-1" value="1"/><label for="zoom-option-1">100%</label>
+			<input type="radio" name="custom-zoom-radio" id="zoom-option-2" value="2"/><label for="zoom-option-2">200%</label>
+			<input type="radio" name="custom-zoom-radio" id="zoom-option-4" value="4"/><label for="zoom-option-4">400%</label>
+			<input type="radio" name="custom-zoom-radio" id="zoom-option-6" value="6"/><label for="zoom-option-6">600%</label>
+			<input type="radio" name="custom-zoom-radio" id="zoom-option-8" value="8"/><label for="zoom-option-8">800%</label>
+			<input type="radio" name="custom-zoom-radio" id="zoom-option-really-custom" value="really-custom"/><label for="zoom-option-really-custom"><input type="number" min="10" max="1000" name="really-custom-zoom-input" class="inset-deep no-spinner" value=""/>%</label>
+		</div>
+	`);
+	let is_custom = true;
+	$fieldset.find("input[type=radio]").get().forEach((el) => {
+		if (parseFloat(el.value) === magnification) {
+			el.checked = true;
+			is_custom = false;
+		}
+	});
+	const $really_custom_radio_option = $fieldset.find("input[value='really-custom']");
+	const $really_custom_input = $fieldset.find("input[name='really-custom-zoom-input']");
+
+	$really_custom_input.closest("label").on("click", () => {
+		$really_custom_radio_option.prop("checked", true);
+		$really_custom_input[0].focus();
+	});
+
+	if (is_custom) {
+		$really_custom_input.val(magnification * 100);
+		$really_custom_radio_option.prop("checked", true);
+	}
+
+	$fieldset.find("label").css({ display: "block" });
+
+	$w.$Button(localize("OK"), () => {
+		let option_val = $fieldset.find("input[name='custom-zoom-radio']:checked").val();
+		let mag;
+		if (option_val === "really-custom") {
+			option_val = $really_custom_input.val();
+			if (`${option_val}`.match(/\dx$/)) { // ...you can't actually type an x; oh well...
+				mag = parseFloat(option_val);
+			} else if (`${option_val}`.match(/\d%?$/)) {
+				mag = parseFloat(option_val) / 100;
+			}
+			if (isNaN(mag)) {
+				please_enter_a_number();
+				return;
+			}
+		} else {
+			mag = parseFloat(option_val);
+		}
+
+		set_magnification(mag);
+
+		$w.close();
+	})[0].focus();
+	$w.$Button(localize("Cancel"), () => {
+		$w.close();
+	});
+
+	$w.center();
+}
+
+
+function toggle_grid() {
+	show_grid = !show_grid;
+	// $G.trigger("option-changed");
+	update_helper_layer();
+}
+
+function toggle_thumbnail() {
+	show_thumbnail = !show_thumbnail;
+	if (!show_thumbnail) {
+		$thumbnail_window.hide();
+	} else {
+		if (!thumbnail_canvas) {
+			thumbnail_canvas = make_canvas(108, 92);
+			thumbnail_canvas.style.width = "100%";
+			thumbnail_canvas.style.height = "100%";
+		}
+		if (!$thumbnail_window) {
+			$thumbnail_window = new $Window({
+				title: localize("Thumbnail"),
+				toolWindow: true,
+				resizable: true,
+				innerWidth: thumbnail_canvas.width + 4, // @TODO: should the border of $content be included in the definition of innerWidth/Height?
+				innerHeight: thumbnail_canvas.height + 4,
+				minInnerWidth: 52 + 4,
+				minInnerHeight: 36 + 4,
+				minOuterWidth: 0, // @FIXME: this shouldn't be needed
+				minOuterHeight: 0, // @FIXME: this shouldn't be needed
+			});
+			$thumbnail_window.addClass("thumbnail-window");
+			$thumbnail_window.$content.append(thumbnail_canvas);
+			$thumbnail_window.$content.addClass("inset-deep");
+			$thumbnail_window.$content.css({ marginTop: "1px" }); // @TODO: should this (or equivalent on titlebar) be for all windows?
+			$thumbnail_window.maximize = () => { }; // @TODO: disable maximize with an option
+			new ResizeObserver((entries) => {
+				const entry = entries[0];
+				let width, height;
+				if ("devicePixelContentBoxSize" in entry) {
+					// console.log("devicePixelContentBoxSize", entry.devicePixelContentBoxSize);
+					// Firefox seems to support this, although I can't find any documentation that says it should
+					// I can't find an implementation bug or anything.
+					// So I had to disable this case to test the fallback case (in Firefox 94.0)
+					width = entry.devicePixelContentBoxSize[0].inlineSize;
+					height = entry.devicePixelContentBoxSize[0].blockSize;
+				} else if ("contentBoxSize" in entry) {
+					// console.log("contentBoxSize", entry.contentBoxSize);
+					// round() seems to line up with what Firefox does for device pixel alignment, which is great.
+					// In Chrome it's blurry at some zoom levels with round(), ceil(), or floor(), but it (documentedly) supports devicePixelContentBoxSize.
+					width = Math.round(entry.contentBoxSize[0].inlineSize * devicePixelRatio);
+					height = Math.round(entry.contentBoxSize[0].blockSize * devicePixelRatio);
+				} else {
+					// Safari on iPad doesn't support either of the above as of iOS 15.0.2
+					width = Math.round(entry.contentRect.width * devicePixelRatio);
+					height = Math.round(entry.contentRect.height * devicePixelRatio);
+				}
+				if (width && height) { // If it's hidden, and then shown, it gets a width and height of 0 briefly on iOS. (This would give IndexSizeError in drawImage.)
+					thumbnail_canvas.width = width;
+					thumbnail_canvas.height = height;
+				}
+				update_helper_layer_immediately(); // updates thumbnail (but also unnecessarily the helper layer)
+			}).observe(thumbnail_canvas, { box: ['device-pixel-content-box'] });
+		}
+		$thumbnail_window.show();
+		$thumbnail_window.on("close", (e) => {
+			e.preventDefault();
+			$thumbnail_window.hide();
+			show_thumbnail = false;
+		});
+	}
+	// Currently the thumbnail updates with the helper layer. But it's not part of the helper layer, so this is a bit of a misnomer for now.
+	update_helper_layer();
+}
+
+function reset_selected_colors() {
+	selected_colors = {
+		foreground: "#000000",
+		background: "#ffffff",
+		ternary: "",
+	};
+	$G.trigger("option-changed");
+}
+
+function reset_file() {
+	system_file_handle = null;
+	file_name = localize("untitled");
+	file_format = "image/png";
+	saved = true;
+	update_title();
+}
+
+function reset_canvas_and_history() {
+	undos.length = 0;
+	redos.length = 0;
+	current_history_node = root_history_node = make_history_node({
+		name: localize("New"),
+		icon: get_help_folder_icon("p_blank.png"),
+	});
+	history_node_to_cancel_to = null;
+
+	main_canvas.width = Math.max(1, my_canvas_width);
+	main_canvas.height = Math.max(1, my_canvas_height);
+	main_ctx.disable_image_smoothing();
+	main_ctx.fillStyle = selected_colors.background;
+	main_ctx.fillRect(0, 0, main_canvas.width, main_canvas.height);
+
+	current_history_node.image_data = main_ctx.getImageData(0, 0, main_canvas.width, main_canvas.height);
+
+	$canvas_area.trigger("resize");
+	$G.triggerHandler("history-update"); // update history view
+}
+
+function make_history_node({
+	parent = null,
+	futures = [],
+	timestamp = Date.now(),
+	soft = false,
+	image_data = null,
+	selection_image_data = null,
+	selection_x,
+	selection_y,
+	textbox_text,
+	textbox_x,
+	textbox_y,
+	textbox_width,
+	textbox_height,
+	text_tool_font = null,
+	tool_transparent_mode,
+	foreground_color,
+	background_color,
+	ternary_color,
+	name,
+	icon = null,
+}) {
+	return {
+		parent,
+		futures,
+		timestamp,
+		soft,
+		image_data,
+		selection_image_data,
+		selection_x,
+		selection_y,
+		textbox_text,
+		textbox_x,
+		textbox_y,
+		textbox_width,
+		textbox_height,
+		text_tool_font,
+		tool_transparent_mode,
+		foreground_color,
+		background_color,
+		ternary_color,
+		name,
+		icon,
+	};
+}
+
+function update_title() {
+	document.title = `${file_name} - ${is_pride_month ? "June Solidarity " : ""}${localize("Paint")}`;
+
+	if (is_pride_month) {
+		$("link[rel~='icon']").attr("href", "./images/icons/gay-es-paint-16x16-light-outline.png");
+	}
+
+	if (window.setRepresentedFilename) {
+		window.setRepresentedFilename(system_file_handle ?? "");
+	}
+	if (window.setDocumentEdited) {
+		window.setDocumentEdited(!saved);
+	}
+}
+
+function get_uris(text) {
+	// parse text/uri-list
+	// get lines, discarding comments
+	const lines = text.split(/[\n\r]+/).filter(line => line[0] !== "#" && line);
+	// discard text with too many lines (likely pasted HTML or something) - may want to revisit this
+	if (lines.length > 15) {
+		return [];
+	}
+	// parse URLs, discarding anything that parses as a relative URL
+	const uris = [];
+	for (let i = 0; i < lines.length; i++) {
+		// Relative URLs will throw when no base URL is passed to the URL constructor.
+		try {
+			const url = new URL(lines[i]);
+			uris.push(url.href);
+			// eslint-disable-next-line no-empty
+		} catch (e) { }
+	}
+	return uris;
+}
+async function load_image_from_uri(uri) {
+
+	// Cases to consider:
+	// - data URI
+	// - blob URI
+	//   - blob URI from another domain
+	// - file URI
+	// - http URI
+	// - https URI
+	// - unsupported protocol, e.g. "ftp://example.com/image.png"
+	// - invalid URI
+	//   - no protocol specified, e.g. "example.com/image.png"
+	//     --> We can fix these up!
+	//   - The user may be just trying to paste text, not an image.
+	// - non-CORS-enabled URI
+	//   --> Use a CORS proxy! :)
+	//   - In electron, using a CORS proxy 1. is silly, 2. maybe isn't working.
+	//     --> Either proxy requests to the main process,
+	//         or configure headers in the main process to make requests work.
+	//         Probably the latter. @TODO
+	//         https://stackoverflow.com/questions/51254618/how-do-you-handle-cors-in-an-electron-app
+	// - invalid image / unsupported image format
+	// - image is no longer available on the live web
+	//   --> try loading from WayBack Machine :)
+	//   - often swathes of URLs are redirected to a new site, and do not give a 404.
+	//     --> make sure the flow of fallbacks accounts for this, and doesn't just see it as an unsupported file format.
+	// - localhost URI, e.g. "http://127.0.0.1/" or "http://localhost/"
+	//   --> Don't try to proxy these, as it will just fail.
+	//   - Some domain extensions are reserved, e.g. .localdomain (how official is this?)
+	//   - There can also be arbitrary hostnames mapped to local servers, which we can't test for
+	// - already a proxy URI, e.g. "https://cors.bridged.cc/https://example.com/image.png"
+	// - file already downloaded
+	//   --> maybe should cache downloads? maybe HTTP caching is good enough? maybe uncommon enough that it doesn't matter.
+	// - Pasting (Edit > Paste or Ctrl+V) vs Opening (drag & drop, File > Open, Ctrl+O, or File > Load From URL)
+	//   --> make wording generic or specific to the context
+
+	const is_blob_uri = uri.match(/^blob:/i);
+	const is_download = !uri.match(/^(blob|data|file):/i);
+	const is_localhost = uri.match(/^(http|https):\/\/((127\.0\.0\.1|localhost)|.*(\.(local|localdomain|domain|lan|home|host|corp|invalid)))\b/i);
+
+	if (is_blob_uri && uri.indexOf(`blob:${location.origin}`) === -1) {
+		const error = new Error("can't load blob: URI from another domain");
+		error.code = "cross-origin-blob-uri";
+		throw error;
+	}
+
+	const uris_to_try = (is_download && !is_localhost) ? [
+		uri,
+		// work around CORS headers not sent by whatever server
+		`https://cors.bridged.cc/${uri}`,
+		`https://jspaint-cors-proxy.herokuapp.com/${uri}`,
+		// if the image isn't available on the live web, see if it's archived
+		`https://web.archive.org/${uri}`,
+	] : [uri];
+	const fails = [];
+
+	for (let index_to_try = 0; index_to_try < uris_to_try.length; index_to_try += 1) {
+		const uri_to_try = uris_to_try[index_to_try];
+		try {
+			if (is_download) {
+				$status_text.text("Downloading picture...");
+			}
+
+			const show_progress = ({ loaded, total }) => {
+				if (is_download) {
+					$status_text.text(`Downloading picture... (${Math.round(loaded / total * 100)}%)`);
+				}
+			};
+
+			if (is_download) {
+				console.log(`Try loading image from URI (${index_to_try + 1}/${uris_to_try.length}): "${uri_to_try}"`);
+			}
+
+			const original_response = await fetch(uri_to_try);
+			let response_to_read = original_response;
+			if (!original_response.ok) {
+				fails.push({ status: original_response.status, statusText: original_response.statusText, url: uri_to_try });
+				continue;
+			}
+			if (!original_response.body) {
+				if (is_download) {
+					console.log("ReadableStream not yet supported in this browser. Progress won't be shown for image requests.");
+				}
+			} else {
+				// to access headers, server must send CORS header "Access-Control-Expose-Headers: content-encoding, content-length x-file-size"
+				// server must send custom x-file-size header if gzip or other content-encoding is used
+				const contentEncoding = original_response.headers.get("content-encoding");
+				const contentLength = original_response.headers.get(contentEncoding ? "x-file-size" : "content-length");
+				if (contentLength === null) {
+					if (is_download) {
+						console.log("Response size header unavailable. Progress won't be shown for this image request.");
+					}
+				} else {
+					const total = parseInt(contentLength, 10);
+					let loaded = 0;
+					response_to_read = new Response(
+						new ReadableStream({
+							start(controller) {
+								const reader = original_response.body.getReader();
+
+								read();
+								function read() {
+									reader.read().then(({ done, value }) => {
+										if (done) {
+											controller.close();
+											return;
+										}
+										loaded += value.byteLength;
+										show_progress({ loaded, total })
+										controller.enqueue(value);
+										read();
+									}).catch(error => {
+										console.error(error);
+										controller.error(error)
+									})
+								}
+							}
+						})
+					);
+				}
+			}
+
+			const blob = await response_to_read.blob();
+			if (is_download) {
+				console.log("Download complete.");
+				$status_text.text("Download complete.");
+			}
+			// @TODO: use headers to detect HTML, since a doctype is not guaranteed
+			// @TODO: fall back to WayBack Machine still for decode errors,
+			// since a website might start redirecting swathes of URLs regardless of what they originally pointed to,
+			// at which point they would likely point to a web page instead of an image.
+			// (But still show an error about it not being an image, if WayBack also fails.)
+			const info = await new Promise((resolve, reject) => {
+				read_image_file(blob, (error, info) => {
+					if (error) {
+						reject(error);
+					} else {
+						resolve(info);
+					}
+				});
+			});
+			return info;
+		} catch (error) {
+			fails.push({ url: uri_to_try, error });
+		}
+	}
+	if (is_download) {
+		$status_text.text("Failed to download picture.");
+	}
+	const error = new Error(`failed to fetch image from any of ${uris_to_try.length} URI(s):\n  ${fails.map((fail) =>
+		(fail.statusText ? `${fail.status} ${fail.statusText} ` : "") + fail.url + (fail.error ? `\n    ${fail.error}` : "")
+	).join("\n  ")}`);
+	error.code = "access-failure";
+	error.fails = fails;
+	throw error;
+}
+
+function open_from_image_info(info, callback, canceled, into_existing_session, from_session_load) {
+	are_you_sure(({ canvas_modified_while_loading } = {}) => {
+		deselect();
+		cancel();
+
+		if (!into_existing_session) {
+			$G.triggerHandler("session-update"); // autosave old session
+			new_local_session();
+		}
+
+		reset_file();
+		reset_selected_colors();
+		reset_canvas_and_history(); // (with newly reset colors)
+		set_magnification(default_magnification);
+
+		main_ctx.copy(info.image || info.image_data);
+		apply_file_format_and_palette_info(info);
+		transparency = has_any_transparency(main_ctx);
+		$canvas_area.trigger("resize");
+
+		current_history_node.name = localize("Open");
+		current_history_node.image_data = main_ctx.getImageData(0, 0, main_canvas.width, main_canvas.height);
+		current_history_node.icon = get_help_folder_icon("p_open.png");
+
+		if (canvas_modified_while_loading || !from_session_load) {
+			// normally we don't want to autosave if we're loading a session,
+			// as this is redundant, but if the user has modified the canvas while loading a session,
+			// right now how it works is the session would be overwritten, so if you reloaded, it'd be lost,
+			// so we'd better save it.
+			// (and we want to save if this is a new session being initialized with an image)
+			$G.triggerHandler("session-update"); // autosave
+		}
+		$G.triggerHandler("history-update"); // update history view
+
+		if (info.source_blob instanceof File) {
+			file_name = info.source_blob.name;
+			// file.path is available in Electron (see https://www.electronjs.org/docs/api/file-object#file-object)
+			system_file_handle = info.source_blob.path;
+		}
+		if (info.source_file_handle) {
+			system_file_handle = info.source_file_handle;
+		}
+		saved = true;
+		update_title();
+
+		callback && callback();
+	}, canceled, from_session_load);
+}
+
+// Note: This function is part of the API.
+function open_from_file(file, source_file_handle) {
+	// The browser isn't very smart about MIME types.
+	// It seems to look at the file extension, but not the actual file contents.
+	// This is particularly problematic for files with no extension, where file.type gives an empty string.
+	// And the File Access API currently doesn't let us automatically append a file extension,
+	// so the user is likely to end up with files with no extension.
+	// It's better to look at the file content to determine file type.
+	// We do this for image files in read_image_file, and palette files in AnyPalette.js.
+
+	if (file.name.match(/\.theme(pack)?$/i)) {
+		file.text().then(load_theme_from_text, (error) => {
+			show_error_message(localize("Paint cannot open this file."), error);
+		});
+		return
+	}
+	// Try loading as an image file first, then as a palette file, but show a combined error message if both fail.
+	read_image_file(file, (as_image_error, image_info) => {
+		if (as_image_error) {
+			AnyPalette.loadPalette(file, (as_palette_error, new_palette) => {
+				if (as_palette_error) {
+					show_file_format_errors({ as_image_error, as_palette_error });
+					return;
+				}
+				palette = new_palette.map((color) => color.toString());
+				$colorbox.rebuild_palette();
+				window.console && console.log(`Loaded palette: ${palette.map(() => `%c█`).join("")}`, ...palette.map((color) => `color: ${color};`));
+			});
+			return;
+		}
+		image_info.source_file_handle = source_file_handle
+		open_from_image_info(image_info);
+	});
+}
+
+function apply_file_format_and_palette_info(info) {
+	file_format = info.file_format;
+
+	if (!enable_palette_loading_from_indexed_images) {
+		return;
+	}
+
+	if (info.palette) {
+		window.console && console.log(`Loaded palette from image file: ${info.palette.map(() => `%c█`).join("")}`, ...info.palette.map((color) => `color: ${color};`));
+		palette = info.palette;
+		selected_colors.foreground = palette[0];
+		selected_colors.background = palette.length === 14 * 2 ? palette[14] : palette[1]; // first in second row for default sized palette, else second color (debatable behavior; should it find a dark and a light color?)
+		$G.trigger("option-changed");
+	} else if (monochrome && !info.monochrome) {
+		palette = default_palette;
+		reset_selected_colors();
+	}
+	$colorbox.rebuild_palette();
+
+	monochrome = info.monochrome;
+}
+
+function load_theme_from_text(fileText) {
+	var cssProperties = parseThemeFileString(fileText);
+	if (!cssProperties) {
+		show_error_message(localize("Paint cannot open this file."));
+		return;
+	}
+	applyCSSProperties(cssProperties, { recurseIntoIframes: true });
+
+	window.themeCSSProperties = cssProperties;
+
+	$G.triggerHandler("theme-load");
+}
+
+function file_new() {
+	are_you_sure(() => {
+		deselect();
+		cancel();
+
+		$G.triggerHandler("session-update"); // autosave old session
+		new_local_session();
+
+		reset_file();
+		reset_selected_colors();
+		reset_canvas_and_history(); // (with newly reset colors)
+		set_magnification(default_magnification);
+
+		$G.triggerHandler("session-update"); // autosave
+	});
+}
+
+async function file_open() {
+	const { file, fileHandle } = await systemHooks.showOpenFileDialog({ formats: image_formats })
+	open_from_file(file, fileHandle);
+}
+
+let $file_load_from_url_window;
+function file_load_from_url() {
+	if ($file_load_from_url_window) {
+		$file_load_from_url_window.close();
+	}
+	const $w = new $DialogWindow().addClass("horizontal-buttons");
+	$file_load_from_url_window = $w;
+	$w.title("Load from URL");
+	// @TODO: URL validation (input has to be in a form (and we don't want the form to submit))
+	$w.$main.html(`
+		<div style='padding: 10px;'>
+			<label style="display: block; margin-bottom: 5px;" for="url-input">Paste or type the web address of an image:</label>
+			<input type="url" required value="" id="url-input" class="inset-deep" style="width: 300px;"/></label>
+		</div>
+	`);
+	const $input = $w.$main.find("#url-input");
+	// $w.$Button("Load", () => {
+	$w.$Button(localize("Open"), () => {
+		const uris = get_uris($input.val());
+		if (uris.length > 0) {
+			// @TODO: retry loading if same URL entered
+			// actually, make it change the hash only after loading successfully
+			// (but still load from the hash when necessary)
+			// make sure it doesn't overwrite the old session before switching
+			$w.close();
+			change_url_param("load", uris[0]);
+		} else {
+			show_error_message("Invalid URL. It must include a protocol (https:// or http://)");
+		}
+	});
+	$w.$Button(localize("Cancel"), () => {
+		$w.close();
+	});
+	$w.center();
+	$input[0].focus();
+}
+
+// Native FS API / File Access API allows you to overwrite files, but people are not used to it.
+// So we ask them to confirm it the first time.
+let acknowledged_overwrite_capability = false;
+const confirmed_overwrite_key = "jspaint confirmed overwrite capable";
+try {
+	acknowledged_overwrite_capability = localStorage[confirmed_overwrite_key] === "true";
+} catch (error) {
+	// no localStorage
+	// In the year 2033, people will be more used to it, right?
+	// This will be known as the "Y2T bug"
+	acknowledged_overwrite_capability = Date.now() >= 2000000000000;
+}
+async function confirm_overwrite_capability() {
+	if (acknowledged_overwrite_capability) {
+		return true;
+	}
+	const { $window, promise } = showMessageBox({
+		messageHTML: `
+			<p>JS Paint can now save over existing files.</p>
+			<p>Do you want to overwrite the file?</p>
+			<p>
+				<input type="checkbox" id="dont-ask-me-again-checkbox"/>
+				<label for="dont-ask-me-again-checkbox">Don't ask me again</label>
+			</p>
+		`,
+		buttons: [
+			{ label: localize("Yes"), value: "overwrite", default: true },
+			{ label: localize("Cancel"), value: "cancel" },
+		],
+	});
+	const result = await promise;
+	if (result === "overwrite") {
+		acknowledged_overwrite_capability = $window.$content.find("#dont-ask-me-again-checkbox").prop("checked");
+		try {
+			localStorage[confirmed_overwrite_key] = acknowledged_overwrite_capability;
+		} catch (error) {
+			// no localStorage... @TODO: don't show the checkbox in this case
+		}
+		return true;
+	}
+	return false;
+}
+
+
+function file_save(maybe_saved_callback = () => { }, update_from_saved = true) {
+	deselect();
+	// store and use file handle at this point in time, to avoid race conditions
+	const save_file_handle = system_file_handle;
+	if (!save_file_handle || file_name.match(/\.(svg|pdf)$/i)) {
+		return file_save_as(maybe_saved_callback, update_from_saved);
+	}
+	write_image_file(main_canvas, file_format, async (blob) => {
+		await systemHooks.writeBlobToHandle(save_file_handle, blob);
+
+		if (update_from_saved) {
+			update_from_saved_file(blob);
+		}
+		maybe_saved_callback();
+	});
+}
+
+function file_save_as(maybe_saved_callback = () => { }, update_from_saved = true) {
+	deselect();
+	systemHooks.showSaveFileDialog({
+		dialogTitle: localize("Save As"),
+		formats: image_formats,
+		defaultFileName: file_name,
+		defaultPath: typeof system_file_handle === "string" ? system_file_handle : null,
+		defaultFileFormatID: file_format,
+		getBlob: (new_file_type) => {
+			return new Promise((resolve) => {
+				write_image_file(main_canvas, new_file_type, (blob) => {
+					resolve(blob);
+				});
+			});
+		},
+		savedCallbackUnreliable: ({ newFileName, newFileFormatID, newFileHandle, newBlob }) => {
+			saved = true;
+			system_file_handle = newFileHandle;
+			file_name = newFileName;
+			file_format = newFileFormatID;
+			update_title();
+			maybe_saved_callback();
+			if (update_from_saved) {
+				update_from_saved_file(newBlob);
+			}
+		}
+	});
+}
+
+
+function are_you_sure(action, canceled, from_session_load) {
+	if (saved) {
+		action();
+	} else if (from_session_load) {
+		showMessageBox({
+			message: localize("You've modified the document while an existing document was loading.\nSave the new document?", file_name),
+			buttons: [
+				{
+					// label: localize("Save"),
+					label: localize("Yes"),
+					value: "save",
+					default: true,
+				},
+				{
+					// label: "Discard",
+					label: localize("No"),
+					value: "discard",
+				},
+			],
+			// @TODO: not closable with Escape or close button
+		}).then((result) => {
+			if (result === "save") {
+				file_save(() => {
+					action();
+				}, false);
+			} else if (result === "discard") {
+				action({ canvas_modified_while_loading: true });
+			} else {
+				// should not ideally happen
+				// but prefer to preserve the previous document,
+				// as the user has only (probably) as small window to make changes while loading,
+				// whereas there could be any amount of work put into the document being loaded.
+				// @TODO: could show dialog again, but making it un-cancelable would be better.
+				action();
+			}
+		});
+	} else {
+		showMessageBox({
+			message: localize("Save changes to %1?", file_name),
+			buttons: [
+				{
+					// label: localize("Save"),
+					label: localize("Yes"),
+					value: "save",
+					default: true,
+				},
+				{
+					// label: "Discard",
+					label: localize("No"),
+					value: "discard",
+				},
+				{
+					label: localize("Cancel"),
+					value: "cancel",
+				},
+			],
+		}).then((result) => {
+			if (result === "save") {
+				file_save(() => {
+					action();
+				}, false);
+			} else if (result === "discard") {
+				action();
+			} else {
+				canceled?.();
+			}
+		});
+	}
+}
+
+function please_enter_a_number() {
+	showMessageBox({
+		// title: "Invalid Value",
+		message: localize("Please enter a number."),
+	});
+}
+
+// Note: This function is part of the API.
+function show_error_message(message, error) {
+	// Test global error handling resiliency by enabling one or both of these:
+	// Promise.reject(new Error("EMIT EMIT EMIT"));
+	// throw new Error("EMIT EMIT EMIT");
+	// It should fall back to an alert.
+	// EMIT stands for "Error Message Itself Test".
+
+	const { $message } = showMessageBox({
+		iconID: "error",
+		message,
+		// windowOptions: {
+		// 	innerWidth: 600,
+		// },
+	});
+	// $message.css("max-width", "600px");
+	if (error) {
+		const $details = $("<details><summary><span>Details</span></summary></details>")
+			.appendTo($message);
+
+		// Chrome includes the error message in the error.stack string, whereas Firefox doesn't.
+		// Also note that there can be Exception objects that don't have a message (empty string) but a name,
+		// for instance Exception { message: "", name: "NS_ERROR_FAILURE", ... } for out of memory when resizing the canvas too large in Firefox.
+		// Chrome just lets you bring the system to a grating halt by trying to grab too much memory.
+		// Firefox does too sometimes.
+		let error_string = error.stack;
+		if (!error_string) {
+			error_string = error.toString();
+		} else if (error.message && error_string.indexOf(error.message) === -1) {
+			error_string = `${error.toString()}\n\n${error_string}`;
+		} else if (error.name && error_string.indexOf(error.name) === -1) {
+			error_string = `${error.name}\n\n${error_string}`;
+		}
+		$(E("pre"))
+			.text(error_string)
+			.appendTo($details)
+			.css({
+				background: "white",
+				color: "#333",
+				// background: "#A00",
+				// color: "white",
+				fontFamily: "monospace",
+				width: "500px",
+				maxWidth: "100%",
+				overflow: "auto",
+			});
+	}
+	if (error) {
+		window.console?.error?.(message, error);
+	} else {
+		window.console?.error?.(message);
+	}
+}
+
+// @TODO: close are_you_sure windows and these Error windows when switching sessions
+// because it can get pretty confusing
+function show_resource_load_error_message(error) {
+	const { $window, $message } = showMessageBox({});
+	const firefox = navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
+	// @TODO: copy & paste vs download & open, more specific guidance
+	if (error.code === "cross-origin-blob-uri") {
+		$message.html(`
+			<p>Can't load image from address starting with "blob:".</p>
+			${firefox ?
+				`<p>Try "Copy Image" instead of "Copy Image Location".</p>` :
+				`<p>Try "Copy image" instead of "Copy image address".</p>`
+			}
+		`);
+	} else if (error.code === "html-not-image") {
+		$message.html(`
+			<p>Address points to a web page, not an image file.</p>
+			<p>Try copying and pasting an image instead of a URL.</p>
+		`);
+	} else if (error.code === "decoding-failure") {
+		$message.html(`
+			<p>Address doesn't point to an image file of a supported format.</p>
+			<p>Try copying and pasting an image instead of a URL.</p>
+		`);
+	} else if (error.code === "access-failure") {
+		if (navigator.onLine) {
+			$message.html(`
+				<p>Failed to download image.</p>
+				<p>Try copying and pasting an image instead of a URL.</p>
+			`);
+			if (error.fails) {
+				$("<ul>").append(error.fails.map(({ status, statusText, url }) =>
+					$("<li>").text(url).prepend($("<b>").text(`${status || ""} ${statusText || "Failed"} `))
+				)).appendTo($message);
+			}
+		} else {
+			$message.html(`
+				<p>Failed to download image.</p>
+				<p>You're offline. Connect to the internet and try again.</p>
+				<p>Or copy and paste an image instead of a URL, if possible.</p>
+			`);
+		}
+	} else {
+		$message.html(`
+			<p>Failed to load image from URL.</p>
+			<p>Check your browser's devtools for details.</p>
+		`);
+	}
+	$message.css({ maxWidth: "500px" });
+	$window.center(); // after adding content
+}
+function show_file_format_errors({ as_image_error, as_palette_error }) {
+	let html = `
+		<p>${localize("Paint cannot open this file.")}</p>
+	`;
+	if (as_image_error) {
+		// TODO: handle weird errors, only show invalid format error if that's what happened
+		html += `
+			<details>
+				<summary>${localize("Bitmap Image")}</summary>
+				<p>${localize("This is not a valid bitmap file, or its format is not currently supported.")}</p>
+			</details>
+		`;
+	}
+	var entity_map = {
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		"'": '&#39;',
+		'/': '&#x2F;',
+		'`': '&#x60;',
+		'=': '&#x3D;',
+	};
+	const escape_html = (string) => String(string).replace(/[&<>"'`=/]/g, (s) => entity_map[s]);
+	const uppercase_first = (string) => string.charAt(0).toUpperCase() + string.slice(1);
+
+	const only_palette_error = as_palette_error && !as_image_error; // update me if there are more error types
+	if (as_palette_error) {
+		let details = "";
+		if (as_palette_error.errors) {
+			details = `<ul dir="ltr">${as_palette_error.errors.map((error) => {
+				const format = error.__PATCHED_LIB_TO_ADD_THIS__format;
+				if (format && error.error) {
+					return `<li><b>${escape_html(`${format.name}`)}</b>: ${escape_html(uppercase_first(error.error.message))}</li>`;
+				}
+				// Fallback for unknown errors
+				return `<li>${escape_html(error.message || error)}</li>`;
+			}).join("\n")}</ul>`;
+		} else {
+			// Fallback for unknown errors
+			details = `<p>${escape_html(as_palette_error.message || as_palette_error)}</p>`;
+		}
+		html += `
+			<details>
+				<summary>${only_palette_error ? "Details" : localize("Palette|*.pal|").split("|")[0]}</summary>
+				<p>${localize("Unexpected file format.")}</p>
+				${details}
+			</details>
+		`;
+	}
+	showMessageBox({
+		messageHTML: html,
+	});
+}
+
+let $about_paint_window;
+const $about_paint_content = $("#about-paint");
+
+
+function show_about_paint() {
+	if ($about_paint_window) {
+		$about_paint_window.close();
+	}
+	$about_paint_window = $Window({
+		title: localize("About Paint"),
+		resizable: false,
+		maximizeButton: false,
+		minimizeButton: false,
+	});
+	$about_paint_window.addClass("about-paint squish");
+	if (is_pride_month) {
+		$("#paint-32x32").attr("src", "./images/icons/gay-es-paint-32x32-light-outline.png");
+	}
+
+	$about_paint_window.$content.append($about_paint_content.show()).css({ padding: "15px" });
+
+	$about_paint_window.center();
+	$about_paint_window.center(); // @XXX - but it helps tho
+
+	$about_paint_window.$Button(localize("OK"), () => {
+		$about_paint_window.close();
+	})
+		.attr("id", "close-about-paint")
+		.focus()
+		.css({
+			float: "right",
+			marginBottom: "10px",
+		});
+}
+
+function exit_fullscreen_if_ios() {
+	if ($("body").hasClass("ios")) {
+		try {
+			if (document.exitFullscreen) {
+				document.exitFullscreen();
+			} else if (document.webkitExitFullscreen) {
+				document.webkitExitFullscreen();
+			} else if (document.mozCancelFullScreen) {
+				document.mozCancelFullScreen();
+			} else if (document.msExitFullscreen) {
+				document.msExitFullscreen();
+			}
+		} catch (error) {
+			// not important, just trying to prevent broken fullscreen after refresh
+			// (:fullscreen and document.fullscreenElement stops working because it's not "requested by the page" anymore)
+			// (the fullscreen styling is not generally obtrusive, but it is obtrusive when it DOESN'T work)
+			//
+			// alternatives:
+			// - detect reload-while-fullscreen by storing a timestamp on unload when fullscreen,
+			//   and apply the fullscreen class if timestamp is within a few seconds during load.
+			//   - This doesn't have an answer for detecting leaving fullscreen,
+			//     and if it keeps thinking it's fullscreen, it'll keep storing the timestamp, and get stuck.
+			//     Unless it only stores the timestamp if it knows it's fullscreen? (i.e. page-requested fullscreen)
+			//     Then it would only work for one reload.
+			//     So ideally it would have the below anyway, in which case this would be unnecessary.
+			// - detect fullscreen state without fullscreen API, using viewport size
+			//   - If this is possible, why don't browsers just expose this information in the fullscreen API? :(
+			//   - iPad resets the zoom level when going fullscreen, and then when reloading,
+			//     the zoom level is reset to the user-set zoom level.
+			//     Safari doesn't update devicePixelRatio based on the zoom level,
+			//     and doesn't support ResizeObserver for device pixels.
+			//     It does support https://developer.mozilla.org/en-US/docs/Web/API/Visual_Viewport_API
+			//     though, so maybe something can be done with that.
+			// - prompt to add to homescreen
+		}
+	}
+}
+
+// show_about_paint(); // for testing
+
+function update_css_classes_for_conditional_messages() {
+
+	$(".on-dev-host, .on-third-party-host, .on-official-host").hide();
+	if (location.hostname.match(/localhost|127.0.0.1/)) {
+		$(".on-dev-host").show();
+	} else if (location.hostname.match(/jspaint.app/)) {
+		$(".on-official-host").show();
+	} else {
+		$(".on-third-party-host").show();
+	}
+
+	$(".navigator-online, .navigator-offline").hide();
+	if (navigator.onLine) {
+		$(".navigator-online").show();
+	} else {
+		$(".navigator-offline").show();
+	}
+}
+
+// @TODO: DRY between these functions and open_from_* functions further?
+
+function paste_image_from_file(blob) {
+	read_image_file(blob, (error, info) => {
+		if (error) {
+			show_file_format_errors({ as_image_error: error });
+			return;
+		}
+		paste(info.image || make_canvas(info.image_data));
+	});
+}
+
+// Edit > Paste From
+async function choose_file_to_paste() {
+	const { file } = await systemHooks.showOpenFileDialog({ formats: image_formats });
+	if (file.type.match(/^image|application\/pdf/)) {
+		paste_image_from_file(file);
+		return;
+	}
+	show_error_message(localize("This is not a valid bitmap file, or its format is not currently supported."));
+}
+
+function paste(img_or_canvas) {
+
+	if (img_or_canvas.width > main_canvas.width || img_or_canvas.height > main_canvas.height) {
+		showMessageBox({
+			message: localize("The image in the clipboard is larger than the bitmap.") + "\n" +
+				localize("Would you like the bitmap enlarged?"),
+			iconID: "question",
+			windowOptions: {
+				icons: {
+					16: "images/windows-16x16.png",
+					32: "images/windows-32x32.png",
+				},
+			},
+			buttons: [
+				{
+					// label: "Enlarge",
+					label: localize("Yes"),
+					value: "enlarge",
+					default: true,
+				},
+				{
+					// label: "Crop",
+					label: localize("No"),
+					value: "crop",
+				},
+				{
+					label: localize("Cancel"),
+					value: "cancel",
+				},
+			],
+		}).then((result) => {
+			if (result === "enlarge") {
+				// The resize gets its own undoable, as in mspaint
+				resize_canvas_and_save_dimensions(
+					Math.max(main_canvas.width, img_or_canvas.width),
+					Math.max(main_canvas.height, img_or_canvas.height),
+					{
+						name: "Enlarge Canvas For Paste",
+						icon: get_help_folder_icon("p_stretch_both.png"),
+					}
+				);
+				do_the_paste();
+				$canvas_area.trigger("resize");
+			} else if (result === "crop") {
+				do_the_paste();
+			}
+		});
+	} else {
+		do_the_paste();
+	}
+
+	function do_the_paste() {
+		deselect();
+		select_tool(get_tool_by_id(TOOL_SELECT));
+
+		const x = Math.max(0, Math.ceil($canvas_area.scrollLeft() / magnification));
+		const y = Math.max(0, Math.ceil(($canvas_area.scrollTop()) / magnification));
+		// Nevermind, canvas, isn't aligned to the right in RTL layout!
+		// let x = Math.max(0, Math.ceil($canvas_area.scrollLeft() / magnification));
+		// if (get_direction() === "rtl") {
+		// 	// magic number 8 is a guess, I guess based on the scrollbar width which shows on the left in RTL layout
+		// 	// x = Math.max(0, Math.ceil(($canvas_area.innerWidth() - canvas.width + $canvas_area.scrollLeft() + 8) / magnification));
+		// 	const scrollbar_width = $canvas_area[0].offsetWidth - $canvas_area[0].clientWidth; // maybe??
+		// 	console.log("scrollbar_width", scrollbar_width);
+		// 	x = Math.max(0, Math.ceil((-$canvas_area.innerWidth() + $canvas_area.scrollLeft() + scrollbar_width) / magnification + canvas.width));
+		// }
+
+		undoable({
+			name: localize("Paste"),
+			icon: get_help_folder_icon("p_paste.png"),
+			soft: true,
+		}, () => {
+			selection = new OnCanvasSelection(x, y, img_or_canvas.width, img_or_canvas.height, img_or_canvas);
+		});
+	}
+}
+
+function render_history_as_gif() {
+	const $win = $DialogWindow();
+	$win.title("Rendering GIF");
+
+	const $output = $win.$main;
+	const $progress = $(E("progress")).appendTo($output).addClass("inset-deep");
+	const $progress_percent = $(E("span")).appendTo($output).css({
+		width: "2.3em",
+		display: "inline-block",
+		textAlign: "center",
+	});
+	$win.$main.css({ padding: 5 });
+
+	const $cancel = $win.$Button('Cancel', () => {
+		$win.close();
+	}).focus();
+
+	$win.center();
+
+	try {
+		const width = main_canvas.width;
+		const height = main_canvas.height;
+		const gif = new GIF({
+			//workers: Math.min(5, Math.floor(undos.length/50)+1),
+			workerScript: "lib/gif.js/gif.worker.js",
+			width,
+			height,
+		});
+
+		$win.on('close', () => {
+			gif.abort();
+		});
+
+		gif.on("progress", p => {
+			$progress.val(p);
+			$progress_percent.text(`${~~(p * 100)}%`);
+		});
+
+		gif.on("finished", blob => {
+			$win.title("Rendered GIF");
+			const blob_url = URL.createObjectURL(blob);
+			$output.empty().append(
+				$(E("div")).addClass("inset-deep").append(
+					$(E("img")).attr({
+						src: blob_url,
+						width,
+						height,
+					}).css({
+						display: "block", // prevent margin below due to inline display (vertical-align can also be used)
+					}),
+				).css({
+					overflow: "auto",
+					maxHeight: "70vh",
+					maxWidth: "70vw",
+				})
+			);
+			$win.on("close", () => {
+				// revoking on image load(+error) breaks right click > "Save image as" and "Open image in new tab"
+				URL.revokeObjectURL(blob_url);
+			});
+			$win.$Button("Upload to Imgur", () => {
+				$win.close();
+				sanity_check_blob(blob, () => {
+					show_imgur_uploader(blob);
+				});
+			}).focus();
+			$win.$Button(localize("Save"), () => {
+				$win.close();
+				sanity_check_blob(blob, () => {
+					const suggested_file_name = `${file_name.replace(/\.(bmp|dib|a?png|gif|jpe?g|jpe|jfif|tiff?|webp|raw)$/i, "")} history.gif`;
+					systemHooks.showSaveFileDialog({
+						dialogTitle: localize("Save As"), // localize("Save Animation As"),
+						getBlob: () => blob,
+						defaultFileName: suggested_file_name,
+						defaultPath: typeof system_file_handle === "string" ? `${system_file_handle.replace(/[/\\][^/\\]*/, "")}/${suggested_file_name}` : null,
+						defaultFileFormatID: "image/gif",
+						formats: [{
+							formatID: "image/gif",
+							mimeType: "image/gif",
+							name: localize("Animated GIF (*.gif)").replace(/\s+\([^(]+$/, ""),
+							nameWithExtensions: localize("Animated GIF (*.gif)"),
+							extensions: ["gif"],
+						}],
+					});
+				});
+			});
+			$cancel.appendTo($win.$buttons);
+			$win.center();
+		});
+
+		const gif_canvas = make_canvas(width, height);
+		const frame_history_nodes = [...undos, current_history_node];
+		for (const frame_history_node of frame_history_nodes) {
+			gif_canvas.ctx.clearRect(0, 0, gif_canvas.width, gif_canvas.height);
+			gif_canvas.ctx.putImageData(frame_history_node.image_data, 0, 0);
+			if (frame_history_node.selection_image_data) {
+				const selection_canvas = make_canvas(frame_history_node.selection_image_data);
+				gif_canvas.ctx.drawImage(selection_canvas, frame_history_node.selection_x, frame_history_node.selection_y);
+			}
+			gif.addFrame(gif_canvas, { delay: 200, copy: true });
+		}
+		gif.render();
+
+	} catch (err) {
+		$win.close();
+		show_error_message("Failed to render GIF.", err);
+	}
+}
+
+function go_to_history_node(target_history_node, canceling, discard_document_state) {
+	const from_history_node = current_history_node;
+
+	if (!target_history_node.image_data) {
+		if (!canceling) {
+			show_error_message("History entry has no image data.");
+			window.console && console.log("Target history entry has no image data:", target_history_node);
+		}
+		return;
+	}
+	/* For performance (especially with two finger panning), I'm disabling this safety check that preserves certain document states in the history.
+	const current_image_data = main_ctx.getImageData(0, 0, main_canvas.width, main_canvas.height);
+	if (!current_history_node.image_data || !image_data_match(current_history_node.image_data, current_image_data, 5)) {
+		window.console && console.log("Canvas image data changed outside of undoable", current_history_node, "current_history_node.image_data:", current_history_node.image_data, "document's current image data:", current_image_data);
+		undoable({name: "Unknown [go_to_history_node]", use_loose_canvas_changes: true}, ()=> {});
+	}
+	*/
+	current_history_node = target_history_node;
+
+	deselect(true);
+	if (!canceling) {
+		cancel(true);
+	}
+	saved = false;
+	update_title();
+
+	main_ctx.copy(target_history_node.image_data);
+	if (target_history_node.selection_image_data) {
+		if (selection) {
+			selection.destroy();
+		}
+		// @TODO maybe: could store whether a selection is from Free-Form Select
+		// so it selects Free-Form Select when you jump to e.g. Move Selection
+		// (or could traverse history to figure it out)
+		if (target_history_node.name === localize("Free-Form Select")) {
+			select_tool(get_tool_by_id(TOOL_FREE_FORM_SELECT));
+		} else {
+			select_tool(get_tool_by_id(TOOL_SELECT));
+		}
+		selection = new OnCanvasSelection(
+			target_history_node.selection_x,
+			target_history_node.selection_y,
+			target_history_node.selection_image_data.width,
+			target_history_node.selection_image_data.height,
+			target_history_node.selection_image_data,
+		);
+	}
+	if (target_history_node.textbox_text != null) {
+		if (textbox) {
+			textbox.destroy();
+		}
+		// @# text_tool_font =
+		for (const [k, v] of Object.entries(target_history_node.text_tool_font)) {
+			text_tool_font[k] = v;
+		}
+
+		selected_colors.foreground = target_history_node.foreground_color;
+		selected_colors.background = target_history_node.background_color;
+		tool_transparent_mode = target_history_node.tool_transparent_mode;
+		$G.trigger("option-changed");
+
+		select_tool(get_tool_by_id(TOOL_TEXT));
+		textbox = new OnCanvasTextBox(
+			target_history_node.textbox_x,
+			target_history_node.textbox_y,
+			target_history_node.textbox_width,
+			target_history_node.textbox_height,
+			target_history_node.textbox_text,
+		);
+	}
+
+	const ancestors_of_target = get_history_ancestors(target_history_node);
+
+	undos = [...ancestors_of_target];
+	undos.reverse();
+
+	const old_history_path =
+		redos.length > 0 ?
+			[redos[0], ...get_history_ancestors(redos[0])] :
+			[from_history_node, ...get_history_ancestors(from_history_node)];
+
+	// window.console && console.log("target_history_node:", target_history_node);
+	// window.console && console.log("ancestors_of_target:", ancestors_of_target);
+	// window.console && console.log("old_history_path:", old_history_path);
+	redos.length = 0;
+
+	let latest_node = target_history_node;
+	while (latest_node.futures.length > 0) {
+		const futures = [...latest_node.futures];
+		futures.sort((a, b) => {
+			if (old_history_path.indexOf(a) > -1) {
+				return -1;
+			}
+			if (old_history_path.indexOf(b) > -1) {
+				return +1;
+			}
+			return 0;
+		});
+		latest_node = futures[0];
+		redos.unshift(latest_node);
+	}
+	// window.console && console.log("new undos:", undos);
+	// window.console && console.log("new redos:", redos);
+
+	$canvas_area.trigger("resize");
+	$G.triggerHandler("session-update"); // autosave
+	$G.triggerHandler("history-update"); // update history view
+}
+
+// Note: This function is part of the API.
+function undoable({ name, icon, use_loose_canvas_changes, soft }, callback) {
+	if (!use_loose_canvas_changes) {
+		/* For performance (especially with two finger panning), I'm disabling this safety check that preserves certain document states in the history.
+		const current_image_data = main_ctx.getImageData(0, 0, main_canvas.width, main_canvas.height);
+		if (!current_history_node.image_data || !image_data_match(current_history_node.image_data, current_image_data, 5)) {
+			window.console && console.log("Canvas image data changed outside of undoable", current_history_node, "current_history_node.image_data:", current_history_node.image_data, "document's current image data:", current_image_data);
+			undoable({name: "Unknown [undoable]", use_loose_canvas_changes: true}, ()=> {});
+		}
+		*/
+	}
+
+	saved = false;
+	update_title();
+
+	const before_callback_history_node = current_history_node;
+	callback && callback();
+	if (current_history_node !== before_callback_history_node) {
+		show_error_message(`History node switched during undoable callback for ${name}. This shouldn't happen.`);
+		window.console && console.log(`History node switched during undoable callback for ${name}, from`, before_callback_history_node, "to", current_history_node);
+	}
+
+	const image_data = main_ctx.getImageData(0, 0, main_canvas.width, main_canvas.height);
+
+	redos.length = 0;
+	undos.push(current_history_node);
+
+	const new_history_node = make_history_node({
+		image_data,
+		selection_image_data: selection && selection.canvas.ctx.getImageData(0, 0, selection.canvas.width, selection.canvas.height),
+		selection_x: selection && selection.x,
+		selection_y: selection && selection.y,
+		textbox_text: textbox && textbox.$editor.val(),
+		textbox_x: textbox && textbox.x,
+		textbox_y: textbox && textbox.y,
+		textbox_width: textbox && textbox.width,
+		textbox_height: textbox && textbox.height,
+		text_tool_font: JSON.parse(JSON.stringify(text_tool_font)),
+		tool_transparent_mode,
+		foreground_color: selected_colors.foreground,
+		background_color: selected_colors.background,
+		ternary_color: selected_colors.ternary,
+		parent: current_history_node,
+		name,
+		icon,
+		soft,
+	});
+	current_history_node.futures.push(new_history_node);
+	current_history_node = new_history_node;
+
+	$G.triggerHandler("history-update"); // update history view
+
+	$G.triggerHandler("session-update"); // autosave
+}
+function make_or_update_undoable(undoable_meta, undoable_action) {
+	if (current_history_node.futures.length === 0 && undoable_meta.match(current_history_node)) {
+		undoable_action();
+		current_history_node.image_data = main_ctx.getImageData(0, 0, main_canvas.width, main_canvas.height);
+		current_history_node.selection_image_data = selection && selection.canvas.ctx.getImageData(0, 0, selection.canvas.width, selection.canvas.height);
+		current_history_node.selection_x = selection && selection.x;
+		current_history_node.selection_y = selection && selection.y;
+		if (undoable_meta.update_name) {
+			current_history_node.name = undoable_meta.name;
+		}
+		$G.triggerHandler("history-update"); // update history view
+	} else {
+		undoable(undoable_meta, undoable_action);
+	}
+}
+function undo() {
+	if (undos.length < 1) { return false; }
+
+	redos.push(current_history_node);
+	let target_history_node = undos.pop();
+
+	while (target_history_node.soft && undos.length) {
+		redos.push(target_history_node);
+		target_history_node = undos.pop();
+	}
+
+	go_to_history_node(target_history_node);
+
+	return true;
+}
+
+// @TODO: use Clippy.js instead for potentially annoying tips
+let $document_history_prompt_window;
+function redo() {
+	if (redos.length < 1) {
+		if ($document_history_prompt_window) {
+			$document_history_prompt_window.close();
+		}
+		if (!$document_history_window || $document_history_window.closed) {
+			$document_history_prompt_window = showMessageBox({
+				title: "Redo",
+				messageHTML: `To view all branches of the history tree, click <b>Edit > History</b>.`,
+				iconID: "info",
+			}).$window;
+		}
+		return false;
+	}
+
+	undos.push(current_history_node);
+	let target_history_node = redos.pop();
+
+	while (target_history_node.soft && redos.length) {
+		undos.push(target_history_node);
+		target_history_node = redos.pop();
+	}
+
+	go_to_history_node(target_history_node);
+
+	return true;
+}
+
+function get_history_ancestors(node) {
+	const ancestors = [];
+	for (node = node.parent; node; node = node.parent) {
+		ancestors.push(node);
+	}
+	return ancestors;
+}
+
+let $document_history_window;
+// setTimeout(show_document_history, 100);
+function show_document_history() {
+	if ($document_history_prompt_window) {
+		$document_history_prompt_window.close();
+	}
+	if ($document_history_window) {
+		$document_history_window.close();
+	}
+	const $w = $document_history_window = new $Window({
+		title: "Document History",
+		resizable: false,
+		maximizeButton: false,
+		minimizeButton: false,
+	});
+	// $w.prependTo("body").css({position: ""});
+	$w.addClass("history-window squish");
+	$w.$content.html(`
+		<label>
+			<select id="history-view-mode" class="inset-deep">
+				<option value="linear">Linear timeline</option>
+				<option value="tree">Tree</option>
+			</select>
+		</label>
+		<div class="history-view" tabIndex="0"></div>
+	`);
+
+	const $history_view = $w.$content.find(".history-view");
+	$history_view.focus();
+
+	let previous_scroll_position = 0;
+
+	let rendered_$entries = [];
+	let current_$entry;
+
+	let $mode_select = $w.$content.find("#history-view-mode");
+	$mode_select.css({
+		margin: "10px",
+	});
+	let mode = $mode_select.val();
+	$mode_select.on("change", () => {
+		mode = $mode_select.val();
+		render_tree();
+	});
+
+	function render_tree_from_node(node) {
+		const $entry = $(`
+			<div class="history-entry">
+				<div class="history-entry-icon-area"></div>
+				<div class="history-entry-name"></div>
+			</div>
+		`);
+		// $entry.find(".history-entry-name").text((node.name || "Unknown") + (node.soft ? " (soft)" : ""));
+		$entry.find(".history-entry-name").text((node.name || "Unknown") + (node === root_history_node ? " (Start of History)" : ""));
+		$entry.find(".history-entry-icon-area").append(node.icon);
+		if (mode === "tree") {
+			let dist_to_root = 0;
+			for (let ancestor = node.parent; ancestor; ancestor = ancestor.parent) {
+				dist_to_root++;
+			}
+			$entry.css({
+				marginInlineStart: `${dist_to_root * 8}px`,
+			});
+		}
+		if (node === current_history_node) {
+			$entry.addClass("current");
+			current_$entry = $entry;
+			requestAnimationFrame(() => {
+				// scrollIntoView causes <html> to scroll when the window is partially offscreen,
+				// despite overflow: hidden on html and body, so it's not an option.
+				$history_view[0].scrollTop =
+					Math.min(
+						$entry[0].offsetTop,
+						Math.max(
+							previous_scroll_position,
+							$entry[0].offsetTop - $history_view[0].clientHeight + $entry.outerHeight()
+						)
+					);
+			});
+		} else {
+			const history_ancestors = get_history_ancestors(current_history_node);
+			if (history_ancestors.indexOf(node) > -1) {
+				$entry.addClass("ancestor-of-current");
+			}
+		}
+		for (const sub_node of node.futures) {
+			render_tree_from_node(sub_node);
+		}
+		$entry.on("click", () => {
+			go_to_history_node(node);
+		});
+		$entry.history_node = node;
+		rendered_$entries.push($entry);
+	}
+	const render_tree = () => {
+		previous_scroll_position = $history_view.scrollTop();
+		$history_view.empty();
+		rendered_$entries = [];
+		render_tree_from_node(root_history_node);
+		if (mode === "linear") {
+			rendered_$entries.sort(($a, $b) => {
+				if ($a.history_node.timestamp < $b.history_node.timestamp) {
+					return -1;
+				}
+				if ($b.history_node.timestamp < $a.history_node.timestamp) {
+					return +1;
+				}
+				return 0;
+			});
+		} else {
+			rendered_$entries.reverse();
+		}
+		rendered_$entries.forEach(($entry) => {
+			$history_view.append($entry);
+		});
+	};
+	render_tree();
+
+	// This is different from Ctrl+Z/Ctrl+Shift+Z because it goes over all branches of the history tree, chronologically,
+	// not just one branch.
+	const go_by = (index_delta) => {
+		const from_index = rendered_$entries.indexOf(current_$entry);
+		const to_index = from_index + index_delta;
+		if (rendered_$entries[to_index]) {
+			rendered_$entries[to_index].click();
+		}
+	};
+	$history_view.on("keydown", (event) => {
+		if (!event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey) {
+			if (event.key === "ArrowDown" || event.key === "Down") {
+				go_by(1);
+				event.preventDefault();
+			} else if (event.key === "ArrowUp" || event.key === "Up") {
+				go_by(-1);
+				event.preventDefault();
+			}
+		}
+	});
+
+	$G.on("history-update", render_tree);
+	$w.on("close", () => {
+		$G.off("history-update", render_tree);
+	});
+
+	$w.center();
+}
+
+function cancel(going_to_history_node, discard_document_state) {
+	// Note: this function should be idempotent.
+	// `cancel(); cancel();` should do the same thing as `cancel();`
+	if (!history_node_to_cancel_to) {
+		return;
+	}
+
+	// For two finger panning, I want to prevent history nodes from being created,
+	// for performance, and to avoid cluttering the history.
+	// (And also so if you undo and then pan, you can still redo (without accessing the nonlinear history window).)
+	// Most tools create undoables on pointerup, in which case we can prevent them from being created,
+	// but Fill tool creates on pointerdown, so we need to delete a history node in that case.
+	// Select tool can create multiple undoables before being cancelled (for moving/resizing/inverting/smearing),
+	// but only the last should be discarded due to panning. (All of them should be undone you hit Esc. But not deleted.)
+	const history_node_to_discard = (
+		discard_document_state &&
+		current_history_node.parent && // can't discard the root node
+		current_history_node !== history_node_to_cancel_to && // can't discard what will be the active node
+		current_history_node.futures.length === 0 // prevent discarding whole branches of history if you go back in history and then pan / hit Esc
+	) ? current_history_node : null;
+
+	// console.log("history_node_to_discard", history_node_to_discard, "current_history_node", current_history_node, "history_node_to_cancel_to", history_node_to_cancel_to);
+
+	// history_node_to_cancel_to = history_node_to_cancel_to || current_history_node;
+	$G.triggerHandler("pointerup", ["canceling", discard_document_state]);
+	for (const selected_tool of selected_tools) {
+		selected_tool.cancel && selected_tool.cancel();
+	}
+	if (!going_to_history_node) {
+		// Note: this will revert any changes from other users in multi-user sessions
+		// which isn't good, but there's no real conflict resolution in multi-user mode anyways
+		go_to_history_node(history_node_to_cancel_to, true);
+
+		if (history_node_to_discard) {
+			const index = history_node_to_discard.parent.futures.indexOf(history_node_to_discard);
+			if (index === -1) {
+				show_error_message("History node not found. Please report this bug.");
+				console.log("history_node_to_discard", history_node_to_discard);
+				console.log("current_history_node", current_history_node);
+				console.log("history_node_to_discard.parent", history_node_to_discard.parent);
+			} else {
+				history_node_to_discard.parent.futures.splice(index, 1);
+				$G.triggerHandler("history-update"); // update history view (don't want you to be able to click on the excised node)
+				// (@TODO: prevent duplicate update, here vs go_to_history_node)
+			}
+		}
+	}
+	history_node_to_cancel_to = null;
+	update_helper_layer();
+}
+function meld_selection_into_canvas(going_to_history_node) {
+	selection.draw();
+	selection.destroy();
+	selection = null;
+	if (!going_to_history_node) {
+		undoable({
+			name: "Deselect",
+			icon: get_icon_for_tool(get_tool_by_id(TOOL_SELECT)),
+			use_loose_canvas_changes: true, // HACK; @TODO: make OnCanvasSelection not change the canvas outside undoable, same rules as tools
+		}, () => { });
+	}
+}
+function meld_textbox_into_canvas(going_to_history_node) {
+	const text = textbox.$editor.val();
+	if (text && !going_to_history_node) {
+		undoable({
+			name: localize("Text"),
+			icon: get_icon_for_tool(get_tool_by_id(TOOL_TEXT)),
+			soft: true,
+		}, () => { });
+		undoable({
+			name: "Finish Text",
+			icon: get_icon_for_tool(get_tool_by_id(TOOL_TEXT)),
+		}, () => {
+			main_ctx.drawImage(textbox.canvas, textbox.x, textbox.y);
+			textbox.destroy();
+			textbox = null;
+		});
+	} else {
+		textbox.destroy();
+		textbox = null;
+	}
+}
+function deselect(going_to_history_node) {
+	if (selection) {
+		meld_selection_into_canvas(going_to_history_node);
+	}
+	if (textbox) {
+		meld_textbox_into_canvas(going_to_history_node);
+	}
+	for (const selected_tool of selected_tools) {
+		selected_tool.end && selected_tool.end(main_ctx);
+	}
+}
+function delete_selection(meta = {}) {
+	if (selection) {
+		undoable({
+			name: meta.name || localize("Clear Selection"), //"Delete", (I feel like "Clear Selection" is unclear, could mean "Deselect")
+			icon: meta.icon || get_help_folder_icon("p_delete.png"),
+			// soft: @TODO: conditionally soft?,
+		}, () => {
+			selection.destroy();
+			selection = null;
+		});
+	}
+}
+function select_all() {
+	deselect();
+	select_tool(get_tool_by_id(TOOL_SELECT));
+
+	undoable({
+		name: localize("Select All"),
+		icon: get_icon_for_tool(get_tool_by_id(TOOL_SELECT)),
+		soft: true,
+	}, () => {
+		selection = new OnCanvasSelection(0, 0, main_canvas.width, main_canvas.height);
+	});
+}
+
+const ctrlOrCmd = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform) ? "⌘" : "Ctrl";
+const recommendationForClipboardAccess = `Please use the keyboard: ${ctrlOrCmd}+C to copy, ${ctrlOrCmd}+X to cut, ${ctrlOrCmd}+V to paste. If keyboard is not an option, try using Chrome version 76 or higher.`;
+function try_exec_command(commandId) {
+	if (document.queryCommandEnabled(commandId)) { // not a reliable source for whether it'll work, if I recall
+		document.execCommand(commandId);
+		if (!navigator.userAgent.includes("Firefox") || commandId === "paste") {
+			return show_error_message(`That ${commandId} probably didn't work. ${recommendationForClipboardAccess}`);
+		}
+	} else {
+		return show_error_message(`Cannot perform ${commandId}. ${recommendationForClipboardAccess}`);
+	}
+}
+
+function getSelectionText() {
+	let text = "";
+	const activeEl = document.activeElement;
+	const activeElTagName = activeEl ? activeEl.tagName.toLowerCase() : null;
+	if (
+		(activeElTagName == "textarea") || (
+			activeElTagName == "input" &&
+			/^(?:text|search|password|tel|url)$/i.test(activeEl.type)
+		) &&
+		(typeof activeEl.selectionStart == "number")
+	) {
+		text = activeEl.value.slice(activeEl.selectionStart, activeEl.selectionEnd);
+	} else if (window.getSelection) {
+		text = window.getSelection().toString();
+	}
+	return text;
+}
+
+function edit_copy(execCommandFallback) {
+	const text = getSelectionText();
+
+	if (text.length > 0) {
+		if (!navigator.clipboard || !navigator.clipboard.writeText) {
+			if (execCommandFallback) {
+				return try_exec_command("copy");
+			} else {
+				throw new Error(`${localize("Error getting the Clipboard Data!")} ${recommendationForClipboardAccess}`);
+				// throw new Error(`The Async Clipboard API is not supported by this browser. ${browserRecommendationForClipboardAccess}`);
+			}
+		}
+		navigator.clipboard.writeText(text);
+	} else if (selection && selection.canvas) {
+		if (!navigator.clipboard || !navigator.clipboard.write) {
+			if (execCommandFallback) {
+				return try_exec_command("copy");
+			} else {
+				throw new Error(`${localize("Error getting the Clipboard Data!")} ${recommendationForClipboardAccess}`);
+				// throw new Error(`The Async Clipboard API is not supported by this browser. ${browserRecommendationForClipboardAccess}`);
+			}
+		}
+		selection.canvas.toBlob(blob => {
+			sanity_check_blob(blob, () => {
+				navigator.clipboard.write([
+					new ClipboardItem(Object.defineProperty({}, blob.type, {
+						value: blob,
+						enumerable: true,
+					}))
+				]).then(() => {
+					window.console && console.log("Copied image to the clipboard.");
+				}, error => {
+					show_error_message("Failed to copy to the Clipboard.", error);
+				});
+			});
+		});
+	}
+}
+function edit_cut(execCommandFallback) {
+	if (!navigator.clipboard || !navigator.clipboard.write) {
+		if (execCommandFallback) {
+			return try_exec_command("cut");
+		} else {
+			throw new Error(`${localize("Error getting the Clipboard Data!")} ${recommendationForClipboardAccess}`);
+			// throw new Error(`The Async Clipboard API is not supported by this browser. ${browserRecommendationForClipboardAccess}`);
+		}
+	}
+	edit_copy();
+	delete_selection({
+		name: localize("Cut"),
+		icon: get_help_folder_icon("p_cut.png"),
+	});
+}
+async function edit_paste(execCommandFallback) {
+	if (
+		document.activeElement instanceof HTMLInputElement ||
+		document.activeElement instanceof HTMLTextAreaElement
+	) {
+		if (!navigator.clipboard || !navigator.clipboard.readText) {
+			if (execCommandFallback) {
+				return try_exec_command("paste");
+			} else {
+				throw new Error(`${localize("Error getting the Clipboard Data!")} ${recommendationForClipboardAccess}`);
+				// throw new Error(`The Async Clipboard API is not supported by this browser. ${browserRecommendationForClipboardAccess}`);
+			}
+		}
+		const clipboardText = await navigator.clipboard.readText();
+		document.execCommand("InsertText", false, clipboardText);
+		return;
+	}
+	if (!navigator.clipboard || !navigator.clipboard.read) {
+		if (execCommandFallback) {
+			return try_exec_command("paste");
+		} else {
+			throw new Error(`${localize("Error getting the Clipboard Data!")} ${recommendationForClipboardAccess}`);
+			// throw new Error(`The Async Clipboard API is not supported by this browser. ${browserRecommendationForClipboardAccess}`);
+		}
+	}
+	try {
+		const clipboardItems = await navigator.clipboard.read();
+		const blob = await clipboardItems[0].getType("image/png");
+		paste_image_from_file(blob);
+	} catch (error) {
+		if (error.name === "NotFoundError") {
+			try {
+				const clipboardText = await navigator.clipboard.readText();
+				if (clipboardText) {
+					const uris = get_uris(clipboardText);
+					if (uris.length > 0) {
+						load_image_from_uri(uris[0]).then((info) => {
+							paste(info.image || make_canvas(info.image_data));
+						}, (error) => {
+							show_resource_load_error_message(error);
+						});
+					} else {
+						// @TODO: should I just make a textbox instead?
+						show_error_message("The information on the Clipboard can't be inserted into Paint.");
+					}
+				} else {
+					show_error_message("The information on the Clipboard can't be inserted into Paint.");
+				}
+			} catch (error) {
+				show_error_message(localize("Error getting the Clipboard Data!"), error);
+			}
+		} else {
+			show_error_message(localize("Error getting the Clipboard Data!"), error);
+		}
+	}
+}
+
+function image_invert_colors() {
+	apply_image_transformation({
+		name: localize("Invert Colors"),
+		icon: get_help_folder_icon("p_invert.png"),
+	}, (original_canvas, original_ctx, new_canvas, new_ctx) => {
+		const monochrome_info = monochrome && detect_monochrome(original_ctx);
+		if (monochrome && monochrome_info.isMonochrome) {
+			invert_monochrome(original_ctx, new_ctx, monochrome_info);
+		} else {
+			invert_rgb(original_ctx, new_ctx);
+		}
+	});
+}
+
+function clear() {
+	deselect();
+	cancel();
+	undoable({
+		name: localize("Clear Image"),
+		icon: get_help_folder_icon("p_blank.png"),
+	}, () => {
+		saved = false;
+		update_title();
+
+		if (transparency) {
+			main_ctx.clearRect(0, 0, main_canvas.width, main_canvas.height);
+		} else {
+			main_ctx.fillStyle = selected_colors.background;
+			main_ctx.fillRect(0, 0, main_canvas.width, main_canvas.height);
+		}
+	});
+}
+
+let cleanup_bitmap_view = () => { };
+function view_bitmap() {
+	cleanup_bitmap_view();
+
+	bitmap_view_div = document.createElement("div");
+	bitmap_view_div.classList.add("bitmap-view", "inset-deep");
+	document.body.appendChild(bitmap_view_div);
+	$(bitmap_view_div).css({
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		position: "fixed",
+		top: "0",
+		left: "0",
+		width: "100%",
+		height: "100%",
+		zIndex: "9999",
+		background: "var(--Background)",
+	});
+	if (bitmap_view_div.requestFullscreen) { bitmap_view_div.requestFullscreen(); }
+	else if (bitmap_view_div.webkitRequestFullscreen) { bitmap_view_div.webkitRequestFullscreen(); }
+
+	let blob_url;
+	let got_fullscreen = false;
+	let iid = setInterval(() => {
+		// In Chrome, if the page is already fullscreen, and you requestFullscreen,
+		// hitting Esc will change document.fullscreenElement without triggering the fullscreenchange event!
+		// It doesn't trigger a keydown either.
+		if (document.fullscreenElement === bitmap_view_div || document.webkitFullscreenElement === bitmap_view_div) {
+			got_fullscreen = true;
+		} else if (got_fullscreen) {
+			cleanup_bitmap_view();
+		}
+	}, 100);
+	cleanup_bitmap_view = () => {
+		document.removeEventListener("fullscreenchange", onFullscreenChange, { once: true });
+		document.removeEventListener("webkitfullscreenchange", onFullscreenChange, { once: true });
+		document.removeEventListener("keydown", onKeyDown);
+		document.removeEventListener("mousedown", onMouseDown);
+		// If you have e.g. the Help window open,
+		// and right click to close the View Bitmap, with the mouse over the window,
+		// this needs a delay to cancel the context menu.
+		setTimeout(() => {
+			document.removeEventListener("contextmenu", onContextMenu);
+		}, 100);
+		URL.revokeObjectURL(blob_url);
+		clearInterval(iid);
+		if (document.fullscreenElement === bitmap_view_div || document.webkitFullscreenElement === bitmap_view_div) {
+			if (document.exitFullscreen) {
+				document.exitFullscreen(); // avoid warning in Firefox
+			} else if (document.msExitFullscreen) {
+				document.msExitFullscreen();
+			} else if (document.mozCancelFullScreen) {
+				document.mozCancelFullScreen();
+			} else if (document.webkitExitFullscreen) {
+				document.webkitExitFullscreen();
+			}
+		}
+		bitmap_view_div.remove();
+		cleanup_bitmap_view = () => { };
+	};
+	document.addEventListener("fullscreenchange", onFullscreenChange, { once: true });
+	document.addEventListener("webkitfullscreenchange", onFullscreenChange, { once: true });
+	document.addEventListener("keydown", onKeyDown);
+	document.addEventListener("mousedown", onMouseDown);
+	document.addEventListener("contextmenu", onContextMenu);
+
+	function onFullscreenChange() {
+		if (document.fullscreenElement !== bitmap_view_div && document.webkitFullscreenElement !== bitmap_view_div) {
+			cleanup_bitmap_view();
+		}
+	}
+	let repeating_f = false;
+	function onKeyDown(event) {
+		// console.log(event.key, event.repeat);
+		repeating_f = repeating_f || event.repeat && (event.key === "f" || event.key === "F");
+		if (event.repeat) { return; }
+		if (repeating_f && (event.key === "f" || event.key === "F")) {
+			repeating_f = false;
+			return; // Chrome sends an F keydown with repeat=false if you release Ctrl before F, while repeating.
+			// This is a slightly overkill, and slightly overzealous workaround (can ignore one normal F before handling F as exit)
+		}
+		// Prevent also toggling View Bitmap on while toggling off, with Ctrl+F+F.
+		// That is, if you hold Ctrl and press F twice, the second F should close View Bitmap and not reopen it immediately.
+		// This relies on the keydown handler handling event.defaultPrevented (or isDefaultPrevented() if it's using jQuery)
+		event.preventDefault();
+		// Note: in mspaint, Esc is the only key that DOESN'T close the bitmap view,
+		// but it also doesn't do anything else — other than changing the cursor. Stupid.
+		cleanup_bitmap_view();
+	}
+	function onMouseDown(event) {
+		// Note: in mspaint, only left click exits View Bitmap mode.
+		// Right click can show a useless context menu.
+		cleanup_bitmap_view();
+	}
+	function onContextMenu(event) {
+		event.preventDefault();
+		cleanup_bitmap_view(); // not needed
+	}
+
+	// @TODO: include selection in the bitmap
+	// I believe mspaint uses a similar code path to the Thumbnail,
+	// considering that if you right click on the image in View Bitmap mode,
+	// it shows the silly "Thumbnail" context menu item.
+	// (It also shows the selection, in a meaningless place, similar to the Thumbnail's bugs)
+	main_canvas.toBlob(blob => {
+		blob_url = URL.createObjectURL(blob);
+		const img = document.createElement("img");
+		img.src = blob_url;
+		bitmap_view_div.appendChild(img);
+	}, "image/png");
+}
+
+function get_tool_by_id(id) {
+	for (let i = 0; i < tools.length; i++) {
+		if (tools[i].id == id) {
+			return tools[i];
+		}
+	}
+	for (let i = 0; i < extra_tools.length; i++) {
+		if (extra_tools[i].id == id) {
+			return extra_tools[i];
+		}
+	}
+}
+
+// hacky but whatever
+// this whole "multiple tools" thing is hacky for now
+function select_tools(tools) {
+	for (let i = 0; i < tools.length; i++) {
+		select_tool(tools[i], i > 0);
+	}
+	update_helper_layer();
+}
+
+function select_tool(tool, toggle) {
+	deselect();
+
+	if (!(selected_tools.length === 1 && selected_tool.deselect)) {
+		return_to_tools = [...selected_tools];
+	}
+	if (toggle) {
+		const index = selected_tools.indexOf(tool);
+		if (index === -1) {
+			selected_tools.push(tool);
+			selected_tools.sort((a, b) => {
+				if (tools.indexOf(a) < tools.indexOf(b)) {
+					return -1;
+				}
+				if (tools.indexOf(a) > tools.indexOf(b)) {
+					return +1;
+				}
+				return 0;
+			});
+		} else {
+			selected_tools.splice(index, 1);
+		}
+		if (selected_tools.length > 0) {
+			selected_tool = selected_tools[selected_tools.length - 1];
+		} else {
+			selected_tool = default_tool;
+			selected_tools = [selected_tool];
+		}
+	} else {
+		selected_tool = tool;
+		selected_tools = [tool];
+	}
+
+	if (tool.preload) {
+		tool.preload();
+	}
+
+	$toolbox.update_selected_tool();
+	// $toolbox2.update_selected_tool();
+}
+
+function has_any_transparency(ctx) {
+	// @TODO Optimization: Assume JPEGs and some other file types are opaque.
+	// Raster file formats that SUPPORT transparency include GIF, PNG, BMP and TIFF
+	// (Yes, even BMPs support transparency!)
+	const id = ctx.getImageData(0, 0, main_canvas.width, main_canvas.height);
+	for (let i = 0, l = id.data.length; i < l; i += 4) {
+		// I've seen firefox give [ 254, 254, 254, 254 ] for get_rgba_from_color("#fff")
+		// or other values
+		if (id.data[i + 3] < 253) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function detect_monochrome(ctx) {
+	// Note: Brave browser, and DuckDuckGo Privacy Essentials browser extension
+	// implement a privacy technique known as "farbling", which breaks this code.
+	// (I've implemented workarounds in many places, but not here yet.)
+	// This function currently returns the set of one or two colors if applicable,
+	// and things outside would need to be changed to handle a "near-monochrome" state.
+
+	const id = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+	const pixelArray = new Uint32Array(id.data.buffer); // to access as whole pixels (for greater efficiency & simplicity)
+	// Note: values in pixelArray may be different on big endian vs little endian machines.
+	// Use id.data, which is guaranteed to be in RGBA order, for getting color information.
+	// Only use the Uint32Array for comparing pixel equality (faster than comparing each color component).
+	const colorUint32s = [];
+	const colorRGBAs = [];
+	let anyTransparency = false;
+	for (let i = 0, len = pixelArray.length; i < len; i += 1) {
+		// @TODO: should this threshold not mirror has_any_transparency?
+		// seems to have different notions of "any transparency"
+		// has_any_transparency is "has any pixels not fully opaque"
+		// detect_monochrome's anyTransparency means "has any pixels fully transparent"
+		if (id.data[i * 4 + 3] > 1) {
+			if (!colorUint32s.includes(pixelArray[i])) {
+				if (colorUint32s.length < 2) {
+					colorUint32s.push(pixelArray[i]);
+					colorRGBAs.push(id.data.slice(i * 4, (i + 1) * 4));
+				} else {
+					return { isMonochrome: false };
+				}
+			}
+		} else {
+			anyTransparency = true;
+		}
+	}
+	return {
+		isMonochrome: true,
+		presentNonTransparentRGBAs: colorRGBAs,
+		presentNonTransparentUint32s: colorUint32s,
+		monochromeWithTransparency: anyTransparency,
+	};
+}
+
+function make_monochrome_pattern(lightness, rgba1 = [0, 0, 0, 255], rgba2 = [255, 255, 255, 255]) {
+
+	const dither_threshold_table = Array.from({ length: 64 }, (_undefined, p) => {
+		const q = p ^ (p >> 3);
+		return (
+			((p & 4) >> 2) | ((q & 4) >> 1) |
+			((p & 2) << 1) | ((q & 2) << 2) |
+			((p & 1) << 4) | ((q & 1) << 5)
+		) / 64;
+	});
+
+	const pattern_canvas = document.createElement("canvas");
+	const pattern_ctx = pattern_canvas.getContext("2d");
+
+	pattern_canvas.width = 8;
+	pattern_canvas.height = 8;
+
+	const pattern_image_data = main_ctx.createImageData(pattern_canvas.width, pattern_canvas.height);
+
+	for (let x = 0; x < pattern_canvas.width; x += 1) {
+		for (let y = 0; y < pattern_canvas.height; y += 1) {
+			const map_value = dither_threshold_table[(x & 7) + ((y & 7) << 3)];
+			const px_white = lightness > map_value;
+			const index = ((y * pattern_image_data.width) + x) * 4;
+			pattern_image_data.data[index + 0] = px_white ? rgba2[0] : rgba1[0];
+			pattern_image_data.data[index + 1] = px_white ? rgba2[1] : rgba1[1];
+			pattern_image_data.data[index + 2] = px_white ? rgba2[2] : rgba1[2];
+			pattern_image_data.data[index + 3] = (px_white ? rgba2[3] : rgba1[3]) ?? 255; // handling also 3-length arrays (RGB)
+		}
+	}
+
+	pattern_ctx.putImageData(pattern_image_data, 0, 0);
+
+	return main_ctx.createPattern(pattern_canvas, "repeat");
+}
+
+function make_monochrome_palette(rgba1 = [0, 0, 0, 255], rgba2 = [255, 255, 255, 255]) {
+	const palette = [];
+	const n_colors_per_row = 14;
+	const n_colors = n_colors_per_row * 2;
+	for (let i = 0; i < n_colors_per_row; i++) {
+		let lightness = i / n_colors;
+		palette.push(make_monochrome_pattern(lightness, rgba1, rgba2));
+	}
+	for (let i = 0; i < n_colors_per_row; i++) {
+		let lightness = 1 - i / n_colors;
+		palette.push(make_monochrome_pattern(lightness, rgba1, rgba2));
+	}
+
+	return palette;
+}
+
+function make_stripe_pattern(reverse, colors, stripe_size = 4) {
+	const rgba_colors = colors.map(get_rgba_from_color);
+
+	const pattern_canvas = document.createElement("canvas");
+	const pattern_ctx = pattern_canvas.getContext("2d");
+
+	pattern_canvas.width = colors.length * stripe_size;
+	pattern_canvas.height = colors.length * stripe_size;
+
+	const pattern_image_data = main_ctx.createImageData(pattern_canvas.width, pattern_canvas.height);
+
+	for (let x = 0; x < pattern_canvas.width; x += 1) {
+		for (let y = 0; y < pattern_canvas.height; y += 1) {
+			const pixel_index = ((y * pattern_image_data.width) + x) * 4;
+			// +1000 to avoid remainder on negative numbers
+			const pos = reverse ? (x - y) : (x + y);
+			const color_index = Math.floor((pos + 1000) / stripe_size) % colors.length;
+			const rgba = rgba_colors[color_index];
+			pattern_image_data.data[pixel_index + 0] = rgba[0];
+			pattern_image_data.data[pixel_index + 1] = rgba[1];
+			pattern_image_data.data[pixel_index + 2] = rgba[2];
+			pattern_image_data.data[pixel_index + 3] = rgba[3];
+		}
+	}
+
+	pattern_ctx.putImageData(pattern_image_data, 0, 0);
+
+	return main_ctx.createPattern(pattern_canvas, "repeat");
+}
+
+function switch_to_polychrome_palette() {
+
+}
+
+function make_opaque() {
+	undoable({
+		name: "Make Opaque",
+		icon: get_help_folder_icon("p_make_opaque.png"),
+	}, () => {
+		main_ctx.save();
+		main_ctx.globalCompositeOperation = "destination-atop";
+
+		main_ctx.fillStyle = selected_colors.background;
+		main_ctx.fillRect(0, 0, main_canvas.width, main_canvas.height);
+
+		// in case the selected background color is transparent/translucent
+		main_ctx.fillStyle = "white";
+		main_ctx.fillRect(0, 0, main_canvas.width, main_canvas.height);
+
+		main_ctx.restore();
+	});
+}
+
+function resize_canvas_without_saving_dimensions(unclamped_width, unclamped_height, undoable_meta = {}) {
+	const new_width = Math.max(1, unclamped_width);
+	const new_height = Math.max(1, unclamped_height);
+	if (main_canvas.width !== new_width || main_canvas.height !== new_height) {
+		undoable({
+			name: undoable_meta.name || "Resize Canvas",
+			icon: undoable_meta.icon || get_help_folder_icon("p_stretch_both.png"),
+		}, () => {
+			try {
+				const image_data = main_ctx.getImageData(0, 0, new_width, new_height);
+				main_canvas.width = new_width;
+				main_canvas.height = new_height;
+				main_ctx.disable_image_smoothing();
+
+				if (!transparency) {
+					main_ctx.fillStyle = selected_colors.background;
+					main_ctx.fillRect(0, 0, main_canvas.width, main_canvas.height);
+				}
+
+				const temp_canvas = make_canvas(image_data);
+				main_ctx.drawImage(temp_canvas, 0, 0);
+			} catch (exception) {
+				if (exception.name === "NS_ERROR_FAILURE") {
+					// or localize("There is not enough memory or resources to complete operation.")
+					show_error_message(localize("Insufficient memory to perform operation."), exception);
+				} else {
+					show_error_message(localize("An unknown error has occurred."), exception);
+				}
+				// @TODO: undo and clean up undoable
+				// maybe even keep Attributes dialog open if that's what's triggering the resize
+				return;
+			}
+
+			$canvas_area.trigger("resize");
+		});
+	}
+}
+
+function resize_canvas_and_save_dimensions(unclamped_width, unclamped_height, undoable_meta = {}) {
+	resize_canvas_without_saving_dimensions(unclamped_width, unclamped_height, undoable_meta);
+	storage.set({
+		width: main_canvas.width,
+		height: main_canvas.height,
+	}, (/*error*/) => {
+		// oh well
+	})
+}
+
+function image_attributes() {
+	if (image_attributes.$window) {
+		image_attributes.$window.close();
+	}
+	const $w = image_attributes.$window = new $DialogWindow(localize("Attributes"));
+	$w.addClass("attributes-window");
+
+	const $main = $w.$main;
+
+	// Information
+
+	const table = {
+		[localize("File last saved:")]: localize("Not Available"), // @TODO: make available?
+		[localize("Size on disk:")]: localize("Not Available"), // @TODO: make available?
+		[localize("Resolution:")]: "72 x 72 dots per inch", // if localizing this, remove "direction" setting below
+	};
+	const $table = $(E("table")).appendTo($main);
+	for (const k in table) {
+		const $tr = $(E("tr")).appendTo($table);
+		const $key = $(E("td")).appendTo($tr).text(k);
+		const $value = $(E("td")).appendTo($tr).text(table[k]);
+		if (table[k].indexOf("72") !== -1) {
+			$value.css("direction", "ltr");
+		}
+	}
+
+	// Dimensions
+
+	const unit_sizes_in_px = { px: 1, in: 72, cm: 28.3465 };
+	let current_unit = image_attributes.unit = image_attributes.unit || "px";
+	let width_in_px = main_canvas.width;
+	let height_in_px = main_canvas.height;
+
+	const $width_label = $(E("label")).appendTo($main).text(localize("Width:"));
+	const $height_label = $(E("label")).appendTo($main).text(localize("Height:"));
+	const $width = $(E("input")).attr({ type: "number", min: 1 }).addClass("no-spinner inset-deep").appendTo($width_label);
+	const $height = $(E("input")).attr({ type: "number", min: 1 }).addClass("no-spinner inset-deep").appendTo($height_label);
+
+	$main.find("input")
+		.css({ width: "40px" })
+		.on("change keyup keydown keypress pointerdown pointermove paste drop", () => {
+			width_in_px = $width.val() * unit_sizes_in_px[current_unit];
+			height_in_px = $height.val() * unit_sizes_in_px[current_unit];
+		});
+
+	// Fieldsets
+
+	const $units = $(E("fieldset")).appendTo($main).append(`
+		<legend>${localize("Units")}</legend>
+		<div class="fieldset-body">
+			<input type="radio" name="units" id="unit-in" value="in"><label for="unit-in">${localize("Inches")}</label>
+			<input type="radio" name="units" id="unit-cm" value="cm"><label for="unit-cm">${localize("Cm")}</label>
+			<input type="radio" name="units" id="unit-px" value="px"><label for="unit-px">${localize("Pixels")}</label>
+		</div>
+	`);
+	$units.find(`[value=${current_unit}]`).attr({ checked: true });
+	$units.on("change", () => {
+		const new_unit = $units.find(":checked").val();
+		$width.val(width_in_px / unit_sizes_in_px[new_unit]);
+		$height.val(height_in_px / unit_sizes_in_px[new_unit]);
+		current_unit = new_unit;
+	}).triggerHandler("change");
+
+	const $colors = $(E("fieldset")).appendTo($main).append(`
+		<legend>${localize("Colors")}</legend>
+		<div class="fieldset-body">
+			<input type="radio" name="colors" id="attribute-monochrome" value="monochrome"><label for="attribute-monochrome">${localize("Black and white")}</label>
+			<input type="radio" name="colors" id="attribute-polychrome" value="polychrome"><label for="attribute-polychrome">${localize("Colors")}</label>
+		</div>
+	`);
+	$colors.find(`[value=${monochrome ? "monochrome" : "polychrome"}]`).attr({ checked: true });
+
+	const $transparency = $(E("fieldset")).appendTo($main).append(`
+		<legend>${localize("Transparency")}</legend>
+		<div class="fieldset-body">
+			<input type="radio" name="transparency" id="attribute-transparent" value="transparent"><label for="attribute-transparent">${localize("Transparent")}</label>
+			<input type="radio" name="transparency" id="attribute-opaque" value="opaque"><label for="attribute-opaque">${localize("Opaque")}</label>
+		</div>
+	`);
+	$transparency.find(`[value=${transparency ? "transparent" : "opaque"}]`).attr({ checked: true });
+
+	// Buttons on the right
+
+	$w.$Button(localize("OK"), () => {
+		const transparency_option = $transparency.find(":checked").val();
+		const colors_option = $colors.find(":checked").val();
+		const unit = $units.find(":checked").val();
+
+		const was_monochrome = monochrome;
+		let monochrome_info;
+
+		image_attributes.unit = unit;
+		transparency = (transparency_option == "transparent");
+		monochrome = (colors_option == "monochrome");
+
+		if (monochrome != was_monochrome) {
+			if (selection) {
+				// want to detect monochrome based on selection + canvas
+				// simplest way to do that is to meld them together
+				meld_selection_into_canvas();
+			}
+			monochrome_info = detect_monochrome(main_ctx);
+
+			if (monochrome) {
+				if (monochrome_info.isMonochrome && monochrome_info.presentNonTransparentRGBAs.length === 2) {
+					palette = make_monochrome_palette(...monochrome_info.presentNonTransparentRGBAs);
+				} else {
+					palette = monochrome_palette;
+				}
+			} else {
+				palette = polychrome_palette;
+			}
+			selected_colors.foreground = palette[0];
+			selected_colors.background = palette[14]; // first in second row
+			selected_colors.ternary = "";
+			$colorbox.rebuild_palette();
+			$G.trigger("option-changed");
+		}
+
+		const unit_to_px = unit_sizes_in_px[unit];
+		const width = $width.val() * unit_to_px;
+		const height = $height.val() * unit_to_px;
+		resize_canvas_and_save_dimensions(~~width, ~~height);
+
+		if (!transparency && has_any_transparency(main_ctx)) {
+			make_opaque();
+		}
+
+		// 1. Must be after canvas resize to avoid weird undoable interaction and such.
+		// 2. Check that monochrome option changed, same as above.
+		//   a) for monochrome_info variable to be available
+		//   b) Consider the case where color is introduced to the canvas while in monochrome mode.
+		//      We only want to show this dialog if it would also change the palette (above), never leave you on an outdated palette.
+		//   c) And it's nice to be able to change other options without worrying about it trying to convert the document to monochrome.
+		if (monochrome != was_monochrome) {
+			if (monochrome && !monochrome_info.isMonochrome) {
+				show_convert_to_black_and_white();
+			}
+		}
+
+		image_attributes.$window.close();
+	})[0].focus();
+
+	$w.$Button(localize("Cancel"), () => {
+		image_attributes.$window.close();
+	});
+
+	$w.$Button(localize("Default"), () => {
+		width_in_px = default_canvas_width;
+		height_in_px = default_canvas_height;
+		$width.val(width_in_px / unit_sizes_in_px[current_unit]);
+		$height.val(height_in_px / unit_sizes_in_px[current_unit]);
+	});
+
+	// Reposition the window
+
+	image_attributes.$window.center();
+}
+
+function show_convert_to_black_and_white() {
+	const $w = new $DialogWindow("Convert to Black and White");
+	$w.addClass("convert-to-black-and-white");
+	$w.$main.append("<fieldset><legend>Threshold:</legend><input type='range' min='0' max='1' step='0.01' value='0.5'></fieldset>");
+	const $slider = $w.$main.find("input[type='range']");
+	const original_canvas = make_canvas(main_canvas);
+	let threshold;
+	const update_threshold = () => {
+		make_or_update_undoable({
+			name: "Make Monochrome",
+			match: (history_node) => history_node.name === "Make Monochrome",
+			icon: get_help_folder_icon("p_monochrome.png"),
+		}, () => {
+			threshold = $slider.val();
+			main_ctx.copy(original_canvas);
+			threshold_black_and_white(main_ctx, threshold);
+		});
+	};
+	update_threshold();
+	$slider.on("input", debounce(update_threshold, 100));
+
+	$w.$Button(localize("OK"), () => {
+		$w.close();
+	}).focus();
+	$w.$Button(localize("Cancel"), () => {
+		if (current_history_node.name === "Make Monochrome") {
+			undo();
+		} else {
+			undoable({
+				name: "Cancel Make Monochrome",
+				icon: get_help_folder_icon("p_color.png"),
+			}, () => {
+				main_ctx.copy(original_canvas);
+			});
+		}
+		$w.close();
+	});
+	$w.center();
+}
+
+function image_flip_and_rotate() {
+	const $w = new $DialogWindow(localize("Flip and Rotate"));
+	$w.addClass("flip-and-rotate");
+
+	const $fieldset = $(E("fieldset")).appendTo($w.$main);
+	$fieldset.append(`
+		<legend>${localize("Flip or rotate")}</legend>
+		<div class="radio-wrapper">
+			<input
+				type="radio"
+				name="flip-or-rotate"
+				id="flip-horizontal"
+				value="flip-horizontal"
+				aria-keyshortcuts="Alt+F"
+				checked
+			/><label for="flip-horizontal">${display_hotkey(localize("&Flip horizontal"))}</label>
+		</div>
+		<div class="radio-wrapper">
+			<input
+				type="radio"
+				name="flip-or-rotate"
+				id="flip-vertical"
+				value="flip-vertical"
+				aria-keyshortcuts="Alt+V"
+			/><label for="flip-vertical">${display_hotkey(localize("Flip &vertical"))}</label>
+		</div>
+		<div class="radio-wrapper">
+			<input
+				type="radio"
+				name="flip-or-rotate"
+				id="rotate-by-angle"
+				value="rotate-by-angle"
+				aria-keyshortcuts="Alt+R"
+			/><label for="rotate-by-angle">${display_hotkey(localize("&Rotate by angle"))}</label>
+		</div>
+	`);
+
+	const $rotate_by_angle = $(E("div")).appendTo($fieldset);
+	$rotate_by_angle.addClass("sub-options");
+	for (const label_with_hotkey of [
+		"&90°",
+		"&180°",
+		"&270°",
+	]) {
+		const degrees = parseInt(remove_hotkey(label_with_hotkey), 10);
+		$rotate_by_angle.append(`
+			<div class="radio-wrapper">
+				<input
+					type="radio"
+					name="rotate-by-angle"
+					value="${degrees}"
+					id="rotate-${degrees}"
+					aria-keyshortcuts="Alt+${get_hotkey(label_with_hotkey).toUpperCase()}"
+				/><label
+					for="rotate-${degrees}"
+				>${display_hotkey(label_with_hotkey)}</label>
+			</div>
+		`);
+	}
+	$rotate_by_angle.append(`
+		<div class="radio-wrapper">
+			<input
+				type="radio"
+				name="rotate-by-angle"
+				value="arbitrary"
+			/><input
+				type="number"
+				min="-360"
+				max="360"
+				name="rotate-by-arbitrary-angle"
+				id="custom-degrees"
+				value=""
+				class="no-spinner inset-deep"
+				style="width: 50px"
+			/>
+			<label for="custom-degrees">${localize("Degrees")}</label>
+		</div>
+	`);
+	$rotate_by_angle.find("#rotate-90").attr({ checked: true });
+	// Disabling inputs makes them not even receive mouse events,
+	// and so pointer-events: none is needed to respond to events on the parent.
+	$rotate_by_angle.find("input").attr({ disabled: true });
+	$fieldset.find("input").on("change", () => {
+		const action = $fieldset.find("input[name='flip-or-rotate']:checked").val();
+		$rotate_by_angle.find("input").attr({
+			disabled: action !== "rotate-by-angle"
+		});
+	});
+	$rotate_by_angle.find(".radio-wrapper").on("click", (e) => {
+		// Select "Rotate by angle" and enable subfields
+		$fieldset.find("input[value='rotate-by-angle']").prop("checked", true);
+		$fieldset.find("input").triggerHandler("change");
+
+		const $wrapper = $(e.target).closest(".radio-wrapper");
+		// Focus the numerical input if this field has one
+		const num_input = $wrapper.find("input[type='number']")[0];
+		if (num_input) {
+			num_input.focus();
+		}
+		// Select the radio for this field
+		$wrapper.find("input[type='radio']").prop("checked", true);
+	});
+
+	$fieldset.find("input[name='rotate-by-arbitrary-angle']").on("input", () => {
+		$fieldset.find("input[value='rotate-by-angle']").prop("checked", true);
+		$fieldset.find("input[value='arbitrary']").prop("checked", true);
+	});
+
+	$w.$Button(localize("OK"), () => {
+		const action = $fieldset.find("input[name='flip-or-rotate']:checked").val();
+		switch (action) {
+			case "flip-horizontal":
+				flip_horizontal();
+				break;
+			case "flip-vertical":
+				flip_vertical();
+				break;
+			case "rotate-by-angle": {
+				let angle_val = $fieldset.find("input[name='rotate-by-angle']:checked").val();
+				if (angle_val === "arbitrary") {
+					angle_val = $fieldset.find("input[name='rotate-by-arbitrary-angle']").val();
+				}
+				const angle_deg = parseFloat(angle_val);
+				const angle = angle_deg / 360 * TAU;
+
+				if (isNaN(angle)) {
+					please_enter_a_number();
+					return;
+				}
+				rotate(angle);
+				break;
+			}
+		}
+
+		$canvas_area.trigger("resize");
+
+		$w.close();
+	})[0].focus();
+	$w.$Button(localize("Cancel"), () => {
+		$w.close();
+	});
+
+	$w.center();
+
+	handle_keyshortcuts_alt_only($w);
+}
+
+function image_stretch_and_skew() {
+	const $w = new $DialogWindow(localize("Stretch and Skew"));
+	$w.addClass("stretch-and-skew");
+
+	const $fieldset_stretch = $(E("fieldset")).appendTo($w.$main);
+	$fieldset_stretch.append(`<legend>${localize("Stretch")}</legend><table></table>`);
+	const $fieldset_skew = $(E("fieldset")).appendTo($w.$main);
+	$fieldset_skew.append(`<legend>${localize("Skew")}</legend><table></table>`);
+
+	const $RowInput = ($table, img_src, label_with_hotkey, default_value, label_unit, min, max) => {
+		const $tr = $(E("tr")).appendTo($table);
+		const $img = $(E("img")).attr({
+			src: `images/transforms/${img_src}.png`,
+			width: 32,
+			height: 32,
+		}).css({
+			marginRight: "20px"
+		});
+		const input_id = ("input" + Math.random() + Math.random()).replace(/\./, "");
+		const $input = $(E("input")).attr({
+			type: "number",
+			min,
+			max,
+			value: default_value,
+			id: input_id,
+			"aria-keyshortcuts": `Alt+${get_hotkey(label_with_hotkey).toUpperCase()}`,
+		}).css({
+			width: "40px"
+		}).addClass("no-spinner inset-deep");
+		$(E("td")).appendTo($tr).append($img);
+		$(E("td")).appendTo($tr).append($(E("label")).html(display_hotkey(label_with_hotkey)).attr("for", input_id));
+		$(E("td")).appendTo($tr).append($input);
+		$(E("td")).appendTo($tr).text(label_unit);
+
+		return $input;
+	};
+
+	const stretch_x = $RowInput($fieldset_stretch.find("table"), "stretch-x", localize("&Horizontal:"), 100, "%", 1, 5000);
+	const stretch_y = $RowInput($fieldset_stretch.find("table"), "stretch-y", localize("&Vertical:"), 100, "%", 1, 5000);
+	const skew_x = $RowInput($fieldset_skew.find("table"), "skew-x", localize("H&orizontal:"), 0, localize("Degrees"), -90, 90);
+	const skew_y = $RowInput($fieldset_skew.find("table"), "skew-y", localize("V&ertical:"), 0, localize("Degrees"), -90, 90);
+
+	$w.$Button(localize("OK"), () => {
+		const x_scale = parseFloat(stretch_x.val()) / 100;
+		const y_scale = parseFloat(stretch_y.val()) / 100;
+		const h_skew = parseFloat(skew_x.val()) / 360 * TAU;
+		const v_skew = parseFloat(skew_y.val()) / 360 * TAU;
+		if (isNaN(x_scale) || isNaN(y_scale) || isNaN(h_skew) || isNaN(v_skew)) {
+			please_enter_a_number();
+			return;
+		}
+		try {
+			stretch_and_skew(x_scale, y_scale, h_skew, v_skew);
+		} catch (exception) {
+			if (exception.name === "NS_ERROR_FAILURE") {
+				// or localize("There is not enough memory or resources to complete operation.")
+				show_error_message(localize("Insufficient memory to perform operation."), exception);
+			} else {
+				show_error_message(localize("An unknown error has occurred."), exception);
+			}
+			// @TODO: undo and clean up undoable
+			return;
+		}
+		$canvas_area.trigger("resize");
+		$w.close();
+	})[0].focus();
+
+	$w.$Button(localize("Cancel"), () => {
+		$w.close();
+	});
+
+	$w.center();
+
+	handle_keyshortcuts_alt_only($w);
+}
+
+// could be expanded to handle all different modifiers, but for now I'm naming it so the limitation is clear
+function handle_keyshortcuts_alt_only($container) {
+	$container.on("keydown", (event) => {
+		if (event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+			let shortcut_target = $container.find(`[aria-keyshortcuts="Alt+${event.key.toUpperCase()}"]`)[0];
+			if (shortcut_target) {
+				event.preventDefault();
+				event.stopPropagation();
+				if (shortcut_target.disabled) {
+					shortcut_target = shortcut_target.closest(".radio-wrapper");
+				}
+				shortcut_target.click();
+				shortcut_target.focus();
+			}
+		}
+	});
+}
+
+function save_as_prompt({
+	dialogTitle = localize("Save As"),
+	defaultFileName = "",
+	defaultFileFormatID,
+	formats,
+	promptForName = true,
+}) {
+	return new Promise((resolve) => {
+		const $w = new $DialogWindow(dialogTitle);
+		$w.addClass("save-as");
+
+		// This is needed to prevent the keyboard from closing when you tap the file name input! in FF mobile
+		// @TODO: Investigate this in os-gui.js; is it literally just the browser default behavior to focus a div with tabindex that's the parent of an input?
+		// That'd be crazy, right?
+		$w.$content.attr("tabIndex", null);
+
+		// @TODO: hotkeys (N, T, S, Enter, Esc)
+		if (promptForName) {
+			$w.$main.append(`
+				<label>
+					File name:
+					<input type="text" class="file-name inset-deep"/>
+				</label>
+			`);
+		}
+		$w.$main.append(`
+			<label>
+				Save as type:
+				<select class="file-type-select inset-deep"></select>
+			</label>
+		`);
+		const $file_type = $w.$main.find(".file-type-select");
+		const $file_name = $w.$main.find(".file-name");
+
+		for (const format of formats) {
+			$file_type.append($("<option>").val(format.formatID).text(format.nameWithExtensions));
+		}
+
+		if (promptForName) {
+			$file_name.val(defaultFileName);
+		}
+
+		const get_selected_format = () => {
+			const selected_format_id = $file_type.val();
+			for (const format of formats) {
+				if (format.formatID === selected_format_id) {
+					return format;
+				}
+			}
+		};
+
+		// Select file type when typing file name
+		const select_file_type_from_file_name = () => {
+			const extension_match = (promptForName ? $file_name.val() : defaultFileName).match(/\.([\w\d]+)$/);
+			if (extension_match) {
+				const selected_format = get_selected_format();
+				const matched_ext = extension_match[1].toLowerCase();
+				if (selected_format && selected_format.extensions.includes(matched_ext)) {
+					// File extension already matches selected file type.
+					// Don't select a different file type with the same extension.
+					return;
+				}
+				for (const format of formats) {
+					if (format.extensions.includes(matched_ext)) {
+						$file_type.val(format.formatID);
+					}
+				}
+			}
+		};
+		if (promptForName) {
+			$file_name.on("input", select_file_type_from_file_name);
+		}
+		if (defaultFileFormatID && formats.some((format) => format.formatID === defaultFileFormatID)) {
+			$file_type.val(defaultFileFormatID);
+		} else {
+			select_file_type_from_file_name();
+		}
+
+		// Change file extension when selecting file type
+		// allowing non-default extension like .dib vs .bmp, .jpg vs .jpeg to stay
+		const update_extension_from_file_type = (add_extension_if_absent) => {
+			if (!promptForName) {
+				return;
+			}
+			let file_name = $file_name.val();
+			const selected_format = get_selected_format();
+			if (!selected_format) {
+				return;
+			}
+			const extensions_for_type = selected_format.extensions;
+			const primary_extension_for_type = extensions_for_type[0];
+			// This way of removing the file extension doesn't scale very well! But I don't want to delete text the user wanted like in case of a version number...
+			const without_extension = file_name.replace(/\.(\w{1,3}|apng|jpeg|jfif|tiff|webp|psppalette|sketchpalette|gimp|colors|scss|sass|less|styl|html|theme|themepack)$/i, "");
+			const extension_present = without_extension !== file_name;
+			const extension = file_name.slice(without_extension.length + 1).toLowerCase(); // without dot
+			if (
+				(add_extension_if_absent || extension_present) &&
+				extensions_for_type.indexOf(extension) === -1
+			) {
+				file_name = `${without_extension}.${primary_extension_for_type}`;
+				$file_name.val(file_name);
+			}
+		};
+		$file_type.on("change", () => {
+			update_extension_from_file_type(false);
+		});
+		// and initially
+		update_extension_from_file_type(false);
+
+		const $save = $w.$Button(localize("Save"), () => {
+			$w.close();
+			update_extension_from_file_type(true);
+			resolve({
+				newFileName: promptForName ? $file_name.val() : defaultFileName,
+				newFileFormatID: $file_type.val(),
+			});
+		});
+		$w.$Button(localize("Cancel"), () => {
+			$w.close();
+		});
+
+		$w.center();
+		// For mobile devices with on-screen keyboards, move the window to the top
+		if (window.innerWidth < 500 || window.innerHeight < 700) {
+			$w.css({ top: 20 });
+		}
+
+		if (promptForName) {
+			$file_name.focus().select();
+		} else {
+			// $file_type.focus(); // most of the time you don't want to change the type from PNG
+			$save.focus();
+		}
+	});
+}
+
+function write_image_file(canvas, mime_type, blob_callback) {
+	const bmp_match = mime_type.match(/^image\/(?:x-)?bmp\s*(?:-(\d+)bpp)?/);
+	if (bmp_match) {
+		const file_content = encodeBMP(canvas.ctx.getImageData(0, 0, canvas.width, canvas.height), parseInt(bmp_match[1] || "24", 10));
+		const blob = new Blob([file_content]);
+		sanity_check_blob(blob, () => {
+			blob_callback(blob);
+		});
+	} else if (mime_type === "image/png") {
+		// UPNG.js gives better compressed PNGs than the built-in browser PNG encoder
+		// In fact you can use it as a minifier! http://upng.photopea.com/
+		const image_data = canvas.ctx.getImageData(0, 0, canvas.width, canvas.height);
+		const array_buffer = UPNG.encode([image_data.data.buffer], image_data.width, image_data.height);
+		const blob = new Blob([array_buffer]);
+		sanity_check_blob(blob, () => {
+			blob_callback(blob);
+		});
+	} else if (mime_type === "image/tiff") {
+		const image_data = canvas.ctx.getImageData(0, 0, canvas.width, canvas.height);
+		const metadata = {
+			t305: ["jspaint (UTIF.js)"],
+		};
+		const array_buffer = UTIF.encodeImage(image_data.data.buffer, image_data.width, image_data.height, metadata);
+		const blob = new Blob([array_buffer]);
+		sanity_check_blob(blob, () => {
+			blob_callback(blob);
+		});
+	} else {
+		canvas.toBlob(blob => {
+			// Note: could check blob.type (mime type) instead
+			const png_magic_bytes = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+			sanity_check_blob(blob, () => {
+				blob_callback(blob);
+			}, png_magic_bytes, mime_type === "image/png");
+		}, mime_type);
+	}
+}
+
+function read_image_file(blob, callback) {
+	// @TODO: handle SVG (might need to keep track of source URL, for relative resources)
+	// @TODO: read palette from GIF files
+
+	let file_format;
+	let palette;
+	let monochrome = false;
+
+	blob.arrayBuffer().then((arrayBuffer) => {
+		// Helpers:
+		// "GIF".split("").map(c=>"0x"+c.charCodeAt(0).toString("16")).join(", ")
+		// [0x47, 0x49, 0x46].map(c=>String.fromCharCode(c)).join("")
+		const magics = {
+			png: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A],
+			bmp: [0x42, 0x4D], // "BM" in ASCII
+			jpeg: [0xFF, 0xD8, 0xFF],
+			gif: [0x47, 0x49, 0x46, 0x38], // "GIF8" in ASCII, fully either "GIF87a" or "GIF89a"
+			webp: [0x57, 0x45, 0x42, 0x50], // "WEBP" in ASCII
+			tiff_be: [0x4D, 0x4D, 0x0, 0x2A],
+			tiff_le: [0x49, 0x49, 0x2A, 0x0],
+			ico: [0x00, 0x00, 0x01, 0x00],
+			cur: [0x00, 0x00, 0x02, 0x00],
+			icns: [0x69, 0x63, 0x6e, 0x73], // "icns" in ASCII
+		};
+		const file_bytes = new Uint8Array(arrayBuffer);
+		let detected_type_id;
+		for (const [type_id, magic_bytes] of Object.entries(magics)) {
+			const magic_found = magic_bytes.every((byte, index) => byte === file_bytes[index]);
+			if (magic_found) {
+				detected_type_id = type_id;
+			}
+		}
+		if (!detected_type_id) {
+			if (String.fromCharCode(...file_bytes.slice(0, 1024)).includes("%PDF")) {
+				detected_type_id = "pdf";
+			}
+		}
+		if (detected_type_id === "bmp") {
+			const { colorTable, bitsPerPixel, imageData } = decodeBMP(arrayBuffer);
+			file_format = bitsPerPixel === 24 ? "image/bmp" : `image/bmp;bpp=${bitsPerPixel}`;
+			if (colorTable.length >= 2) {
+				if (colorTable.length === 2) {
+					palette = make_monochrome_palette(...colorTable.map((color) => [color.r, color.g, color.b, 255]));
+					monochrome = true;
+				} else {
+					palette = colorTable.map((color) => `rgb(${color.r}, ${color.g}, ${color.b})`);
+					monochrome = false;
+				}
+			}
+			// if (bitsPerPixel !== 32 && bitsPerPixel !== 16) {
+			// 	for (let i = 3; i < imageData.data.length; i += 4) {
+			// 		imageData.data[i] = 255;
+			// 	}
+			// }
+			callback(null, { file_format, monochrome, palette, image_data: imageData, source_blob: blob });
+		} else if (detected_type_id === "png") {
+			const decoded = UPNG.decode(arrayBuffer);
+			const rgba = UPNG.toRGBA8(decoded)[0];
+			const { width, height, tabs, ctype } = decoded;
+			// If it's a palettized PNG, load the palette for the Colors box.
+			// Note: PLTE (palette) chunk must be present for palettized PNGs,
+			// but can also be present as a recommended set of colors in true-color mode.
+			// tRNs (transparency) chunk can provide alpha data associated with each color in the PLTE chunk.
+			// It may contain as many transparency entries as there are palette entries, or as few as one.
+			// tRNS chunk can also be used to specify a single color to be considered fully transparent in true-color mode.
+			if (tabs.PLTE && tabs.PLTE.length >= 3 * 2 && ctype === 3 /* palettized */) {
+				if (tabs.PLTE.length === 3 * 2) {
+					palette = make_monochrome_palette(
+						[...tabs.PLTE.slice(0, 3), tabs.tRNS?.[0] ?? 255],
+						[...tabs.PLTE.slice(3, 6), tabs.tRNS?.[1] ?? 255]
+					);
+					monochrome = true;
+				} else {
+					palette = new Array(tabs.PLTE.length / 3);
+					for (let i = 0; i < palette.length; i++) {
+						if (tabs.tRNS && tabs.tRNS.length >= i + 1) {
+							palette[i] = `rgba(${tabs.PLTE[i * 3 + 0]}, ${tabs.PLTE[i * 3 + 1]}, ${tabs.PLTE[i * 3 + 2]}, ${tabs.tRNS[i] / 255})`;
+						} else {
+							palette[i] = `rgb(${tabs.PLTE[i * 3 + 0]}, ${tabs.PLTE[i * 3 + 1]}, ${tabs.PLTE[i * 3 + 2]})`;
+						}
+					}
+					monochrome = false;
+				}
+			}
+			file_format = "image/png";
+			const image_data = new ImageData(new Uint8ClampedArray(rgba), width, height);
+			callback(null, { file_format, monochrome, palette, image_data, source_blob: blob });
+		} else if (detected_type_id === "tiff_be" || detected_type_id === "tiff_le") {
+			// IFDs = image file directories
+			// VSNs = ???
+			// This code is based on UTIF.bufferToURI
+			var ifds = UTIF.decode(arrayBuffer);
+			//console.log(ifds);
+			var vsns = ifds, ma = 0, page = vsns[0];
+			if (ifds[0].subIFD) {
+				vsns = vsns.concat(ifds[0].subIFD);
+			}
+			for (var i = 0; i < vsns.length; i++) {
+				var img = vsns[i];
+				if (img["t258"] == null || img["t258"].length < 3) continue;
+				var ar = img["t256"] * img["t257"];
+				if (ar > ma) { ma = ar; page = img; }
+			}
+			UTIF.decodeImage(arrayBuffer, page, ifds);
+			var rgba = UTIF.toRGBA8(page);
+
+			var image_data = new ImageData(new Uint8ClampedArray(rgba.buffer), page.width, page.height);
+
+			file_format = "image/tiff";
+			callback(null, { file_format, monochrome, palette, image_data, source_blob: blob });
+		} else if (detected_type_id === "pdf") {
+			file_format = "application/pdf";
+
+			const pdfjs = window['pdfjs-dist/build/pdf'];
+
+			pdfjs.GlobalWorkerOptions.workerSrc = 'lib/pdf.js/build/pdf.worker.js';
+
+			const file_bytes = new Uint8Array(arrayBuffer);
+
+			const loadingTask = pdfjs.getDocument({
+				data: file_bytes,
+				cMapUrl: "lib/pdf.js/web/cmaps/",
+				cMapPacked: true,
+			});
+
+			loadingTask.promise.then((pdf) => {
+				console.log('PDF loaded');
+
+				// Fetch the first page
+				// TODO: maybe concatenate all pages into one image?
+				var pageNumber = 1;
+				pdf.getPage(pageNumber).then((page) => {
+					console.log('Page loaded');
+
+					var scale = 1.5;
+					var viewport = page.getViewport({ scale });
+
+					// Prepare canvas using PDF page dimensions
+					var canvas = make_canvas(viewport.width, viewport.height);
+
+					// Render PDF page into canvas context
+					var renderContext = {
+						canvasContext: canvas.ctx,
+						viewport,
+					};
+					var renderTask = page.render(renderContext);
+					renderTask.promise.then(() => {
+						console.log('Page rendered');
+						const image_data = canvas.ctx.getImageData(0, 0, canvas.width, canvas.height);
+						callback(null, { file_format, monochrome, palette, image_data, source_blob: blob });
+					});
+				});
+			}, (reason) => {
+				callback(new Error(`Failed to load PDF. ${reason}`));
+			});
+		} else {
+			monochrome = false;
+			file_format = {
+				// bmp: "image/bmp",
+				png: "image/png",
+				webp: "image/webp",
+				jpeg: "image/jpeg",
+				gif: "image/gif",
+				tiff_be: "image/tiff",
+				tiff_le: "image/tiff", // can also be image/x-canon-cr2 etc.
+				ico: "image/x-icon",
+				cur: "image/x-win-bitmap",
+				icns: "image/icns",
+			}[detected_type_id] || blob.type;
+
+			const blob_uri = URL.createObjectURL(blob);
+			const img = new Image();
+			// img.crossOrigin = "Anonymous";
+			const handle_decode_fail = () => {
+				URL.revokeObjectURL(blob_uri);
+				blob.text().then((file_text) => {
+					const error = new Error("failed to decode blob as an image");
+					error.code = file_text.match(/^\s*<!doctype\s+html/i) ? "html-not-image" : "decoding-failure";
+					callback(error);
+				}, (err) => {
+					const error = new Error("failed to decode blob as image or text");
+					error.code = "decoding-failure";
+					callback(error);
+				});
+			};
+			img.onload = () => {
+				URL.revokeObjectURL(blob_uri);
+				if (!img.complete || typeof img.naturalWidth == "undefined" || img.naturalWidth === 0) {
+					handle_decode_fail();
+					return;
+				}
+				callback(null, { file_format, monochrome, palette, image: img, source_blob: blob });
+			};
+			img.onerror = handle_decode_fail;
+			img.src = blob_uri;
+		}
+	}, (error) => {
+		callback(error);
+	});
+}
+
+function update_from_saved_file(blob) {
+	read_image_file(blob, (error, info) => {
+		if (error) {
+			show_error_message("The file has been saved, however... " + localize("Paint cannot read this file."), error);
+			return;
+		}
+		apply_file_format_and_palette_info(info);
+		const format = image_formats.find(({ mimeType }) => mimeType === info.file_format);
+		undoable({
+			name: `${localize("Save As")} ${format ? format.name : info.file_format}`,
+			icon: get_help_folder_icon("p_save.png"),
+		}, () => {
+			main_ctx.copy(info.image || info.image_data);
+		});
+	});
+}
+
+function save_selection_to_file() {
+	if (selection && selection.canvas) {
+		systemHooks.showSaveFileDialog({
+			dialogTitle: localize("Save As"),
+			defaultName: "selection.png",
+			defaultFileFormatID: "image/png",
+			formats: image_formats,
+			getBlob: (new_file_type) => {
+				return new Promise((resolve) => {
+					write_image_file(selection.canvas, new_file_type, (blob) => {
+						resolve(blob);
+					});
+				});
+			},
+		});
+	}
+}
+
+function sanity_check_blob(blob, okay_callback, magic_number_bytes, magic_wanted = true) {
+	if (blob.size > 0) {
+		if (magic_number_bytes) {
+			blob.arrayBuffer().then((arrayBuffer) => {
+				const file_bytes = new Uint8Array(arrayBuffer);
+				const magic_found = magic_number_bytes.every((byte, index) => byte === file_bytes[index]);
+				// console.log(file_bytes, magic_number_bytes, magic_found, magic_wanted);
+				if (magic_found === magic_wanted) {
+					okay_callback();
+				} else {
+					showMessageBox({
+						// hackily combining messages that are already localized, in ways they were not meant to be used.
+						// you may have to do some deduction to understand this message.
+						// messageHTML: `
+						// 	<p>${localize("Unexpected file format.")}</p>
+						// 	<p>${localize("An unsupported operation was attempted.")}</p>
+						// `,
+						message: "Your browser does not support writing images in this file format.",
+						iconID: "error",
+					});
+				}
+			}, (error) => {
+				show_error_message(localize("An unknown error has occurred."), error);
+			});
+		} else {
+			okay_callback();
+		}
+	} else {
+		show_error_message(localize("Failed to save document."));
+	}
+}
+
+function show_multi_user_setup_dialog(from_current_document) {
+	const $w = $DialogWindow().title("Multi-User Setup").addClass("horizontal-buttons");
+	$w.$main.html(`
+		${from_current_document ? "<p>This will make the current document public.</p>" : ""}
+		<p>
+			<!-- Choose a name for the multi-user session, included in the URL for sharing: -->
+			Enter the session name that will be used in the URL for sharing:
+		</p>
+		<p>
+			<label>
+				<span class="partial-url-label">jspaint.app/#session:</span>
+				<input
+					type="text"
+					id="session-name"
+					aria-label="session name"
+					pattern="[-0-9A-Za-z\\u00c0-\\u00d6\\u00d8-\\u00f6\\u00f8-\\u02af\\u1d00-\\u1d25\\u1d62-\\u1d65\\u1d6b-\\u1d77\\u1d79-\\u1d9a\\u1e00-\\u1eff\\u2090-\\u2094\\u2184-\\u2184\\u2488-\\u2490\\u271d-\\u271d\\u2c60-\\u2c7c\\u2c7e-\\u2c7f\\ua722-\\ua76f\\ua771-\\ua787\\ua78b-\\ua78c\\ua7fb-\\ua7ff\\ufb00-\\ufb06]+"
+					title="Numbers, letters, and hyphens are allowed."
+					class="inset-deep"
+				>
+			</label>
+		</p>
+	`);
+	const $session_name = $w.$main.find("#session-name");
+	$w.$main.css({ maxWidth: "500px" });
+	$w.$Button("Start", () => {
+		let name = $session_name.val().trim();
+
+		if (name == "") {
+			show_error_message("The session name cannot be empty.");
+		} else if ($session_name.is(":invalid")) {
+			show_error_message("The session name must be made from only numbers, letters, and hyphens.");
+		} else {
+			if (from_current_document) {
+				change_url_param("session", name);
+			} else {
+				// @TODO: load new empty session in the same browser tab
+				// (or at least... keep settings like vertical-color-box-mode?)
+				window.open(`${location.origin}${location.pathname}#session:${name}`);
+			}
+			$w.close();
+		}
+	});
+	$w.$Button(localize("Cancel"), () => {
+		$w.close();
+	});
+	$w.center();
+	$session_name.focus();
+}

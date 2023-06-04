@@ -1,1 +1,3793 @@
-"use strict";function bufferID_to_assetID(e){return 0===e?"4dXGR8":1===e?"XsXGR8":2===e?"4sXGR8":3===e?"XdfGR8":"none"}function assetID_to_bufferID(e){return"4dXGR8"===e?0:"XsXGR8"===e?1:"4sXGR8"===e?2:"XdfGR8"===e?3:-1}function assetID_to_cubemapBuferID(e){return"4dX3Rr"===e?0:-1}function cubamepBufferID_to_assetID(e){return 0===e?"4dX3Rr":"none"}function EffectPass(e,t,m,r,n,s,i,o,a,l,u,h){this.mID=u,this.mInputs=[null,null,null,null],this.mOutputs=[null,null,null,null],this.mSource=null,this.mGainNode=a,this.mSoundShaderCompiled=!1,this.mEffect=h,this.mRenderer=e,this.mProgramCopy=l,this.mCompilationTime=0,this.mType="none",this.mName="none",this.mFrame=0,this.mShaderTextureLOD=r,this.mIs20=t,this.mIsLowEnd=m,this.mTextureCallbackFun=n,this.mTextureCallbackObj=s,this.mForceMuted=i,this.mForcePaused=o}function Screenshots(){let e,t=null,m=null,r=0,n=0,s=null;var i={Initialize:function(t){let m,r;s=t,s.GetCaps().mIsGL20?(m="layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }",r="uniform samplerCube t; out vec4 outColor; void main() { vec2 px = gl_FragCoord.xy/vec2(4096.0,2048.0); vec2 an = 3.1415926535898 * (px*vec2(2.0, 1.0) - vec2(0.0,0.5)); vec3 rd = vec3(-cos(an.y) * sin(an.x), sin(an.y), cos(an.y) * cos(an.x)); outColor = texture(t, rd); }"):(m="attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }",r="uniform samplerCube t; void main() { vec2 px = gl_FragCoord.xy/vec2(4096.0,2048.0); vec2 an = 3.1415926535898 * (px*vec2(2.0, 1.0) - vec2(0.0,0.5)); vec3 rd = vec3(-cos(an.y) * sin(an.x), sin(an.y), cos(an.y) * cos(an.x)); gl_FragColor = texture(t, rd); }");return s.CreateShader(m,r,!1,!0,(function(t,m){!1===t?console.log("Failed to compile cubemap resample shader ("+errorType+"): "+log):e=m})),!0},Allocate:function(e,i){if(e>r||i>n){let o=s.CreateTexture(s.TEXTYPE.T2D,e,i,s.TEXFMT.C4F32,s.FILTER.NONE,s.TEXWRP.CLAMP,null),a=s.CreateRenderTarget(o,null,null,null,null,!1);0!==r&&(s.DestroyTexture(t),s.DestroyRenderTarget(m)),t=o,m=a,r=e,n=i}},GetProgram:function(){return e},GetTarget:function(){return m}};return i}function Effect(e,t,m,r,n,s,i,o,a){let l=m.width,u=m.height,h=this;if(this.mCanvas=m,this.mCreated=!1,this.mRenderer=null,this.mAudioContext=t,this.mGLContext=null,this.mWebVR=e,this.mRenderingStereo=!1,this.mXres=l,this.mYres=u,this.mForceMuted=s,null===t&&(this.mForceMuted=!0),this.mForcePaused=i,this.mGainNode=null,this.mPasses=[],this.mFrame=0,this.mTextureCallbackFun=r,this.mTextureCallbackObj=n,this.mMaxBuffers=4,this.mMaxCubeBuffers=1,this.mMaxPasses=this.mMaxBuffers+1+1+1+1,this.mBuffers=[],this.mCubeBuffers=[],this.mScreenshotSytem=null,this.mCompilationTime=0,this.mIsLowEnd=piIsMobile(),this.mGLContext=piCreateGlContext(m,!1,!1,!0,!1),null===this.mGLContext)return;if(m.addEventListener("webglcontextlost",(function(e){e.preventDefault(),a()}),!1),this.mRenderer=piRenderer(),!this.mRenderer.Initialize(this.mGLContext))return;if(this.mScreenshotSytem=Screenshots(),!this.mScreenshotSytem.Initialize(this.mRenderer))return;var f=this.mRenderer.GetCaps();let d,p,c,T;this.mIs20=f.mIsGL20,this.mShaderTextureLOD=f.mShaderTextureLOD,null!==t&&(this.mGainNode=t.createGain(),s||this.mGainNode.connect(t.destination),this.mForceMuted?this.mGainNode.gain.value=0:this.mGainNode.gain.value=1),this.mIs20?(d="layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }",p="uniform vec4 v; uniform sampler2D t; out vec4 outColor; void main() { outColor = textureLod(t, gl_FragCoord.xy / v.zw, 0.0); }"):(d="attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }",p="uniform vec4 v; uniform sampler2D t; void main() { gl_FragColor = texture2D(t, gl_FragCoord.xy / v.zw, -100.0); }"),this.mRenderer.CreateShader(d,p,!1,!0,(function(e,t){!1===e?console.log("Failed to compile shader to copy buffers : "+t.mErrorStr):h.mProgramCopy=t})),this.mIs20?(c="layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }",T="uniform vec4 v; uniform sampler2D t; out vec4 outColor; void main() { vec2 uv = gl_FragCoord.xy / v.zw; outColor = texture(t, vec2(uv.x,1.0-uv.y)); }"):(c="attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }",T="uniform vec4 v; uniform sampler2D t; void main() { vec2 uv = gl_FragCoord.xy / v.zw; gl_FragColor = texture2D(t, vec2(uv.x,1.0-uv.y)); }"),this.mRenderer.CreateShader(c,T,!1,!0,(function(e,t){!1===e?console.log("Failed to compile shader to downscale buffers : "+t.mErrorStr):h.mProgramDownscale=t}));for(let e=0;e<this.mMaxBuffers;e++)this.mBuffers[e]={mTexture:[null,null],mTarget:[null,null],mResolution:[0,0],mLastRenderDone:0,mThumbnailRenderTarget:null,mThumbnailTexture:null,mThumbnailBuffer:null,mThumbnailRes:[0,0]};for(let e=0;e<this.mMaxCubeBuffers;e++)this.mCubeBuffers[e]={mTexture:[null,null],mTarget:[null,null],mResolution:[0,0],mLastRenderDone:0,mThumbnailRenderTarget:null,mThumbnailTexture:null,mThumbnailBuffer:null,mThumbnailRes:[0,0]};let I=new Uint8Array(768);for(let e=0;e<768;e++)I[e]=0;let y=this.mRenderer.CreateTexture(this.mRenderer.TEXTYPE.T2D,256,3,this.mRenderer.TEXFMT.C1I8,this.mRenderer.FILTER.NONE,this.mRenderer.TEXWRP.CLAMP,null);this.mKeyboard={mData:I,mTexture:y};let g=function(){let e=globalThis.devicePixelRatio||1;!function(e,t){h.mCanvas.width=e,h.mCanvas.height=t,h.mXres=e,h.mYres=t,h.ResizeBuffers(e,t),o(e,t)}(0|Math.round(globalThis.demoCanvasRect?.width||h.mCanvas.offsetWidth||h.mCanvas.width*e),0|Math.round(globalThis.demoCanvasRect?.height||h.mCanvas.offsetHeight||h.mCanvas.height*e))};g(),globalThis.updateLandscapeSize=g,this.mCreated=!0}EffectPass.prototype.MakeHeader_Image=function(){let e="";e+="#define HW_PERFORMANCE "+(!0===this.mIsLowEnd?"0":"1")+"\n",e+="uniform vec3      iResolution;\nuniform float     iTime;\nuniform float     iChannelTime[4];\nuniform vec4      iMouse;\nuniform vec4      iDate;\nuniform float     iSampleRate;\nuniform vec3      iChannelResolution[4];\nuniform int       iFrame;\nuniform float     iTimeDelta;\nuniform float     iFrameRate;\n";for(let t=0;t<this.mInputs.length;t++){let m=this.mInputs[t];null===m?e+="uniform sampler2D iChannel"+t+";\n":"cubemap"===m.mInfo.mType?e+="uniform samplerCube iChannel"+t+";\n":"volume"===m.mInfo.mType?e+="uniform sampler3D iChannel"+t+";\n":e+="uniform sampler2D iChannel"+t+";\n",e+="uniform struct {\n",null===m?e+="  sampler2D":"cubemap"===m.mInfo.mType?e+="  samplerCube":"volume"===m.mInfo.mType?e+="  sampler3D":e+="  sampler2D",e+=" sampler;\n",e+="  vec3  size;\n",e+="  float time;\n",e+="  int   loaded;\n",e+="}iCh"+t+";\n"}e+="void mainImage( out vec4 c, in vec2 f );\n",e+="void st_assert( bool cond );\n",e+="void st_assert( bool cond, int v );\n",this.mIs20?e+="\nout vec4 shadertoy_out_color;\nvoid st_assert( bool cond, int v ) {if(!cond){if(v==0)shadertoy_out_color.x=-1.0;else if(v==1)shadertoy_out_color.y=-1.0;else if(v==2)shadertoy_out_color.z=-1.0;else shadertoy_out_color.w=-1.0;}}\nvoid st_assert( bool cond        ) {if(!cond)shadertoy_out_color.x=-1.0;}\nvoid main( void ){shadertoy_out_color = vec4(1.0,1.0,1.0,1.0);vec4 color = vec4(0.0,0.0,0.0,1.0);mainImage( color, gl_FragCoord.xy );if(shadertoy_out_color.x<0.0) color=vec4(1.0,0.0,0.0,1.0);if(shadertoy_out_color.y<0.0) color=vec4(0.0,1.0,0.0,1.0);if(shadertoy_out_color.z<0.0) color=vec4(0.0,0.0,1.0,1.0);if(shadertoy_out_color.w<0.0) color=vec4(1.0,1.0,0.0,1.0);shadertoy_out_color = vec4(color.xyz,1.0);}":e+="void st_assert( bool cond, int v ) {if(!cond){if(v==0)gl_FragColor.x=-1.0;else if(v==1)gl_FragColor.y=-1.0;else if(v==2)gl_FragColor.z=-1.0;else gl_FragColor.w=-1.0;}}\nvoid st_assert( bool cond        ) {if(!cond)gl_FragColor.x=-1.0;}\nvoid main( void ){gl_FragColor = vec4(0.0,0.0,0.0,1.0);vec4 color = vec4(0.0,0.0,0.0,1.0);mainImage( color, gl_FragCoord.xy );color.w = 1.0;if(gl_FragColor.w<0.0) color=vec4(1.0,0.0,0.0,1.0);if(gl_FragColor.x<0.0) color=vec4(1.0,0.0,0.0,1.0);if(gl_FragColor.y<0.0) color=vec4(0.0,1.0,0.0,1.0);if(gl_FragColor.z<0.0) color=vec4(0.0,0.0,1.0,1.0);if(gl_FragColor.w<0.0) color=vec4(1.0,1.0,0.0,1.0);gl_FragColor = vec4(color.xyz,1.0);}",e+="\n",this.mHeader=e,this.mHeaderLength=0},EffectPass.prototype.MakeHeader_Buffer=function(){let e="";e+="#define HW_PERFORMANCE "+(!0===this.mIsLowEnd?"0":"1")+"\n",e+="uniform vec3      iResolution;\nuniform float     iTime;\nuniform float     iChannelTime[4];\nuniform vec4      iMouse;\nuniform vec4      iDate;\nuniform float     iSampleRate;\nuniform vec3      iChannelResolution[4];\nuniform int       iFrame;\nuniform float     iTimeDelta;\nuniform float     iFrameRate;\n";for(let t=0;t<this.mInputs.length;t++){let m=this.mInputs[t];null===m?e+="uniform sampler2D iChannel"+t+";\n":"cubemap"===m.mInfo.mType?e+="uniform samplerCube iChannel"+t+";\n":"volume"===m.mInfo.mType?e+="uniform sampler3D iChannel"+t+";\n":e+="uniform sampler2D iChannel"+t+";\n"}e+="void mainImage( out vec4 c,  in vec2 f );\n",this.mIs20&&(e+="\nout vec4 outColor;\n"),e+="\nvoid main( void )\n{vec4 color = vec4(0.0,0.0,0.0,1.0);mainImage( color, gl_FragCoord.xy );",this.mIs20?e+="outColor = color; }":e+="gl_FragColor = color; }",e+="\n",this.mHeader=e,this.mHeaderLength=0},EffectPass.prototype.MakeHeader_Cubemap=function(){let e="";e+="#define HW_PERFORMANCE "+(!0===this.mIsLowEnd?"0":"1")+"\n",e+="uniform vec3      iResolution;\nuniform float     iTime;\nuniform float     iChannelTime[4];\nuniform vec4      iMouse;\nuniform vec4      iDate;\nuniform float     iSampleRate;\nuniform vec3      iChannelResolution[4];\nuniform int       iFrame;\nuniform float     iTimeDelta;\nuniform float     iFrameRate;\n";for(let t=0;t<this.mInputs.length;t++){let m=this.mInputs[t];null===m?e+="uniform sampler2D iChannel"+t+";\n":"cubemap"===m.mInfo.mType?e+="uniform samplerCube iChannel"+t+";\n":"volume"===m.mInfo.mType?e+="uniform sampler3D iChannel"+t+";\n":e+="uniform sampler2D iChannel"+t+";\n"}e+="void mainCubemap( out vec4 c, in vec2 f, in vec3 ro, in vec3 rd );\n",e+="\nuniform vec4 unViewport;\nuniform vec3 unCorners[5];\n",this.mIs20&&(e+="\nout vec4 outColor;\n"),e+="\nvoid main( void )\n{vec4 color = vec4(0.0,0.0,0.0,1.0);vec3 ro = unCorners[4];vec2 uv = (gl_FragCoord.xy - unViewport.xy)/unViewport.zw;vec3 rd = normalize( mix( mix( unCorners[0], unCorners[1], uv.x ),mix( unCorners[3], unCorners[2], uv.x ), uv.y ) - ro);mainCubemap( color, gl_FragCoord.xy-unViewport.xy, ro, rd );",this.mIs20?e+="outColor = color; }":e+="gl_FragColor = color; }",e+="\n",this.mHeader=e,this.mHeaderLength=0},EffectPass.prototype.MakeHeader_Sound=function(){let e="";e+="#define HW_PERFORMANCE "+(!0===this.mIsLowEnd?"0":"1")+"\n",e+="uniform float     iChannelTime[4];\nuniform float     iTimeOffset;\nuniform int       iSampleOffset;\nuniform vec4      iDate;\nuniform float     iSampleRate;\nuniform vec3      iChannelResolution[4];\n";for(let t=0;t<this.mInputs.length;t++){let m=this.mInputs[t];null!==m&&"cubemap"===m.mInfo.mType?e+="uniform samplerCube iChannel"+t+";\n":e+="uniform sampler2D iChannel"+t+";\n"}e+="\n",e+="vec2 mainSound( in int samp, float time );\n",this.mIs20?e+="out vec4 outColor; void main(){float t = iTimeOffset + ((gl_FragCoord.x-0.5) + (gl_FragCoord.y-0.5)*512.0)/iSampleRate;int   s = iSampleOffset + int(gl_FragCoord.y-0.2)*512 + int(gl_FragCoord.x-0.2);vec2 y = mainSound( s, t );vec2 v  = floor((0.5+0.5*y)*65536.0);vec2 vl =   mod(v,256.0)/255.0;vec2 vh = floor(v/256.0)/255.0;outColor = vec4(vl.x,vh.x,vl.y,vh.y);}":e+="void main(){float t = iTimeOffset + ((gl_FragCoord.x-0.5) + (gl_FragCoord.y-0.5)*512.0)/iSampleRate;vec2 y = mainSound( 0, t );vec2 v  = floor((0.5+0.5*y)*65536.0);vec2 vl =   mod(v,256.0)/255.0;vec2 vh = floor(v/256.0)/255.0;gl_FragColor = vec4(vl.x,vh.x,vl.y,vh.y);}",e+="\n",this.mHeader=e,this.mHeaderLength=0},EffectPass.prototype.MakeHeader_Common=function(){let e="",t=0;e+="uniform vec4      iDate;\nuniform float     iSampleRate;\n",t+=2,this.mIs20&&(e+="out vec4 outColor;\n",t+=1),e+="void main( void )\n",t+=1,this.mIs20?e+="{ outColor = vec4(0.0); }":e+="{ gl_FragColor = vec4(0.0); }",t+=1,e+="\n",t+=1,this.mHeader=e,this.mHeaderLength=t},EffectPass.prototype.MakeHeader=function(){"image"===this.mType?this.MakeHeader_Image():"sound"===this.mType?this.MakeHeader_Sound():"buffer"===this.mType?this.MakeHeader_Buffer():"common"===this.mType?this.MakeHeader_Common():"cubemap"===this.mType?this.MakeHeader_Cubemap():console.log("ERROR 4")},EffectPass.prototype.Create_Image=function(e){this.MakeHeader(),this.mSampleRate=44100,this.mSupportsVR=!1,this.mProgram=null,this.mError=!1,this.mErrorStr="",this.mTranslatedSource=null},EffectPass.prototype.Destroy_Image=function(e){},EffectPass.prototype.Create_Buffer=function(e){this.MakeHeader(),this.mSampleRate=44100,this.mSupportsVR=!1,this.mProgram=null,this.mError=!1,this.mErrorStr="",this.mTranslatedSource=null},EffectPass.prototype.Destroy_Buffer=function(e){},EffectPass.prototype.Create_Cubemap=function(e){this.MakeHeader(),this.mSampleRate=44100,this.mProgram=null,this.mError=!1,this.mErrorStr="",this.mTranslatedSource=null},EffectPass.prototype.Destroy_Cubemap=function(e){},EffectPass.prototype.Create_Common=function(e){this.mProgram=null,this.mError=!1,this.mErrorStr="",this.MakeHeader()},EffectPass.prototype.Destroy_Common=function(e){},EffectPass.prototype.Create_Sound=function(e){this.MakeHeader(),this.mProgram=null,this.mError=!1,this.mErrorStr="",this.mTranslatedSource=null,this.mSampleRate=44100,this.mPlayTime=180,this.mPlaySamples=this.mPlayTime*this.mSampleRate,this.mBuffer=e.createBuffer(2,this.mPlaySamples,this.mSampleRate),this.mTextureDimensions=512,this.mRenderTexture=this.mRenderer.CreateTexture(this.mRenderer.TEXTYPE.T2D,this.mTextureDimensions,this.mTextureDimensions,this.mRenderer.TEXFMT.C4I8,this.mRenderer.FILTER.NONE,this.mRenderer.TEXWRP.CLAMP,null),this.mRenderFBO=this.mRenderer.CreateRenderTarget(this.mRenderTexture,null,null,null,null,!1),this.mTmpBufferSamples=this.mTextureDimensions*this.mTextureDimensions,this.mData=new Uint8Array(4*this.mTmpBufferSamples),this.mPlaying=!1},EffectPass.prototype.Destroy_Sound=function(e){null!==this.mPlayNode&&this.mPlayNode.stop(),this.mPlayNode=null,this.mBuffer=null,this.mData=null,this.mRenderer.DestroyRenderTarget(this.mRenderFBO),this.mRenderer.DestroyTexture(this.mRenderTexture)},EffectPass.prototype.Create=function(e,t){this.mType=e,this.mSource=null,"image"===e?this.Create_Image(t):"sound"===e?this.Create_Sound(t):"buffer"===e?this.Create_Buffer(t):"common"===e?this.Create_Common(t):"cubemap"===e?this.Create_Cubemap(t):alert("ERROR 1")},EffectPass.prototype.SetName=function(e){this.mName=e},EffectPass.prototype.SetCode=function(e){this.mSource=e},EffectPass.prototype.Destroy=function(e){this.mSource=null,"image"===this.mType?this.Destroy_Image(e):"sound"===this.mType?this.Destroy_Sound(e):"buffer"===this.mType?this.Destroy_Buffer(e):"common"===this.mType?this.Destroy_Common(e):"cubemap"===this.mType?this.Destroy_Cubemap(e):alert("ERROR 2")},EffectPass.prototype.NewShader_Sound=function(e,t){let m=null;m=this.mIs20?"layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }":"attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";let r=this.mHeader;for(let e=0;e<t.length;e++)r+=t[e]+"\n";return this.mHeaderLength=r.split(/\r\n|\r|\n/).length,r+=e,this.mSoundShaderCompiled=!1,[m,r]},EffectPass.prototype.NewShader_Image=function(e,t){this.mSupportsVR=!1;let m=null;m=this.mIs20?"layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }":"attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";let r=this.mHeader;for(let e=0;e<t.length;e++)r+=t[e]+"\n";return this.mHeaderLength=r.split(/\r\n|\r|\n/).length,r+=e,[m,r]},EffectPass.prototype.NewShader_Cubemap=function(e,t){let m=null;m=this.mIs20?"layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }":"attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";let r=this.mHeader;for(let e=0;e<t.length;e++)r+=t[e]+"\n";return this.mHeaderLength=r.split(/\r\n|\r|\n/).length,r+=e,[m,r]},EffectPass.prototype.NewShader_Common=function(e){let t=null;return t=this.mIs20?"layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }":"attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }",[t,this.mHeader+e]},EffectPass.prototype.NewShader=function(e,t,m){if(null===this.mRenderer)return;let r=null;if("sound"===this.mType)r=this.NewShader_Sound(this.mSource,e);else if("image"===this.mType)r=this.NewShader_Image(this.mSource,e);else if("buffer"===this.mType)r=this.NewShader_Image(this.mSource,e);else if("common"===this.mType)r=this.NewShader_Common(this.mSource);else{if("cubemap"!==this.mType)return void console.log('ERROR 3: "'+this.mType+'"');r=this.NewShader_Cubemap(this.mSource,e)}let n=this;this.mRenderer.CreateShader(r[0],r[1],t,!1,(function(e,t){!0===e?("sound"===n.mType&&(n.mSoundShaderCompiled=!0),n.mCompilationTime=t.mTime,n.mError=!1,n.mErrorStr="No Errors",null!==n.mProgram&&n.mRenderer.DestroyShader(n.mProgram),n.mTranslatedSource=n.mRenderer.GetTranslatedShaderSource(t),n.mProgram=t):(n.mError=!0,n.mErrorStr=t.mErrorStr),m()}))},EffectPass.prototype.DestroyInput=function(e){if(null!==this.mInputs[e]){if("texture"===this.mInputs[e].mInfo.mType&&null!==this.mInputs[e].globject&&this.mRenderer.DestroyTexture(this.mInputs[e].globject),"volume"===this.mInputs[e].mInfo.mType)null!==this.mInputs[e].globject&&this.mRenderer.DestroyTexture(this.mInputs[e].globject);else if("webcam"===this.mInputs[e].mInfo.mType){if(this.mInputs[e].video.pause(),this.mInputs[e].video.src="",null!==this.mInputs[e].video.srcObject){let t=this.mInputs[e].video.srcObject.getVideoTracks();t&&t[0].stop()}this.mInputs[e].video=null,null!==this.mInputs[e].globject&&this.mRenderer.DestroyTexture(this.mInputs[e].globject)}else"video"===this.mInputs[e].mInfo.mType?(this.mInputs[e].video.pause(),this.mInputs[e].video=null,null!==this.mInputs[e].globject&&this.mRenderer.DestroyTexture(this.mInputs[e].globject)):"music"===this.mInputs[e].mInfo.mType||"musicstream"===this.mInputs[e].mInfo.mType?(this.mInputs[e].audio.pause(),this.mInputs[e].audio.mSound.mFreqData=null,this.mInputs[e].audio.mSound.mWaveData=null,this.mInputs[e].audio=null,null!==this.mInputs[e].globject&&this.mRenderer.DestroyTexture(this.mInputs[e].globject)):"cubemap"===this.mInputs[e].mInfo.mType?null!==this.mInputs[e].globject&&this.mRenderer.DestroyTexture(this.mInputs[e].globject):"keyboard"===this.mInputs[e].mInfo.mType||"mic"===this.mInputs[e].mInfo.mType&&(this.mInputs[e].mic=null,null!==this.mInputs[e].globject&&this.mRenderer.DestroyTexture(this.mInputs[e].globject));this.mInputs[e]=null}},EffectPass.prototype.TooglePauseInput=function(e,t){let m=this.mInputs[t];if(null===m);else if("texture"===m.mInfo.mType);else if("volume"===m.mInfo.mType);else{if("video"===m.mInfo.mType)return m.video.mPaused?(m.video.play(),m.video.mPaused=!1):(m.video.pause(),m.video.mPaused=!0),m.video.mPaused;if("music"===m.mInfo.mType||"musicstream"===m.mInfo.mType)return e.resume(),m.audio.mPaused?(m.loaded&&m.audio.play(),m.audio.mPaused=!1):(m.audio.pause(),m.audio.mPaused=!0),m.audio.mPaused}return null},EffectPass.prototype.StopInput=function(e){let t=this.mInputs[e];if(null===t);else if("texture"===t.mInfo.mType);else if("volume"===t.mInfo.mType);else{if("video"===t.mInfo.mType)return!1===t.video.mPaused&&(t.video.pause(),t.video.mPaused=!0),t.video.mPaused;if("music"===t.mInfo.mType||"musicstream"===t.mInfo.mType)return!1===t.audio.mPaused&&(t.audio.pause(),t.audio.mPaused=!0),t.audio.mPaused}return null},EffectPass.prototype.ResumeInput=function(e){let t=this.mInputs[e];if(null===t);else if("texture"===t.mInfo.mType);else if("volume"===t.mInfo.mType);else{if("video"===t.mInfo.mType)return t.video.mPaused&&(t.video.play(),t.video.mPaused=!1),t.video.mPaused;if("music"===t.mInfo.mType||"musicstream"===t.mInfo.mType)return t.audio.mPaused&&(t.audio.play(),t.audio.mPaused=!1),t.audio.mPaused}return null},EffectPass.prototype.RewindInput=function(e,t){let m=this.mInputs[t];null==m||"texture"===m.mInfo.mType||"volume"===m.mInfo.mType||("video"===m.mInfo.mType?m.loaded&&(m.video.currentTime=0):"music"!==m.mInfo.mType&&"musicstream"!==m.mInfo.mType||(e.resume(),m.loaded&&(m.audio.currentTime=0)))},EffectPass.prototype.MuteInput=function(e,t){let m=this.mInputs[t];null!==m&&("video"===m.mInfo.mType?(m.video.muted=!0,m.video.mMuted=!0):"music"!==m.mInfo.mType&&"musicstream"!==m.mInfo.mType||(null!==e&&(m.audio.mSound.mGain.gain.value=0),m.audio.mMuted=!0))},EffectPass.prototype.UnMuteInput=function(e,t){let m=this.mInputs[t];null!==m&&("video"===m.mInfo.mType?(m.video.muted=!1,m.video.mMuted=!1):"music"!==m.mInfo.mType&&"musicstream"!==m.mInfo.mType||(null!==e&&(m.audio.mSound.mGain.gain.value=1),m.audio.mMuted=!1))},EffectPass.prototype.ToggleMuteInput=function(e,t){let m=this.mInputs[t];return null===m?null:"video"===m.mInfo.mType?(m.video.mMuted?this.UnMuteInput(e,t):this.MuteInput(e,t),m.video.mMuted):"music"===m.mInfo.mType||"musicstream"===m.mInfo.mType?(m.audio.mMuted?this.UnMuteInput(e,t):this.MuteInput(e,t),m.audio.mMuted):null},EffectPass.prototype.UpdateInputs=function(e,t,m){for(let r=0;r<this.mInputs.length;r++){let n=this.mInputs[r];if(null===n)t&&null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,r,null,!1,0,0,-1,this.mID);else if("texture"===n.mInfo.mType)n.loaded&&t&&null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,r,n.image,!0,1,1,-1,this.mID);else if("volume"===n.mInfo.mType)n.loaded&&t&&null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,r,n.mPreview,!0,1,1,-1,this.mID);else if("cubemap"===n.mInfo.mType){if(n.loaded&&t&&null!==this.mTextureCallbackFun){let e=-1===assetID_to_cubemapBuferID(n.mInfo.mID)?n.image[0]:n.mImage;this.mTextureCallbackFun(this.mTextureCallbackObj,r,e,!0,2,1,-1,this.mID)}}else"keyboard"===n.mInfo.mType?null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,r,{mImage:m.mIcon,mData:m.mData},!1,6,0,-1,this.mID):"video"===n.mInfo.mType?n.video.readyState===n.video.HAVE_ENOUGH_DATA&&null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,r,n.video,!1,3,1,-1,this.mID):"music"===n.mInfo.mType||"musicstream"===n.mInfo.mType?n.loaded&&!1===n.audio.mPaused&&!1===n.audio.mForceMuted?(null!==e&&(n.audio.mSound.mAnalyser.getByteFrequencyData(n.audio.mSound.mFreqData),n.audio.mSound.mAnalyser.getByteTimeDomainData(n.audio.mSound.mWaveData)),null!==this.mTextureCallbackFun&&("music"===n.mInfo.mType?this.mTextureCallbackFun(this.mTextureCallbackObj,r,{wave:null==e?null:n.audio.mSound.mFreqData},!1,4,1,n.audio.currentTime,this.mID):"musicstream"===n.mInfo.mType&&this.mTextureCallbackFun(this.mTextureCallbackObj,r,{wave:null==e?null:n.audio.mSound.mFreqData,info:n.audio.soundcloudInfo},!1,8,1,n.audio.currentTime,this.mID))):!1===n.loaded&&null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,r,{wave:null},!1,4,0,-1,this.mID):"mic"===n.mInfo.mType?n.loaded&&!1===n.mForceMuted&&(null!==e&&(n.mAnalyser.getByteFrequencyData(n.mFreqData),n.mAnalyser.getByteTimeDomainData(n.mWaveData)),null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,r,{wave:null==e?null:n.mFreqData},!1,5,1,0,this.mID)):"buffer"===n.mInfo.mType&&n.loaded&&t&&null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,r,{texture:n.image,data:null},!0,9,1,-1,this.mID)}},EffectPass.prototype.Sampler2Renderer=function(e){let t=this.mRenderer.FILTER.NONE;"linear"===e.filter&&(t=this.mRenderer.FILTER.LINEAR),"mipmap"===e.filter&&(t=this.mRenderer.FILTER.MIPMAP);let m=this.mRenderer.TEXWRP.REPEAT;"clamp"===e.wrap&&(m=this.mRenderer.TEXWRP.CLAMP);let r=!1;return"true"===e.vflip&&(r=!0),{mFilter:t,mWrap:m,mVFlip:r}},EffectPass.prototype.GetSamplerVFlip=function(e){return this.mInputs[e].mInfo.mSampler.vflip},EffectPass.prototype.GetTranslatedShaderSource=function(){return this.mTranslatedSource},EffectPass.prototype.SetSamplerVFlip=function(e,t){var m=this.mRenderer;let r=this.mInputs[e],n=!1;"true"===t&&(n=!0),null===r||("texture"===r.mInfo.mType?r.loaded&&(m.SetSamplerVFlip(r.globject,n,r.image),r.mInfo.mSampler.vflip=t):"volume"===r.mInfo.mType||("video"===r.mInfo.mType||"cubemap"===r.mInfo.mType?r.loaded&&(m.SetSamplerVFlip(r.globject,n,r.image),r.mInfo.mSampler.vflip=t):"webcam"===r.mInfo.mType&&r.loaded&&(m.SetSamplerVFlip(r.globject,n,null),r.mInfo.mSampler.vflip=t)))},EffectPass.prototype.GetAcceptsVFlip=function(e){let t=this.mInputs[e];return null!==t&&("texture"===t.mInfo.mType||"volume"!==t.mInfo.mType&&("video"===t.mInfo.mType||("cubemap"===t.mInfo.mType||("webcam"===t.mInfo.mType||"music"!==t.mInfo.mType&&("musicstream"!==t.mInfo.mType&&("mic"!==t.mInfo.mType&&("keyboard"!==t.mInfo.mType&&"buffer"!==t.mInfo.mType)))))))},EffectPass.prototype.GetSamplerFilter=function(e){let t=this.mInputs[e];if(null!==t)return t.mInfo.mSampler.filter},EffectPass.prototype.SetSamplerFilter=function(e,t,m,r){var n=this.mRenderer;let s=this.mInputs[e],i=n.FILTER.NONE;"linear"===t&&(i=n.FILTER.LINEAR),"mipmap"===t&&(i=n.FILTER.MIPMAP),null===s||("texture"===s.mInfo.mType||"volume"===s.mInfo.mType||"video"===s.mInfo.mType?s.loaded&&(n.SetSamplerFilter(s.globject,i,!0),s.mInfo.mSampler.filter=t):"cubemap"===s.mInfo.mType?s.loaded&&(0===assetID_to_cubemapBuferID(s.mInfo.mID)?(n.SetSamplerFilter(r[0].mTexture[0],i,!0),n.SetSamplerFilter(r[0].mTexture[1],i,!0),s.mInfo.mSampler.filter=t):(n.SetSamplerFilter(s.globject,i,!0),s.mInfo.mSampler.filter=t)):"webcam"===s.mInfo.mType?s.loaded&&(n.SetSamplerFilter(s.globject,i,!0),s.mInfo.mSampler.filter=t):"buffer"===s.mInfo.mType?(n.SetSamplerFilter(m[s.id].mTexture[0],i,!0),n.SetSamplerFilter(m[s.id].mTexture[1],i,!0),s.mInfo.mSampler.filter=t):"keyboard"===s.mInfo.mType&&(s.mInfo.mSampler.filter=t))},EffectPass.prototype.GetAcceptsMipmapping=function(e){let t=this.mInputs[e];return null!==t&&("texture"===t.mInfo.mType||("volume"===t.mInfo.mType||("video"===t.mInfo.mType?this.mIs20:"cubemap"===t.mInfo.mType||("webcam"===t.mInfo.mType?this.mIs20:"music"!==t.mInfo.mType&&("musicstream"!==t.mInfo.mType&&("mic"!==t.mInfo.mType&&("keyboard"!==t.mInfo.mType&&("buffer"===t.mInfo.mType&&this.mIs20))))))))},EffectPass.prototype.GetAcceptsLinear=function(e){let t=this.mInputs[e];return null!==t&&("texture"===t.mInfo.mType||("volume"===t.mInfo.mType||("video"===t.mInfo.mType||("cubemap"===t.mInfo.mType||("webcam"===t.mInfo.mType||("music"===t.mInfo.mType||("musicstream"===t.mInfo.mType||("mic"===t.mInfo.mType||"keyboard"!==t.mInfo.mType&&"buffer"===t.mInfo.mType))))))))},EffectPass.prototype.GetAcceptsWrapRepeat=function(e){let t=this.mInputs[e];return null!==t&&("texture"===t.mInfo.mType||("volume"===t.mInfo.mType||("video"===t.mInfo.mType?this.mIs20:"cubemap"!==t.mInfo.mType&&("webcam"===t.mInfo.mType?this.mIs20:"music"!==t.mInfo.mType&&("musicstream"!==t.mInfo.mType&&("mic"!==t.mInfo.mType&&("keyboard"!==t.mInfo.mType&&("buffer"===t.mInfo.mType&&this.mIs20))))))))},EffectPass.prototype.GetSamplerWrap=function(e){return this.mInputs[e].mInfo.mSampler.wrap},EffectPass.prototype.SetSamplerWrap=function(e,t,m){var r=this.mRenderer;let n=this.mInputs[e],s=r.TEXWRP.REPEAT;"clamp"===t&&(s=r.TEXWRP.CLAMP),null===n||("texture"===n.mInfo.mType||"volume"===n.mInfo.mType||"video"===n.mInfo.mType||"cubemap"===n.mInfo.mType||"webcam"===n.mInfo.mType?n.loaded&&(r.SetSamplerWrap(n.globject,s),n.mInfo.mSampler.wrap=t):"buffer"===n.mInfo.mType&&(r.SetSamplerWrap(m[n.id].mTexture[0],s),r.SetSamplerWrap(m[n.id].mTexture[1],s),n.mInfo.mSampler.wrap=t))},EffectPass.prototype.GetTexture=function(e){let t=this.mInputs[e];return null===t?null:t.mInfo},EffectPass.prototype.SetOutputs=function(e,t){this.mOutputs[e]=t},EffectPass.prototype.SetOutputsByBufferID=function(e,t){"buffer"===this.mType?(this.mOutputs[e]=bufferID_to_assetID(t),this.mEffect.ResizeBuffer(t,this.mEffect.mXres,this.mEffect.mYres,!1)):"cubemap"===this.mType&&(this.mOutputs[e]=cubamepBufferID_to_assetID(t),this.mEffect.ResizeCubemapBuffer(t,1024,1024))},EffectPass.prototype.NewTexture=function(e,t,m,r,n,s){var i=this,o=this.mRenderer;if(null===o)return;let a=null;if(null===m||null===m.mType)return null!==i.mTextureCallbackFun&&i.mTextureCallbackFun(this.mTextureCallbackObj,t,null,!0,0,0,-1,i.mID),i.DestroyInput(t),i.mInputs[t]=null,i.MakeHeader(),{mFailed:!1,mNeedsShaderCompile:!1};if("texture"===m.mType){a={},a.mInfo=m,a.globject=null,a.loaded=!1,a.image=new Image,a.image.crossOrigin="",a.image.onload=function(){let e=i.Sampler2Renderer(m.mSampler),r=o.TEXFMT.C4I8;"Xdf3zn"!==m.mID&&"4sf3Rn"!==m.mID&&"4dXGzn"!==m.mID&&"4sf3Rr"!==m.mID||(r=o.TEXFMT.C1I8),a.globject=o.CreateTextureFromImage(o.TEXTYPE.T2D,a.image,r,e.mFilter,e.mWrap,e.mVFlip),a.loaded=!0,null!==i.mTextureCallbackFun&&i.mTextureCallbackFun(i.mTextureCallbackObj,t,a.image,!0,1,1,-1,i.mID)},a.image.src=m.mSrc;let e={mFailed:!1,mNeedsShaderCompile:null===this.mInputs[t]||"texture"!==this.mInputs[t].mInfo.mType&&"webcam"!==this.mInputs[t].mInfo.mType&&"mic"!==this.mInputs[t].mInfo.mType&&"music"!==this.mInputs[t].mInfo.mType&&"musicstream"!==this.mInputs[t].mInfo.mType&&"keyboard"!==this.mInputs[t].mInfo.mType&&"video"!==this.mInputs[t].mInfo.mType};return this.DestroyInput(t),this.mInputs[t]=a,this.MakeHeader(),e}if("volume"===m.mType){a={},a.mInfo=m,a.globject=null,a.loaded=!1,a.mImage={mData:null,mXres:1,mYres:0,mZres:0},a.mPreview=new Image,a.mPreview.crossOrigin="";var l=new XMLHttpRequest;if(null===l)return{mFailed:!0};l.open("GET",m.mSrc,!0),l.responseType="arraybuffer",l.onerror=function(){console.log("Error 1 loading Volume")},l.onload=function(){let e=l.response;if(!e)return void console.log("Error 2 loading Volume");let r=piFile(e);r.ReadUInt32();a.mImage.mXres=r.ReadUInt32(),a.mImage.mYres=r.ReadUInt32(),a.mImage.mZres=r.ReadUInt32();let n=r.ReadUInt8(),s=(r.ReadUInt8(),r.ReadUInt16()),u=o.TEXFMT.C1I8;if(1===n&&0===s)u=o.TEXFMT.C1I8;else if(2===n&&0===s)u=o.TEXFMT.C2I8;else if(3===n&&0===s)u=o.TEXFMT.C3I8;else if(4===n&&0===s)u=o.TEXFMT.C4I8;else if(1===n&&10===s)u=o.TEXFMT.C1F32;else if(2===n&&10===s)u=o.TEXFMT.C2F32;else if(3===n&&10===s)u=o.TEXFMT.C3F32;else{if(4!==n||10!==s)return;u=o.TEXFMT.C4F32}let h=new Uint8Array(e,20),f=i.Sampler2Renderer(m.mSampler);if(a.globject=o.CreateTexture(o.TEXTYPE.T3D,a.mImage.mXres,a.mImage.mYres,u,f.mFilter,f.mWrap,h),null===a.globject)return console.log("Error 4: loading Volume"),{mFailed:!0};null!==i.mTextureCallbackFun&&i.mTextureCallbackFun(i.mTextureCallbackObj,t,a.mPreview,!0,1,1,-1,i.mID),a.loaded=!0,a.mPreview.onload=function(){null!==i.mTextureCallbackFun&&i.mTextureCallbackFun(i.mTextureCallbackObj,t,a.mPreview,!0,1,1,-1,i.mID)},a.mPreview.src=m.mPreviewSrc},l.send("");let e={mFailed:!1,mNeedsShaderCompile:null==this.mInputs[t]||"volume"!=this.mInputs[t].mInfo.mType};return this.DestroyInput(t),this.mInputs[t]=a,this.MakeHeader(),e}if("cubemap"===m.mType){a={},a.mInfo=m,a.globject=null,a.loaded=!1;let e=i.Sampler2Renderer(m.mSampler);if(-1!==assetID_to_cubemapBuferID(m.mID))a.mImage=new Image,a.mImage.onload=function(){a.loaded=!0,null!==i.mTextureCallbackFun&&i.mTextureCallbackFun(i.mTextureCallbackObj,t,a.mImage,!0,2,1,-1,i.mID)},a.mImage.src="/media/previz/cubemap00.png",this.mEffect.ResizeCubemapBuffer(0,1024,1024);else{a.image=[new Image,new Image,new Image,new Image,new Image,new Image];let r=0;for(var u=0;u<6;u++)if(a.image[u].mId=u,a.image[u].crossOrigin="",a.image[u].onload=function(){this.mId;r++,6===r&&(a.globject=o.CreateTextureFromImage(o.TEXTYPE.CUBEMAP,a.image,o.TEXFMT.C4I8,e.mFilter,e.mWrap,e.mVFlip),a.loaded=!0,null!==i.mTextureCallbackFun&&i.mTextureCallbackFun(i.mTextureCallbackObj,t,a.image[0],!0,2,1,-1,i.mID))},0===u)a.image[u].src=m.mSrc;else{let e=m.mSrc.lastIndexOf(".");a.image[u].src=m.mSrc.substring(0,e)+"_"+u+m.mSrc.substring(e,m.mSrc.length)}}let r={mFailed:!1,mNeedsShaderCompile:null==this.mInputs[t]||"cubemap"!=this.mInputs[t].mInfo.mType};return this.DestroyInput(t),this.mInputs[t]=a,this.MakeHeader(),r}if("buffer"===m.mType){a={},a.mInfo=m,a.image=new Image,a.image.onload=function(){null!=i.mTextureCallbackFun&&i.mTextureCallbackFun(i.mTextureCallbackObj,t,{texture:a.image,data:null},!0,9,1,-1,i.mID)},a.image.src=m.mSrc,a.id=assetID_to_bufferID(m.mID),a.loaded=!0;let e={mFailed:!1,mNeedsShaderCompile:null===this.mInputs[t]||"texture"!=this.mInputs[t].mInfo.mType&&"webcam"!=this.mInputs[t].mInfo.mType&&"mic"!=this.mInputs[t].mInfo.mType&&"music"!=this.mInputs[t].mInfo.mType&&"musicstream"!=this.mInputs[t].mInfo.mType&&"keyboard"!=this.mInputs[t].mInfo.mType&&"video"!=this.mInputs[t].mInfo.mType};return this.DestroyInput(t),this.mInputs[t]=a,this.mEffect.ResizeBuffer(a.id,this.mEffect.mXres,this.mEffect.mYres,!1),this.SetSamplerFilter(t,m.mSampler.filter,r,n,!0),this.SetSamplerVFlip(t,m.mSampler.vflip),this.SetSamplerWrap(t,m.mSampler.wrap,r),this.MakeHeader(),e}return alert("input type error"),{mFailed:!0}},EffectPass.prototype.Paint_Image=function(e,t,m,r,n,s,i,o,a,l,u,h,f,d,p){let c=[0,0,0,0],T=[m.getFullYear(),m.getMonth(),m.getDate(),60*m.getHours()*60+60*m.getMinutes()+m.getSeconds()+m.getMilliseconds()/1e3],I=[a,l,i,o],y=[0,0,0,0,0,0,0,0,0,0,0,0],g=[0,0,0,0],S=[null,null,null,null];for(let e=0;e<this.mInputs.length;e++){let m=this.mInputs[e];if(null===m);else if("texture"===m.mInfo.mType)!0===m.loaded&&(S[e]=m.globject,g[e]=1,y[3*e+0]=m.image.width,y[3*e+1]=m.image.height,y[3*e+2]=1);else if("volume"===m.mInfo.mType)!0===m.loaded&&(S[e]=m.globject,g[e]=1,y[3*e+0]=m.mImage.mXres,y[3*e+1]=m.mImage.mYres,y[3*e+2]=m.mImage.mZres);else if("keyboard"===m.mInfo.mType)S[e]=p.mTexture,g[e]=1,y[3*e+0]=256,y[3*e+1]=3,y[3*e+2]=1;else if("cubemap"===m.mInfo.mType){if(!0===m.loaded){let t=assetID_to_cubemapBuferID(m.mInfo.mID);if(-1!==t){S[e]=d[t].mTexture[d[t].mLastRenderDone],y[3*e+0]=d[t].mResolution[0],y[3*e+1]=d[t].mResolution[1],y[3*e+2]=1,g[e]=1;let r=this.mRenderer.FILTER.NONE;"linear"===m.mInfo.mSampler.filter?r=this.mRenderer.FILTER.LINEAR:"mipmap"===m.mInfo.mSampler.filter&&(r=this.mRenderer.FILTER.MIPMAP),this.mRenderer.SetSamplerFilter(S[e],r,!1)}else S[e]=m.globject,g[e]=1}}else if("webcam"===m.mInfo.mType)!0===m.loaded?null!==m.mImage?(null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,e,m.mImage,!1,7,1,-1,this.mID),S[e]=m.globject,g[e]=1,y[3*e+0]=m.mImage.width,y[3*e+1]=m.mImage.height,y[3*e+2]=1):m.video.readyState===m.video.HAVE_ENOUGH_DATA&&(null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,e,m.video,!1,7,1,-1,this.mID),S[e]=m.globject,this.mRenderer.UpdateTextureFromImage(m.globject,m.video),"mipmap"===m.mInfo.mSampler.filter&&this.mRenderer.CreateMipmaps(m.globject),y[3*e+0]=m.video.videoWidth,y[3*e+1]=m.video.videoHeight,y[3*e+2]=1,g[e]=1):(S[e]=null,g[e]=0,y[3*e+0]=m.video.width,y[3*e+1]=m.video.height,y[3*e+2]=1);else if("video"===m.mInfo.mType)!1===m.video.mPaused&&null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,e,m.video,!1,3,1,m.video.currentTime,this.mID),!0===m.loaded&&(c[e]=m.video.currentTime,S[e]=m.globject,g[e]=1,!1===m.video.mPaused&&(this.mRenderer.UpdateTextureFromImage(m.globject,m.video),"mipmap"===m.mInfo.mSampler.filter&&this.mRenderer.CreateMipmaps(m.globject)),y[3*e+0]=m.video.videoWidth,y[3*e+1]=m.video.videoHeight,y[3*e+2]=1);else if("music"===m.mInfo.mType||"musicstream"===m.mInfo.mType){if(!1===m.audio.mPaused&&!1===m.audio.mForceMuted&&!0===m.loaded&&(null!==t&&(m.audio.mSound.mAnalyser.getByteFrequencyData(m.audio.mSound.mFreqData),m.audio.mSound.mAnalyser.getByteTimeDomainData(m.audio.mSound.mWaveData)),null!==this.mTextureCallbackFun&&("music"===m.mInfo.mType?this.mTextureCallbackFun(this.mTextureCallbackObj,e,null===t?null:{wave:m.audio.mSound.mFreqData},!1,4,1,m.audio.currentTime,this.mID):"musicstream"===m.mInfo.mType&&this.mTextureCallbackFun(this.mTextureCallbackObj,e,null===t?null:{wave:m.audio.mSound.mFreqData,info:m.audio.soundcloudInfo},!1,8,1,m.audio.currentTime,this.mID))),!0===m.loaded){if(c[e]=m.audio.currentTime,S[e]=m.globject,g[e]=1,!0===m.audio.mForceMuted){c[e]=10+r;let t=m.audio.mSound.mFreqData.length;for(let e=0;e<t;e++){let n=e/t,s=(.75+.25*Math.sin(10*e+13*r))*Math.exp(-3*n);e<3&&(s=Math.pow(.5+.5*Math.sin(6.2831*r),4)*(1-e/3)),m.audio.mSound.mFreqData[e]=0|Math.floor(255*s)}for(let e=0;e<t;e++){let n=.5+.15*Math.sin(17*r+62.831*e/t)*Math.sin(23*r+1.9*e/t);m.audio.mSound.mWaveData[e]=0|Math.floor(255*n)}}if(!1===m.audio.mPaused){Math.min(m.audio.mSound.mWaveData.length,512);this.mRenderer.UpdateTexture(m.globject,0,0,512,1,m.audio.mSound.mFreqData),this.mRenderer.UpdateTexture(m.globject,0,1,512,1,m.audio.mSound.mWaveData)}y[3*e+0]=512,y[3*e+1]=2,y[3*e+2]=1}}else if("mic"===m.mInfo.mType){if(!1===m.loaded||m.mForceMuted||null===t||null==m.mAnalyser){c[e]=10+r;let t=m.mFreqData.length;for(let e=0;e<t;e++){let n=e/t,s=(.75+.25*Math.sin(10*e+13*r))*Math.exp(-3*n);e<3&&(s=Math.pow(.5+.5*Math.sin(6.2831*r),4)*(1-e/3)),m.mFreqData[e]=0|Math.floor(255*s)}for(let e=0;e<t;e++){let n=.5+.15*Math.sin(17*r+62.831*e/t)*Math.sin(23*r+1.9*e/t);m.mWaveData[e]=0|Math.floor(255*n)}}else m.mAnalyser.getByteFrequencyData(m.mFreqData),m.mAnalyser.getByteTimeDomainData(m.mWaveData);if(null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,e,{wave:m.mFreqData},!1,5,1,-1,this.mID),!0===m.loaded){S[e]=m.globject,g[e]=1;let t=Math.min(m.mWaveData.length,512);this.mRenderer.UpdateTexture(m.globject,0,0,512,1,m.mFreqData),this.mRenderer.UpdateTexture(m.globject,0,1,t,1,m.mWaveData),y[3*e+0]=512,y[3*e+1]=2,y[3*e+2]=1}}else if("buffer"===m.mInfo.mType){let t=m.id;if(!0===m.loaded){S[e]=f[t].mTexture[f[t].mLastRenderDone],g[e]=1,y[3*e+0]=u,y[3*e+1]=h,y[3*e+2]=1;let r=this.mRenderer.FILTER.NONE;"linear"===m.mInfo.mSampler.filter?r=this.mRenderer.FILTER.LINEAR:"mipmap"===m.mInfo.mSampler.filter&&(r=this.mRenderer.FILTER.MIPMAP),this.mRenderer.SetSamplerFilter(S[e],r,!1)}null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,e,{texture:m.image,data:f[t].mThumbnailBuffer},!1,9,1,-1,this.mID)}}this.mRenderer.AttachTextures(4,S[0],S[1],S[2],S[3]);let C=this.mProgram;this.mRenderer.AttachShader(C),this.mRenderer.SetShaderConstant1F("iTime",r),this.mRenderer.SetShaderConstant3F("iResolution",u,h,1),this.mRenderer.SetShaderConstant4FV("iMouse",I),this.mRenderer.SetShaderConstant1FV("iChannelTime",c),this.mRenderer.SetShaderConstant4FV("iDate",T),this.mRenderer.SetShaderConstant3FV("iChannelResolution",y),this.mRenderer.SetShaderConstant1F("iSampleRate",this.mSampleRate),this.mRenderer.SetShaderTextureUnit("iChannel0",0),this.mRenderer.SetShaderTextureUnit("iChannel1",1),this.mRenderer.SetShaderTextureUnit("iChannel2",2),this.mRenderer.SetShaderTextureUnit("iChannel3",3),this.mRenderer.SetShaderConstant1I("iFrame",this.mFrame),this.mRenderer.SetShaderConstant1F("iTimeDelta",n),this.mRenderer.SetShaderConstant1F("iFrameRate",s),this.mRenderer.SetShaderConstant1F("iCh0.time",c[0]),this.mRenderer.SetShaderConstant1F("iCh1.time",c[1]),this.mRenderer.SetShaderConstant1F("iCh2.time",c[2]),this.mRenderer.SetShaderConstant1F("iCh3.time",c[3]),this.mRenderer.SetShaderConstant3F("iCh0.size",y[0],y[1],y[2]),this.mRenderer.SetShaderConstant3F("iCh1.size",y[3],y[4],y[5]),this.mRenderer.SetShaderConstant3F("iCh2.size",y[6],y[7],y[8]),this.mRenderer.SetShaderConstant3F("iCh3.size",y[9],y[10],y[11]),this.mRenderer.SetShaderConstant1I("iCh0.loaded",g[0]),this.mRenderer.SetShaderConstant1I("iCh1.loaded",g[1]),this.mRenderer.SetShaderConstant1I("iCh2.loaded",g[2]),this.mRenderer.SetShaderConstant1I("iCh3.loaded",g[3]);let R=this.mRenderer.GetAttribLocation(this.mProgram,"pos");if(null!==e&&this.mSupportsVR)for(let t=0;t<2;t++){let m=0===t?e.mLeftEye:e.mRightEye,r=[t*u/2,0,u/2,h];this.mRenderer.SetViewport(r);let n=m.mProjection,s=[-n[2],-n[1],-1],i=[n[3],-n[1],-1],o=[n[3],n[0],-1],a=[-n[2],n[0],-1],l=[0,0,0],f=invertFast(m.mCamera);s=matMulpoint(f,s),i=matMulpoint(f,i),o=matMulpoint(f,o),a=matMulpoint(f,a),l=matMulpoint(f,l);let d=[s[0],s[1],s[2],i[0],i[1],i[2],o[0],o[1],o[2],a[0],a[1],a[2],l[0],l[1],l[2]];this.mRenderer.SetShaderConstant3FV("unCorners",d),this.mRenderer.SetShaderConstant4FV("unViewport",r),this.mRenderer.DrawUnitQuad_XY(R)}else this.mRenderer.SetViewport([0,0,u,h]),this.mRenderer.DrawFullScreenTriangle_XY(R);this.mRenderer.DettachTextures()},EffectPass.prototype.iRenderSound=function(e,t){let m=[e.getFullYear(),e.getMonth(),e.getDate(),60*e.getHours()*60+60*e.getMinutes()+e.getSeconds()],r=[0,0,0,0,0,0,0,0,0,0,0,0];this.mRenderer.SetRenderTarget(this.mRenderFBO),this.mRenderer.SetViewport([0,0,this.mTextureDimensions,this.mTextureDimensions]),this.mRenderer.AttachShader(this.mProgram),this.mRenderer.SetBlend(!1);let n=[null,null,null,null];for(let e=0;e<this.mInputs.length;e++){let t=this.mInputs[e];null===t||("texture"===t.mInfo.mType?!0===t.loaded&&(n[e]=t.globject,r[3*e+0]=t.image.width,r[3*e+1]=t.image.height,r[3*e+2]=1):"volume"===t.mInfo.mType&&!0===t.loaded&&(n[e]=t.globject,r[3*e+0]=t.mImage.mXres,r[3*e+1]=t.mImage.mYres,r[3*e+2]=t.mImage.mZres))}this.mRenderer.AttachTextures(4,n[0],n[1],n[2],n[3]);let s=this.mRenderer.SetShaderConstantLocation(this.mProgram,"iTimeOffset"),i=this.mRenderer.SetShaderConstantLocation(this.mProgram,"iSampleOffset");this.mRenderer.SetShaderConstant4FV("iDate",m),this.mRenderer.SetShaderConstant3FV("iChannelResolution",r),this.mRenderer.SetShaderConstant1F("iSampleRate",this.mSampleRate),this.mRenderer.SetShaderTextureUnit("iChannel0",0),this.mRenderer.SetShaderTextureUnit("iChannel1",1),this.mRenderer.SetShaderTextureUnit("iChannel2",2),this.mRenderer.SetShaderTextureUnit("iChannel3",3);let o=this.mRenderer.GetAttribLocation(this.mProgram,"pos"),a=this.mTmpBufferSamples,l=this.mPlaySamples/a;for(let e=0;e<l;e++){let m=e*a;this.mRenderer.SetShaderConstant1F_Pos(s,m/this.mSampleRate),this.mRenderer.SetShaderConstant1I_Pos(i,m),this.mRenderer.DrawUnitQuad_XY(o),this.mRenderer.GetPixelData(this.mData,0,this.mTextureDimensions,this.mTextureDimensions),t(m,this.mData,a)}this.mRenderer.DetachShader(),this.mRenderer.DettachTextures(),this.mRenderer.SetRenderTarget(null)},EffectPass.prototype.Paint_Sound=function(e,t){let m=this.mBuffer.getChannelData(0),r=this.mBuffer.getChannelData(1);this.iRenderSound(t,(function(e,t,n){for(let s=0;s<n;s++)m[e+s]=2*(t[4*s+0]+256*t[4*s+1])/65535-1,r[e+s]=2*(t[4*s+2]+256*t[4*s+3])/65535-1}))},EffectPass.prototype.SetUniforms=function(e,t,m,r,n,s,i,o,a,l,u,h,f,d,p){let c=[0,0,0,0],T=[m.getFullYear(),m.getMonth(),m.getDate(),60*m.getHours()*60+60*m.getMinutes()+m.getSeconds()+m.getMilliseconds()/1e3],I=[a,l,i,o],y=[0,0,0,0,0,0,0,0,0,0,0,0],g=[null,null,null,null];for(let e=0;e<this.mInputs.length;e++){let m=this.mInputs[e];if(null===m);else if("texture"===m.mInfo.mType)!0===m.loaded&&(g[e]=m.globject,y[3*e+0]=m.image.width,y[3*e+1]=m.image.height,y[3*e+2]=1);else if("volume"===m.mInfo.mType)!0===m.loaded&&(g[e]=m.globject,y[3*e+0]=m.mImage.mXres,y[3*e+1]=m.mImage.mYres,y[3*e+2]=m.mImage.mZres);else if("keyboard"===m.mInfo.mType)g[e]=p.mTexture;else if("cubemap"==m.mInfo.mType){if(!0===m.loaded){let t=assetID_to_cubemapBuferID(m.mInfo.mID);if(-1!==t){g[e]=d[t].mTexture[d[t].mLastRenderDone],y[3*e+0]=d[t].mResolution[0],y[3*e+1]=d[t].mResolution[1],y[3*e+2]=1;let r=this.mRenderer.FILTER.NONE;"linear"===m.mInfo.mSampler.filter?r=this.mRenderer.FILTER.LINEAR:"mipmap"===m.mInfo.mSampler.filter&&(r=this.mRenderer.FILTER.MIPMAP),this.mRenderer.SetSamplerFilter(g[e],r,!1)}else g[e]=m.globject}}else"webcam"===m.mInfo.mType?!0===m.loaded?null!==m.mImage?(g[e]=m.globject,y[3*e+0]=m.mImage.width,y[3*e+1]=m.mImage.height,y[3*e+2]=1):m.video.readyState===m.video.HAVE_ENOUGH_DATA&&(g[e]=m.globject,y[3*e+0]=m.video.videoWidth,y[3*e+1]=m.video.videoHeight,y[3*e+2]=1):(g[e]=null,y[3*e+0]=m.video.width,y[3*e+1]=m.video.height,y[3*e+2]=1):"video"===m.mInfo.mType?!0===m.loaded&&(c[e]=m.video.currentTime,g[e]=m.globject,y[3*e+0]=m.video.videoWidth,y[3*e+1]=m.video.videoHeight,y[3*e+2]=1):"music"===m.mInfo.mType||"musicstream"===m.mInfo.mType?!0===m.loaded&&(c[e]=m.audio.currentTime,g[e]=m.globject,!0===m.audio.mForceMuted&&(c[e]=10+r),y[3*e+0]=512,y[3*e+1]=2,y[3*e+2]=1):"mic"===m.mInfo.mType?((!1===m.loaded||m.mForceMuted||null===t||null==m.mAnalyser)&&(c[e]=10+r),!0===m.loaded&&(g[e]=m.globject,y[3*e+0]=512,y[3*e+1]=2,y[3*e+2]=1)):"buffer"===m.mInfo.mType&&!0===m.loaded&&(g[e]=f[m.id].mTexture[f[m.id].mLastRenderDone],y[3*e+0]=f[m.id].mResolution[0],y[3*e+1]=f[m.id].mResolution[1],y[3*e+2]=1)}this.mRenderer.AttachTextures(4,g[0],g[1],g[2],g[3]),this.mRenderer.AttachShader(this.mProgram),this.mRenderer.SetShaderConstant1F("iTime",r),this.mRenderer.SetShaderConstant3F("iResolution",u,h,1),this.mRenderer.SetShaderConstant4FV("iMouse",I),this.mRenderer.SetShaderConstant1FV("iChannelTime",c),this.mRenderer.SetShaderConstant4FV("iDate",T),this.mRenderer.SetShaderConstant3FV("iChannelResolution",y),this.mRenderer.SetShaderConstant1F("iSampleRate",this.mSampleRate),this.mRenderer.SetShaderTextureUnit("iChannel0",0),this.mRenderer.SetShaderTextureUnit("iChannel1",1),this.mRenderer.SetShaderTextureUnit("iChannel2",2),this.mRenderer.SetShaderTextureUnit("iChannel3",3),this.mRenderer.SetShaderConstant1I("iFrame",this.mFrame),this.mRenderer.SetShaderConstant1F("iTimeDelta",n),this.mRenderer.SetShaderConstant1F("iFrameRate",s),this.mRenderer.SetShaderConstant1F("iChannel[0].time",c[0]),this.mRenderer.SetShaderConstant1F("iChannel[1].time",c[1]),this.mRenderer.SetShaderConstant1F("iChannel[2].time",c[2]),this.mRenderer.SetShaderConstant1F("iChannel[3].time",c[3]),this.mRenderer.SetShaderConstant3F("iChannel[0].resolution",y[0],y[1],y[2]),this.mRenderer.SetShaderConstant3F("iChannel[1].resolution",y[3],y[4],y[5]),this.mRenderer.SetShaderConstant3F("iChannel[2].resolution",y[6],y[7],y[8]),this.mRenderer.SetShaderConstant3F("iChannel[3].resolution",y[9],y[10],y[11])},EffectPass.prototype.ProcessInputs=function(e,t,m,r,n,s,i,o,a,l,u,h,f,d,p){for(let e=0;e<this.mInputs.length;e++){let m=this.mInputs[e];if(null===m);else if("texture"===m.mInfo.mType);else if("volume"===m.mInfo.mType);else if("keyboard"===m.mInfo.mType);else if("cubemap"===m.mInfo.mType);else if("webcam"===m.mInfo.mType)!0===m.loaded&&(null!==m.mImage?null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,e,m.mImage,!1,7,1,-1,this.mID):m.video.readyState===m.video.HAVE_ENOUGH_DATA&&(null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,e,m.video,!1,7,1,-1,this.mID),this.mRenderer.UpdateTextureFromImage(m.globject,m.video),"mipmap"===m.mInfo.mSampler.filter&&this.mRenderer.CreateMipmaps(m.globject)));else if("video"===m.mInfo.mType)!1===m.video.mPaused&&null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,e,m.video,!1,3,1,m.video.currentTime,this.mID),!0===m.loaded&&!1===m.video.mPaused&&(this.mRenderer.UpdateTextureFromImage(m.globject,m.video),"mipmap"===m.mInfo.mSampler.filter&&this.mRenderer.CreateMipmaps(m.globject));else if("music"===m.mInfo.mType||"musicstream"===m.mInfo.mType){if(!1===m.audio.mPaused&&!1===m.audio.mForceMuted&&!0===m.loaded&&(null!==t&&(m.audio.mSound.mAnalyser.getByteFrequencyData(m.audio.mSound.mFreqData),m.audio.mSound.mAnalyser.getByteTimeDomainData(m.audio.mSound.mWaveData)),null!==this.mTextureCallbackFun&&("music"===m.mInfo.mType?this.mTextureCallbackFun(this.mTextureCallbackObj,e,null==t?null:{wave:m.audio.mSound.mFreqData},!1,4,1,m.audio.currentTime,this.mID):"musicstream"===m.mInfo.mType&&this.mTextureCallbackFun(this.mTextureCallbackObj,e,null==t?null:{wave:m.audio.mSound.mFreqData,info:m.audio.soundcloudInfo},!1,8,1,m.audio.currentTime,this.mID))),!0===m.loaded){if(!0===m.audio.mForceMuted){let e=m.audio.mSound.mFreqData.length;for(let t=0;t<e;t++){let n=t/e,s=(.75+.25*Math.sin(10*t+13*r))*Math.exp(-3*n);t<3&&(s=Math.pow(.5+.5*Math.sin(6.2831*r),4)*(1-t/3)),m.audio.mSound.mFreqData[t]=0|Math.floor(255*s)}for(let t=0;t<e;t++){let n=.5+.15*Math.sin(17*r+62.831*t/e)*Math.sin(23*r+1.9*t/e);m.audio.mSound.mWaveData[t]=0|Math.floor(255*n)}}if(!1===m.audio.mPaused){Math.min(m.audio.mSound.mWaveData.length,512);this.mRenderer.UpdateTexture(m.globject,0,0,512,1,m.audio.mSound.mFreqData),this.mRenderer.UpdateTexture(m.globject,0,1,512,1,m.audio.mSound.mWaveData)}}}else if("mic"===m.mInfo.mType){if(!1===m.loaded||m.mForceMuted||null===t||null==m.mAnalyser){let e=m.mFreqData.length;for(let t=0;t<e;t++){let n=t/e,s=(.75+.25*Math.sin(10*t+13*r))*Math.exp(-3*n);t<3&&(s=Math.pow(.5+.5*Math.sin(6.2831*r),4)*(1-t/3)),m.mFreqData[t]=0|Math.floor(255*s)}for(let t=0;t<e;t++){let n=.5+.15*Math.sin(17*r+62.831*t/e)*Math.sin(23*r+1.9*t/e);m.mWaveData[t]=0|Math.floor(255*n)}}else m.mAnalyser.getByteFrequencyData(m.mFreqData),m.mAnalyser.getByteTimeDomainData(m.mWaveData);if(null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,e,{wave:m.mFreqData},!1,5,1,-1,this.mID),!0===m.loaded){let e=Math.min(m.mWaveData.length,512);this.mRenderer.UpdateTexture(m.globject,0,0,512,1,m.mFreqData),this.mRenderer.UpdateTexture(m.globject,0,1,e,1,m.mWaveData)}}else if("buffer"===m.mInfo.mType){if(!0===m.loaded){let e=m.id,t=f[e].mTexture[f[e].mLastRenderDone],r=this.mRenderer.FILTER.NONE;"linear"===m.mInfo.mSampler.filter?r=this.mRenderer.FILTER.LINEAR:"mipmap"===m.mInfo.mSampler.filter&&(r=this.mRenderer.FILTER.MIPMAP),this.mRenderer.SetSamplerFilter(t,r,!1)}if(null!==this.mTextureCallbackFun){let t=m.id;this.mTextureCallbackFun(this.mTextureCallbackObj,e,{texture:m.image,data:f[t].mThumbnailBuffer},!1,9,1,-1,this.mID)}}}},EffectPass.prototype.Paint_Cubemap=function(e,t,m,r,n,s,i,o,a,l,u,h,f,d,p,c){this.ProcessInputs(e,t,m,r,n,s,i,o,a,l,u,h,f,d,p,c),this.SetUniforms(e,t,m,r,n,s,i,o,a,l,u,h,f,d,p);let T=this.mRenderer.GetAttribLocation(this.mProgram,"pos"),I=[0,0,u,h];this.mRenderer.SetViewport(I);let y=[-1,-1,-1],g=[1,-1,-1],S=[1,1,-1],C=[-1,1,-1],R=[0,0,0];0===c?(y=[1,1,1],g=[1,1,-1],S=[1,-1,-1],C=[1,-1,1]):1===c?(y=[-1,1,-1],g=[-1,1,1],S=[-1,-1,1],C=[-1,-1,-1]):2===c?(y=[-1,1,-1],g=[1,1,-1],S=[1,1,1],C=[-1,1,1]):3===c?(y=[-1,-1,1],g=[1,-1,1],S=[1,-1,-1],C=[-1,-1,-1]):4===c?(y=[-1,1,1],g=[1,1,1],S=[1,-1,1],C=[-1,-1,1]):(y=[1,1,-1],g=[-1,1,-1],S=[-1,-1,-1],C=[1,-1,-1]);let b=[y[0],y[1],y[2],g[0],g[1],g[2],S[0],S[1],S[2],C[0],C[1],C[2],R[0],R[1],R[2]];this.mRenderer.SetShaderConstant3FV("unCorners",b),this.mRenderer.SetShaderConstant4FV("unViewport",I),this.mRenderer.DrawUnitQuad_XY(T),this.mRenderer.DettachTextures()},EffectPass.prototype.Paint=function(e,t,m,r,n,s,i,o,a,l,u,h,f,d,p,c,T,I,y){if("sound"===this.mType){if(!0===this.mSoundShaderCompiled){for(let e=0;e<this.mInputs.length;e++){let t=this.mInputs[e];if(null!==t){if("texture"===t.mInfo.mType&&!t.loaded)return;if("cubemap"===t.mInfo.mType&&!t.loaded)return}}this.Paint_Sound(t,m),this.mSoundShaderCompiled=!1}0===this.mFrame&&(!0===this.mPlaying&&(this.mPlayNode.disconnect(),this.mPlayNode.stop(),this.mPlayNode=null),this.mPlaying=!0,this.mPlayNode=t.createBufferSource(),this.mPlayNode.buffer=this.mBuffer,this.mPlayNode.connect(this.mGainNode),this.mPlayNode.start(0)),this.mFrame++}else if("image"===this.mType)this.mRenderer.SetRenderTarget(null),this.Paint_Image(e,t,m,r,n,s,i,o,a,l,u,h,c,T,I),this.mFrame++;else if("common"===this.mType);else if("buffer"===this.mType){this.mEffect.ResizeBuffer(d,this.mEffect.mXres,this.mEffect.mYres,!1);let f=c[d],y=1-f.mLastRenderDone;this.mRenderer.SetRenderTarget(f.mTarget[y]),this.Paint_Image(e,t,m,r,n,s,i,o,a,l,u,h,c,T,I),p&&this.mRenderer.CreateMipmaps(f.mTexture[y]),c[d].mLastRenderDone=1-c[d].mLastRenderDone,this.mFrame++}else if("cubemap"===this.mType){this.mEffect.ResizeCubemapBuffer(d,1024,1024,!1);let f=T[d];u=f.mResolution[0],h=f.mResolution[1];let y=1-f.mLastRenderDone;for(let d=0;d<6;d++)this.mRenderer.SetRenderTargetCubeMap(f.mTarget[y],d),this.Paint_Cubemap(e,t,m,r,n,s,i,o,a,l,u,h,c,T,I,d);this.mRenderer.SetRenderTargetCubeMap(null,0),p&&this.mRenderer.CreateMipmaps(f.mTexture[y]),T[d].mLastRenderDone=1-T[d].mLastRenderDone,this.mFrame++}},EffectPass.prototype.StopOutput_Sound=function(e){null!==this.mPlayNode&&this.mPlayNode.disconnect()},EffectPass.prototype.ResumeOutput_Sound=function(e){null!==this.mPlayNode&&(e.resume(),this.mPlayNode.connect(this.mGainNode))},EffectPass.prototype.StopOutput_Image=function(e){},EffectPass.prototype.ResumeOutput_Image=function(e){},EffectPass.prototype.StopOutput=function(e){for(let e=0;e<this.mInputs.length;e++)this.StopInput(e);"sound"===this.mType?this.StopOutput_Sound(e):this.StopOutput_Image(e)},EffectPass.prototype.ResumeOutput=function(e){for(let e=0;e<this.mInputs.length;e++)this.ResumeInput(e);"sound"===this.mType?this.ResumeOutput_Sound(e):this.ResumeOutput_Image(e)},EffectPass.prototype.GetCompilationTime=function(){return this.mCompilationTime},Effect.prototype.ResizeCubemapBuffer=function(e,t,m){let r=this.mCubeBuffers[e].mResolution[0],n=this.mCubeBuffers[e].mResolution[1];if(null===this.mCubeBuffers[e].mTexture[0]||r!==t||n!==m){let r=this.mRenderer.CreateTexture(this.mRenderer.TEXTYPE.CUBEMAP,t,m,this.mRenderer.TEXFMT.C4F16,this.mRenderer.FILTER.LINEAR,this.mRenderer.TEXWRP.CLAMP,null),n=this.mRenderer.CreateRenderTargetCubeMap(r,null,!1),s=this.mRenderer.CreateTexture(this.mRenderer.TEXTYPE.CUBEMAP,t,m,this.mRenderer.TEXFMT.C4F16,this.mRenderer.FILTER.LINEAR,this.mRenderer.TEXWRP.CLAMP,null),i=this.mRenderer.CreateRenderTargetCubeMap(s,null,!1);this.mCubeBuffers[e].mTexture=[r,s],this.mCubeBuffers[e].mTarget=[n,i],this.mCubeBuffers[e].mLastRenderDone=0,this.mCubeBuffers[e].mResolution[0]=t,this.mCubeBuffers[e].mResolution[1]=m}},Effect.prototype.ResizeBuffer=function(e,t,m,r){if(r&&null===this.mBuffers[e].mTexture[0])return;let n=this.mBuffers[e].mResolution[0],s=this.mBuffers[e].mResolution[1];if(n!==t||s!==m){let r=null!==this.mBuffers[e].mTexture[0],i=this.mRenderer.CreateTexture(this.mRenderer.TEXTYPE.T2D,t,m,this.mRenderer.TEXFMT.C4F32,r?this.mBuffers[e].mTexture[0].mFilter:this.mRenderer.FILTER.NONE,r?this.mBuffers[e].mTexture[0].mWrap:this.mRenderer.TEXWRP.CLAMP,null),o=this.mRenderer.CreateTexture(this.mRenderer.TEXTYPE.T2D,t,m,this.mRenderer.TEXFMT.C4F32,r?this.mBuffers[e].mTexture[1].mFilter:this.mRenderer.FILTER.NONE,r?this.mBuffers[e].mTexture[1].mWrap:this.mRenderer.TEXWRP.CLAMP,null),a=this.mRenderer.CreateRenderTarget(i,null,null,null,null,!1),l=this.mRenderer.CreateRenderTarget(o,null,null,null,null,!1);if(r){let r=[0,0,Math.min(t,n),Math.min(m,s)];this.mRenderer.SetBlend(!1),this.mRenderer.SetViewport(r),this.mRenderer.AttachShader(this.mProgramCopy);let i=this.mRenderer.GetAttribLocation(this.mProgramCopy,"pos"),o=[0,0,n,s];this.mRenderer.SetShaderConstant4FV("v",o),this.mRenderer.SetRenderTarget(a),this.mRenderer.AttachTextures(1,this.mBuffers[e].mTexture[0],null,null,null),this.mRenderer.DrawUnitQuad_XY(i),this.mRenderer.SetRenderTarget(l),this.mRenderer.AttachTextures(1,this.mBuffers[e].mTexture[1],null,null,null),this.mRenderer.DrawUnitQuad_XY(i),this.mRenderer.DestroyTexture(this.mBuffers[e].mTexture[0]),this.mRenderer.DestroyRenderTarget(this.mBuffers[e].mTarget[0]),this.mRenderer.DestroyTexture(this.mBuffers[e].mTexture[1]),this.mRenderer.DestroyRenderTarget(this.mBuffers[e].mTarget[1])}this.mBuffers[e].mTexture=[i,o],this.mBuffers[e].mTarget=[a,l],this.mBuffers[e].mLastRenderDone=0,this.mBuffers[e].mResolution[0]=t,this.mBuffers[e].mResolution[1]=m}},Effect.prototype.saveScreenshot=function(e){let t=this.mPasses[e];if("buffer"===t.mType){let t=assetID_to_bufferID(this.mPasses[e].mOutputs[0]),m=this.mBuffers[t].mTarget[this.mBuffers[t].mLastRenderDone],r=3,n=m.mTex0.mXres,s=m.mTex0.mYres,i="Float",o=new Float32Array(n*s*4);this.mRenderer.GetPixelDataRenderTarget(m,o,n,s);let a=piExportToEXR(n,s,r,i,o);piTriggerDownload("image.exr",a)}else if("cubemap"===t.mType){let e=4096,t=2048;this.mScreenshotSytem.Allocate(e,t);let m=this.mCubeBuffers[0],r=this.mScreenshotSytem.GetTarget();this.mRenderer.SetRenderTarget(r);let n=this.mScreenshotSytem.GetProgram();this.mRenderer.AttachShader(n);let s=this.mRenderer.GetAttribLocation(n,"pos");this.mRenderer.SetViewport([0,0,e,t]),this.mRenderer.AttachTextures(1,m.mTexture[m.mLastRenderDone],null,null,null),this.mRenderer.DrawUnitQuad_XY(s),this.mRenderer.DettachTextures(),this.mRenderer.SetRenderTarget(null);let i=new Float32Array(e*t*4);this.mRenderer.GetPixelDataRenderTarget(r,i,e,t);let o=piExportToEXR(e,t,3,"Float",i);piTriggerDownload("image.exr",o)}else if("sound"===t.mType){let e=0;const m=16,r=2;let n=new Int16Array(60*t.mSampleRate*r);t.iRenderSound(new Date,(function(t,m,r){for(let t=0;t<r;t++)n[e++]=m[4*t+0]+256*m[4*t+1]-32767,n[e++]=m[4*t+2]+256*m[4*t+3]-32767}));let s=piExportToWAV(60*t.mSampleRate,t.mSampleRate,m,r,n);piTriggerDownload("sound.wav",s)}},Effect.prototype.ResizeBuffers=function(e,t){for(let m=0;m<this.mMaxBuffers;m++)this.ResizeBuffer(m,e,t,!0)},Effect.prototype.IsEnabledVR=function(){return!!this.mRenderingStereo},Effect.prototype.EnableVR=function(){this.mWebVR.IsSupported()&&(this.mRenderingStereo||(this.mRenderingStereo=!0,this.mWebVR.Enable()))},Effect.prototype.DisableVR=function(){this.mWebVR.IsSupported()&&this.mRenderingStereo&&(this.mRenderingStereo=!1,this.mWebVR.Disable())},Effect.prototype.GetTexture=function(e,t){return this.mPasses[e].GetTexture(t)},Effect.prototype.NewTexture=function(e,t,m){return this.mPasses[e].NewTexture(this.mAudioContext,t,m,this.mBuffers,this.mCubeBuffers,this.mKeyboard)},Effect.prototype.SetOutputs=function(e,t,m){this.mPasses[e].SetOutputs(t,m)},Effect.prototype.SetOutputsByBufferID=function(e,t,m){this.mPasses[e].SetOutputsByBufferID(t,m)},Effect.prototype.GetAcceptsLinear=function(e,t){return this.mPasses[e].GetAcceptsLinear(t)},Effect.prototype.GetAcceptsMipmapping=function(e,t){return this.mPasses[e].GetAcceptsMipmapping(t)},Effect.prototype.GetAcceptsWrapRepeat=function(e,t){return this.mPasses[e].GetAcceptsWrapRepeat(t)},Effect.prototype.GetAcceptsVFlip=function(e,t){return this.mPasses[e].GetAcceptsVFlip(t)},Effect.prototype.SetSamplerFilter=function(e,t,m){this.mPasses[e].SetSamplerFilter(t,m,this.mBuffers,this.mCubeBuffers)},Effect.prototype.GetTranslatedShaderSource=function(e){return this.mPasses[e].GetTranslatedShaderSource()},Effect.prototype.GetSamplerFilter=function(e,t){return this.mPasses[e].GetSamplerFilter(t)},Effect.prototype.SetSamplerWrap=function(e,t,m){this.mPasses[e].SetSamplerWrap(t,m,this.mBuffers)},Effect.prototype.GetSamplerWrap=function(e,t){return this.mPasses[e].GetSamplerWrap(t)},Effect.prototype.SetSamplerVFlip=function(e,t,m){this.mPasses[e].SetSamplerVFlip(t,m)},Effect.prototype.GetSamplerVFlip=function(e,t){return this.mPasses[e].GetSamplerVFlip(t)},Effect.prototype.GetHeaderSize=function(e){return this.mPasses[e].mHeaderLength+this.mRenderer.GetShaderHeaderLines(1)},Effect.prototype.ToggleVolume=function(){this.mForceMuted=!this.mForceMuted,this.mForceMuted?this.mGainNode.gain.value=0:this.mGainNode.gain.value=1;let e=this.mPasses.length;for(let t=0;t<e;t++)for(let e=0;e<this.mPasses[t].mInputs.length;e++)this.mForceMuted?this.mPasses[t].MuteInput(this.mAudioContext,e):this.mPasses[t].UnMuteInput(this.mAudioContext,e);return this.mForceMuted},Effect.prototype.SetKeyDown=function(e,t){if(255==this.mKeyboard.mData[t+0])return;this.mKeyboard.mData[t+0]=255,this.mKeyboard.mData[t+256]=255,this.mKeyboard.mData[t+512]=255-this.mKeyboard.mData[t+512],this.mRenderer.UpdateTexture(this.mKeyboard.mTexture,0,0,256,3,this.mKeyboard.mData);let m=this.mPasses.length;for(let e=0;e<m;e++)for(let t=0;t<this.mPasses[e].mInputs.length;t++){let m=this.mPasses[e].mInputs[t];null!==m&&"keyboard"===m.mInfo.mType&&null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,t,{mImage:this.mKeyboard.mIcon,mData:this.mKeyboard.mData},!1,6,1,-1,this.mPasses[e].mID)}},Effect.prototype.SetKeyUp=function(e,t){this.mKeyboard.mData[t+0]=0,this.mKeyboard.mData[t+256]=0,this.mRenderer.UpdateTexture(this.mKeyboard.mTexture,0,0,256,3,this.mKeyboard.mData);let m=this.mPasses.length;for(let e=0;e<m;e++)for(let t=0;t<this.mPasses[e].mInputs.length;t++){let m=this.mPasses[e].mInputs[t];null!==m&&"keyboard"===m.mInfo.mType&&null!==this.mTextureCallbackFun&&this.mTextureCallbackFun(this.mTextureCallbackObj,t,{mImage:this.mKeyboard.mIcon,mData:this.mKeyboard.mData},!1,6,1,-1,this.mPasses[e].mID)}},Effect.prototype.StopOutputs=function(){let e=this.mAudioContext,t=this.mPasses.length;for(let m=0;m<t;m++)this.mPasses[m].StopOutput(e)},Effect.prototype.ResumeOutputs=function(){let e=this.mAudioContext,t=this.mPasses.length;for(let m=0;m<t;m++)this.mPasses[m].ResumeOutput(e)},Effect.prototype.PauseInput=function(e,t){return this.mPasses[e].TooglePauseInput(this.mAudioContext,t)},Effect.prototype.ToggleMuteInput=function(e,t){return this.mPasses[e].ToggleMuteInput(this.mAudioContext,t)},Effect.prototype.RewindInput=function(e,t){this.mPasses[e].RewindInput(this.mAudioContext,t)},Effect.prototype.UpdateInputs=function(e,t){this.mPasses[e].UpdateInputs(this.mAudioContext,t,this.mKeyboard)},Effect.prototype.ResetTime=function(){this.mFrame=0,this.mAudioContext.resume();let e=this.mPasses.length;for(let t=0;t<e;t++){this.mPasses[t].mFrame=0;for(let e=0;e<this.mPasses[t].mInputs.length;e++)this.mPasses[t].RewindInput(this.mAudioContext,e)}},Effect.prototype.RequestAnimationFrame=function(e){this.mRenderingStereo&&this.mWebVR.IsPresenting()?this.mWebVR.RequestAnimationFrame(e):setTimeout(e,1e3/60)},Effect.prototype.Paint=function(e,t,m,r,n,s,i,o){let a=this.mAudioContext,l=new Date,u=null;this.mRenderingStereo&&(u=this.mWebVR.GetData());let h=this.mXres/1,f=this.mYres/1;if(0===this.mFrame){for(let e=0;e<this.mMaxBuffers;e++)null!==this.mBuffers[e].mTexture[0]&&(this.mRenderer.SetRenderTarget(this.mBuffers[e].mTarget[0]),this.mRenderer.Clear(this.mRenderer.CLEAR.Color,[0,0,0,0],1,0),this.mRenderer.SetRenderTarget(this.mBuffers[e].mTarget[1]),this.mRenderer.Clear(this.mRenderer.CLEAR.Color,[0,0,0,0],1,0),this.mRenderer.CreateMipmaps(this.mBuffers[e].mTexture[0]),this.mRenderer.CreateMipmaps(this.mBuffers[e].mTexture[1]));for(let e=0;e<this.mMaxCubeBuffers;e++)if(null!==this.mCubeBuffers[e].mTexture[0])for(let t=0;t<6;t++)this.mRenderer.SetRenderTargetCubeMap(this.mCubeBuffers[e].mTarget[0],t),this.mRenderer.Clear(this.mRenderer.CLEAR.Color,[0,0,0,0],1,0),this.mRenderer.SetRenderTargetCubeMap(this.mCubeBuffers[e].mTarget[1],t),this.mRenderer.Clear(this.mRenderer.CLEAR.Color,[0,0,0,0],1,0),this.mRenderer.CreateMipmaps(this.mCubeBuffers[e].mTexture[0]),this.mRenderer.CreateMipmaps(this.mCubeBuffers[e].mTexture[1])}let d=this.mPasses.length;for(let p=0;p<d;p++)"sound"===this.mPasses[p].mType&&null!==this.mPasses[p].mProgram&&this.mPasses[p].Paint(u,a,l,e,t,m,r,n,s,i,h,f,o,null,!1,this.mBuffers,this.mCubeBuffers,this.mKeyboard,this);for(let p=0;p<d;p++){if("buffer"!==this.mPasses[p].mType)continue;if(null===this.mPasses[p].mProgram)continue;let c=assetID_to_bufferID(this.mPasses[p].mOutputs[0]),T=!1;for(let e=0;e<d;e++)for(let t=0;t<this.mPasses[e].mInputs.length;t++){let m=this.mPasses[e].mInputs[t];if(null!==m&&"buffer"===m.mInfo.mType&&m.id===c&&"mipmap"===m.mInfo.mSampler.filter){T=!0;break}}this.mPasses[p].Paint(u,a,l,e,t,m,r,n,s,i,h,f,o,c,T,this.mBuffers,this.mCubeBuffers,this.mKeyboard,this)}for(let p=0;p<d;p++){if("cubemap"!==this.mPasses[p].mType)continue;if(null===this.mPasses[p].mProgram)continue;let c=0,T=!1;for(let e=0;e<d;e++)for(let t=0;t<this.mPasses[e].mInputs.length;t++){let m=this.mPasses[e].mInputs[t];if(null!==m&&"cubemap"===m.mInfo.mType&&0===assetID_to_cubemapBuferID(m.mInfo.mID)&&"mipmap"===m.mInfo.mSampler.filter){T=!0;break}}this.mPasses[p].Paint(u,a,l,e,t,m,r,n,s,i,h,f,o,c,T,this.mBuffers,this.mCubeBuffers,this.mKeyboard,this)}for(let p=0;p<d;p++)"image"===this.mPasses[p].mType&&null!==this.mPasses[p].mProgram&&this.mPasses[p].Paint(u,a,l,e,t,m,r,n,s,i,h,f,o,null,!1,this.mBuffers,this.mCubeBuffers,this.mKeyboard,this);for(let e=0;e<256;e++)this.mKeyboard.mData[e+256]=0;this.mRenderer.UpdateTexture(this.mKeyboard.mTexture,0,0,256,3,this.mKeyboard.mData),this.mRenderingStereo&&this.mWebVR.Finish(),this.mFrame++},Effect.prototype.NewShader=function(e,t,m){let r=[];for(let e=0;e<this.mPasses.length;e++)"common"===this.mPasses[e].mType&&r.push(this.mPasses[e].mSource);this.mPasses[e].NewShader(r,t,m)},Effect.prototype.GetNumPasses=function(){return this.mPasses.length},Effect.prototype.GetNumOfType=function(e){let t=0;for(let m=0;m<this.mPasses.length;m++)this.mPasses[m].mType===e&&t++;return t},Effect.prototype.GetPassType=function(e){return this.mPasses[e].mType},Effect.prototype.GetPassName=function(e){return this.mPasses[e].mName},Effect.prototype.GetCode=function(e){return this.mPasses[e].mSource},Effect.prototype.SetCode=function(e,t){this.mPasses[e].SetCode(t)},Effect.prototype.GetError=function(e){return this.mPasses[e].mError},Effect.prototype.GetErrorStr=function(e){return this.mPasses[e].mErrorStr},Effect.prototype.GetErrorGlobal=function(){for(let e=0;e<this.mPasses.length;e++)if(this.mPasses[e].mError)return!0;return!1},Effect.prototype.Load=function(e){if("0.1"!==e.ver)return console.log("Wrong Format"),!1;let t=e.renderpass.length;if(t<1||t>this.mMaxPasses)return console.log("Corrupted Shader - "+t),!1;this.mPasses=[];for(let m=0;m<t;m++){let t=e.renderpass[m];if(this.mForceMuted&&"sound"===t.type)continue;let r=new EffectPass(this.mRenderer,this.mIs20,this.mIsLowEnd,this.mShaderTextureLOD,this.mTextureCallbackFun,this.mTextureCallbackObj,this.mForceMuted,this.mForcePaused,this.mGainNode,this.mProgramDownscale,m,this);r.Create(t.type,this.mAudioContext);let n=t.inputs.length;for(let e=0;e<4;e++)r.NewTexture(this.mAudioContext,e,null,null,null);for(let e=0;e<n;e++){let m=t.inputs[e].channel,n=t.inputs[e].type,s=t.inputs[e].id,i=t.inputs[e].filepath,o=t.inputs[e].previewfilepath,a=t.inputs[e].sampler;r.NewTexture(this.mAudioContext,m,{mType:n,mID:s,mSrc:i,mSampler:a,mPreviewSrc:o},this.mBuffers,this.mCubeBuffers,this.mKeyboard)}for(let e=0;e<4;e++)r.SetOutputs(e,null);let s=t.outputs.length;for(let e=0;e<s;e++){let m=t.outputs[e].id,n=t.outputs[e].channel;r.SetOutputs(n,m)}let i="";"common"===t.type&&(i="Common"),"sound"===t.type&&(i="Sound"),"image"===t.type&&(i="Image"),"buffer"===t.type&&(i="Buffer "+String.fromCharCode(65+assetID_to_bufferID(r.mOutputs[0]))),"cubemap"===t.type&&(i="Cube A"),r.SetName(i),r.SetCode(t.code),this.mPasses.push(r)}return!0},Effect.prototype.CompileSome=function(e,t,m){let r=this,n=(new Date).getTime(),s=[];for(let m=0;m<e.length;m++)s.push(new Promise((function(n,s){r.NewShader(e[m],t,(function(){n(1)}))})));Promise.all(s).then((function(e){let t=!1;for(let e=0;e<r.mPasses.length;e++)if(r.mPasses[e].mError){t=!0;break}r.mCompilationTime=(new Date).getTime()-n,m(!t)})).catch(console.log)},Effect.prototype.Compile=function(e,t){let m=this,r=(new Date).getTime(),n=[],s=this.mPasses.length;for(let t=0;t<s;t++)n.push(new Promise((function(r,n){m.NewShader(t,e,(function(){r(1)}))})));Promise.all(n).then((function(e){let n=!1;for(let e=0;e<s;e++)if(m.mPasses[e].mError){n=!0;break}m.mCompilationTime=(new Date).getTime()-r,t(!n)})).catch(console.log)},Effect.prototype.GetCompilationTime=function(e){return this.mPasses[e].GetCompilationTime()/1e3},Effect.prototype.GetTotalCompilationTime=function(){return this.mCompilationTime/1e3},Effect.prototype.DestroyPass=function(e){this.mPasses[e].Destroy(this.mAudioContext),this.mPasses.splice(e,1)},Effect.prototype.AddPass=function(e,t,m){let r=null;"sound"===e&&(r="vec2 mainSound( int samp, float time )\n{\n    // A 440 Hz wave that attenuates quickly overt time\n    return vec2( sin(6.2831*440.0*time)*exp(-3.0*time) );\n}"),"buffer"===e&&(r="void mainImage( out vec4 fragColor, in vec2 fragCoord )\n{\n    fragColor = vec4(0.0,0.0,1.0,1.0);\n}"),"common"===e&&(r="vec4 someFunction( vec4 a, float b )\n{\n    return a+b;\n}"),"cubemap"===e&&(r="void mainCubemap( out vec4 fragColor, in vec2 fragCoord, in vec3 rayOri, in vec3 rayDir )\n{\n    // Ray direction as color\n    vec3 col = 0.5 + 0.5*rayDir;\n\n    // Output to cubemap\n    fragColor = vec4(col,1.0);\n}");let n=this.GetNumPasses();return this.mPasses[n]=new EffectPass(this.mRenderer,this.mIs20,this.mIsLowEnd,this.mShaderTextureLOD,this.mTextureCallbackFun,this.mTextureCallbackObj,this.mForceMuted,this.mForcePaused,this.mGainNode,this.mProgramDownscale,n,this),this.mPasses[n].Create(e,this.mAudioContext),this.mPasses[n].SetName(t),this.mPasses[n].SetCode(r),this.NewShader(n,!1,(function(){m()})),{mId:n,mShader:r}},Effect.prototype.IsBufferPassUsed=function(e){for(let t=0;t<this.mPasses.length;t++)if("buffer"===this.mPasses[t].mType&&this.mPasses[t].mOutputs[0]===bufferID_to_assetID(e))return!0;return!1},Effect.prototype.Save=function(){var e={ver:"0.1",renderpass:[]};let t=this.mPasses.length;for(let m=0;m<t;m++){e.renderpass[m]={},e.renderpass[m].outputs=new Array;for(let t=0;t<4;t++){let r=this.mPasses[m].mOutputs[t];null!==r&&e.renderpass[m].outputs.push({channel:t,id:r})}e.renderpass[m].inputs=new Array;for(let t=0;t<4;t++)null!==this.mPasses[m].mInputs[t]&&e.renderpass[m].inputs.push({channel:t,type:this.mPasses[m].mInputs[t].mInfo.mType,id:this.mPasses[m].mInputs[t].mInfo.mID,filepath:this.mPasses[m].mInputs[t].mInfo.mSrc,sampler:this.mPasses[m].mInputs[t].mInfo.mSampler});e.renderpass[m].code=this.mPasses[m].mSource,e.renderpass[m].name=this.mPasses[m].mName,e.renderpass[m].description="",e.renderpass[m].type=this.mPasses[m].mType}return e.flags=this.calcFlags(),e},Effect.prototype.calcFlags=function(){let e=!1,t=!1,m=!1,r=!1,n=!1,s=!1,i=!1,o=this.mPasses.length;for(let a=0;a<o;a++){let o=this.mPasses[a];"sound"===o.mType&&(r=!0),"buffer"===o.mType&&(s=!0);for(let e=0;e<4;e++)null!==o.mInputs[e]&&("webcam"===o.mInputs[e].mInfo.mType?t=!0:"keyboard"===o.mInputs[e].mInfo.mType?n=!0:"mic"===o.mInputs[e].mInfo.mType?m=!0:"musicstream"===o.mInputs[e].mInfo.mType&&(i=!0));let l=o.mSource.indexOf("mainVR("),u=o.mSource.indexOf("mainVR (");(l>0||u>0)&&(e=!0)}return{mFlagVR:e,mFlagWebcam:t,mFlagSoundInput:m,mFlagSoundOutput:r,mFlagKeyboard:n,mFlagMultipass:s,mFlagMusicStream:i}};
+"use strict"
+
+function bufferID_to_assetID( id )
+{
+    if( id===0 ) return '4dXGR8';
+    if( id===1 ) return 'XsXGR8';
+    if( id===2 ) return '4sXGR8';
+    if( id===3 ) return 'XdfGR8';
+    return 'none';
+}
+function assetID_to_bufferID( id )
+{
+    if( id==='4dXGR8' ) return 0;
+    if( id==='XsXGR8' ) return 1;
+    if( id==='4sXGR8' ) return 2;
+    if( id==='XdfGR8' ) return 3;
+    return -1;
+}
+
+function assetID_to_cubemapBuferID( id )
+{
+    if( id==='4dX3Rr' ) return 0;
+    return -1;
+}
+function cubamepBufferID_to_assetID( id )
+{
+    if( id===0 ) return '4dX3Rr';
+    return 'none';
+}
+
+function EffectPass( renderer, is20, isLowEnd, hasShaderTextureLOD, callback, obj, forceMuted, forcePaused, outputGainNode, copyProgram, id, effect  )
+{
+    this.mID = id;
+    this.mInputs  = [null, null, null, null ];
+    this.mOutputs = [null, null, null, null ];
+    this.mSource = null;
+
+    this.mGainNode = outputGainNode;
+    this.mSoundShaderCompiled = false;
+
+    this.mEffect = effect;
+    this.mRenderer = renderer;
+    this.mProgramCopy = copyProgram;
+    this.mCompilationTime = 0;
+
+    this.mType = "none";
+    this.mName = "none";
+    this.mFrame = 0;
+
+    this.mShaderTextureLOD = hasShaderTextureLOD;
+    this.mIs20 = is20;
+    this.mIsLowEnd = isLowEnd;
+    this.mTextureCallbackFun = callback;
+    this.mTextureCallbackObj = obj;
+    this.mForceMuted = forceMuted;
+    this.mForcePaused = forcePaused;
+}
+
+EffectPass.prototype.MakeHeader_Image = function()
+{
+    let header = "";
+
+    header += "#define HW_PERFORMANCE " + ((this.mIsLowEnd===true)?"0":"1") + "\n";
+
+    header += "uniform vec3      iResolution;\n" +
+              "uniform float     iTime;\n" +
+              "uniform float     iChannelTime[4];\n" +
+              "uniform vec4      iMouse;\n" +
+              "uniform vec4      iDate;\n" +
+              "uniform float     iSampleRate;\n" +
+              "uniform vec3      iChannelResolution[4];\n" +
+              "uniform int       iFrame;\n" +
+              "uniform float     iTimeDelta;\n" +
+              "uniform float     iFrameRate;\n";
+
+    for( let i=0; i<this.mInputs.length; i++ )
+    {
+        let inp = this.mInputs[i];
+
+        // old API
+             if( inp===null )                  header += "uniform sampler2D iChannel" + i + ";\n";
+        else if( inp.mInfo.mType==="cubemap" ) header += "uniform samplerCube iChannel" + i + ";\n";
+        else if( inp.mInfo.mType==="volume"  ) header += "uniform sampler3D iChannel" + i + ";\n";
+        else                                  header += "uniform sampler2D iChannel" + i + ";\n";
+
+        // new API (see shadertoy.com/view/wtdGW8)
+        header += "uniform struct {\n";
+             if( inp===null )                  header += "  sampler2D";
+        else if( inp.mInfo.mType==="cubemap" ) header += "  samplerCube";
+        else if( inp.mInfo.mType==="volume"  ) header += "  sampler3D";
+        else                                  header += "  sampler2D";
+        header +=        " sampler;\n";
+        header += "  vec3  size;\n";
+        header += "  float time;\n";
+        header += "  int   loaded;\n";
+        header += "}iCh" + i + ";\n";
+    }
+	header += "void mainImage( out vec4 c, in vec2 f );\n";
+    header += "void st_assert( bool cond );\n";
+    header += "void st_assert( bool cond, int v );\n";
+
+    if( this.mIs20 )
+    {
+        header += "\nout vec4 shadertoy_out_color;\n" +
+        "void st_assert( bool cond, int v ) {if(!cond){if(v==0)shadertoy_out_color.x=-1.0;else if(v==1)shadertoy_out_color.y=-1.0;else if(v==2)shadertoy_out_color.z=-1.0;else shadertoy_out_color.w=-1.0;}}\n" +
+        "void st_assert( bool cond        ) {if(!cond)shadertoy_out_color.x=-1.0;}\n" +
+        "void main( void )" +
+        "{" +
+            "shadertoy_out_color = vec4(1.0,1.0,1.0,1.0);" +
+            "vec4 color = vec4(0.0,0.0,0.0,1.0);" +
+            "mainImage( color, gl_FragCoord.xy );" +
+            "if(shadertoy_out_color.x<0.0) color=vec4(1.0,0.0,0.0,1.0);" +
+            "if(shadertoy_out_color.y<0.0) color=vec4(0.0,1.0,0.0,1.0);" +
+            "if(shadertoy_out_color.z<0.0) color=vec4(0.0,0.0,1.0,1.0);" +
+            "if(shadertoy_out_color.w<0.0) color=vec4(1.0,1.0,0.0,1.0);" +
+            "shadertoy_out_color = vec4(color.xyz,1.0);" +
+        "}";
+    }
+    else
+    {
+        header += "" +
+        "void st_assert( bool cond, int v ) {if(!cond){if(v==0)gl_FragColor.x=-1.0;else if(v==1)gl_FragColor.y=-1.0;else if(v==2)gl_FragColor.z=-1.0;else gl_FragColor.w=-1.0;}}\n" +
+        "void st_assert( bool cond        ) {if(!cond)gl_FragColor.x=-1.0;}\n" +
+        "void main( void )" +
+        "{" +
+            "gl_FragColor = vec4(0.0,0.0,0.0,1.0);" +
+            "vec4 color = vec4(0.0,0.0,0.0,1.0);" +
+            "mainImage( color, gl_FragCoord.xy );" +
+            "color.w = 1.0;" +
+            "if(gl_FragColor.w<0.0) color=vec4(1.0,0.0,0.0,1.0);" +
+            "if(gl_FragColor.x<0.0) color=vec4(1.0,0.0,0.0,1.0);" +
+            "if(gl_FragColor.y<0.0) color=vec4(0.0,1.0,0.0,1.0);" +
+            "if(gl_FragColor.z<0.0) color=vec4(0.0,0.0,1.0,1.0);" +
+            "if(gl_FragColor.w<0.0) color=vec4(1.0,1.0,0.0,1.0);" +
+            "gl_FragColor = vec4(color.xyz,1.0);"+
+        "}";
+    }
+    header += "\n";
+
+    /*
+    this.mImagePassFooterVR = "\n" +
+    "uniform vec4 unViewport;\n" +
+    "uniform vec3 unCorners[5];\n";
+    if( this.mIs20 )
+        this.mImagePassFooterVR += "\nout vec4 outColor;\n";
+    this.mImagePassFooterVR += "void main( void )" +
+    "{" +
+        "vec4 color = vec4(0.0,0.0,0.0,1.0);" +
+
+        "vec3 ro = unCorners[4];" +
+        "vec2 uv = (gl_FragCoord.xy - unViewport.xy)/unViewport.zw;" +
+        "vec3 rd = normalize( mix( mix( unCorners[0], unCorners[1], uv.x )," +
+                                  "mix( unCorners[3], unCorners[2], uv.x ), uv.y ) - ro);" +
+
+        "mainVR( color, gl_FragCoord.xy-unViewport.xy, ro, rd );" +
+        "color.w = 1.0;"
+    if( this.mIs20 )
+        this.mImagePassFooterVR +=  "outColor = color;}";
+    else
+        this.mImagePassFooterVR +=  "gl_FragColor = color;}";
+    */
+    this.mHeader = header;
+    this.mHeaderLength = 0;
+}
+
+EffectPass.prototype.MakeHeader_Buffer = function()
+{
+    let header = "";
+
+    header += "#define HW_PERFORMANCE " + ((this.mIsLowEnd===true)?"0":"1") + "\n";
+
+    header += "uniform vec3      iResolution;\n" +
+              "uniform float     iTime;\n" +
+              "uniform float     iChannelTime[4];\n" +
+              "uniform vec4      iMouse;\n" +
+              "uniform vec4      iDate;\n" +
+              "uniform float     iSampleRate;\n" +
+              "uniform vec3      iChannelResolution[4];\n" +
+              "uniform int       iFrame;\n" +
+              "uniform float     iTimeDelta;\n" +
+              "uniform float     iFrameRate;\n";
+
+    for (let i = 0; i < this.mInputs.length; i++)
+    {
+        let inp = this.mInputs[i];
+             if( inp===null )                  header += "uniform sampler2D iChannel" + i + ";\n";
+        else if( inp.mInfo.mType==="cubemap" ) header += "uniform samplerCube iChannel" + i + ";\n";
+        else if( inp.mInfo.mType==="volume"  ) header += "uniform sampler3D iChannel" + i + ";\n";
+        else                                  header += "uniform sampler2D iChannel" + i + ";\n";
+    }
+
+	header += "void mainImage( out vec4 c,  in vec2 f );\n"
+
+    if( this.mIs20 )
+        header += "\nout vec4 outColor;\n";
+    header += "\nvoid main( void )\n" +
+    "{" +
+        "vec4 color = vec4(0.0,0.0,0.0,1.0);" +
+        "mainImage( color, gl_FragCoord.xy );";
+    if( this.mIs20 )
+        header +="outColor = color; }";
+    else
+        header +="gl_FragColor = color; }";
+    header += "\n";
+
+    /*
+    this.mImagePassFooterVR = "\n" +
+    "uniform vec4 unViewport;\n" +
+    "uniform vec3 unCorners[5];\n";
+    if( this.mIs20 )
+    this.mImagePassFooterVR += "\nout vec4 outColor;\n";
+    this.mImagePassFooterVR += "\nvoid main( void )\n" +
+    "{" +
+        "vec4 color = vec4(0.0,0.0,0.0,1.0);" +
+
+        "vec3 ro = unCorners[4];" +
+        "vec2 uv = (gl_FragCoord.xy - unViewport.xy)/unViewport.zw;" +
+        "vec3 rd = normalize( mix( mix( unCorners[0], unCorners[1], uv.x )," +
+                                  "mix( unCorners[3], unCorners[2], uv.x ), uv.y ) - ro);" +
+
+        "mainVR( color, gl_FragCoord.xy-unViewport.xy, ro, rd );";
+    if( this.mIs20 )
+        this.mImagePassFooterVR +="outColor = color; }";
+    else
+        this.mImagePassFooterVR +="gl_FragColor = color; }";
+    */
+    this.mHeader = header;
+    this.mHeaderLength = 0;
+}
+
+
+EffectPass.prototype.MakeHeader_Cubemap = function()
+{
+    let header = "";
+
+    header += "#define HW_PERFORMANCE " + ((this.mIsLowEnd===true)?"0":"1") + "\n";
+
+    header += "uniform vec3      iResolution;\n" +
+              "uniform float     iTime;\n" +
+              "uniform float     iChannelTime[4];\n" +
+              "uniform vec4      iMouse;\n" +
+              "uniform vec4      iDate;\n" +
+              "uniform float     iSampleRate;\n" +
+              "uniform vec3      iChannelResolution[4];\n" +
+              "uniform int       iFrame;\n" +
+              "uniform float     iTimeDelta;\n" +
+              "uniform float     iFrameRate;\n";
+
+    for (let i = 0; i < this.mInputs.length; i++)
+    {
+        let inp = this.mInputs[i];
+             if( inp===null )                  header += "uniform sampler2D iChannel" + i + ";\n";
+        else if( inp.mInfo.mType==="cubemap" ) header += "uniform samplerCube iChannel" + i + ";\n";
+        else if( inp.mInfo.mType==="volume"  ) header += "uniform sampler3D iChannel" + i + ";\n";
+        else                                   header += "uniform sampler2D iChannel" + i + ";\n";
+    }
+
+	header += "void mainCubemap( out vec4 c, in vec2 f, in vec3 ro, in vec3 rd );\n"
+
+    header += "\n" +
+    "uniform vec4 unViewport;\n" +
+    "uniform vec3 unCorners[5];\n";
+    if( this.mIs20 )
+        header += "\nout vec4 outColor;\n";
+    header += "\nvoid main( void )\n" +
+    "{" +
+        "vec4 color = vec4(0.0,0.0,0.0,1.0);" +
+
+        "vec3 ro = unCorners[4];" +
+        "vec2 uv = (gl_FragCoord.xy - unViewport.xy)/unViewport.zw;" +
+        "vec3 rd = normalize( mix( mix( unCorners[0], unCorners[1], uv.x )," +
+                                  "mix( unCorners[3], unCorners[2], uv.x ), uv.y ) - ro);" +
+
+        "mainCubemap( color, gl_FragCoord.xy-unViewport.xy, ro, rd );";
+    if( this.mIs20 )
+        header +="outColor = color; }";
+    else
+        header +="gl_FragColor = color; }";
+    header += "\n";
+
+    this.mHeader = header;
+    this.mHeaderLength = 0;
+}
+
+EffectPass.prototype.MakeHeader_Sound = function()
+{
+    let header = "";
+
+    header += "#define HW_PERFORMANCE " + ((this.mIsLowEnd===true)?"0":"1") + "\n";
+
+    header += "uniform float     iChannelTime[4];\n" +
+              "uniform float     iTimeOffset;\n" +
+              "uniform int       iSampleOffset;\n" +
+              "uniform vec4      iDate;\n" +
+              "uniform float     iSampleRate;\n" +
+              "uniform vec3      iChannelResolution[4];\n";
+
+    for (let i=0; i<this.mInputs.length; i++ )
+    {
+        let inp = this.mInputs[i];
+
+        if( inp!==null && inp.mInfo.mType==="cubemap" )
+            header += "uniform samplerCube iChannel" + i + ";\n";
+        else
+            header += "uniform sampler2D iChannel" + i + ";\n";
+    }
+    header += "\n";
+    header += "vec2 mainSound( in int samp, float time );\n";
+
+    if( this.mIs20 )
+    {
+        header += "out vec4 outColor; void main()" +
+            "{" +
+            "float t = iTimeOffset + ((gl_FragCoord.x-0.5) + (gl_FragCoord.y-0.5)*512.0)/iSampleRate;" +
+            "int   s = iSampleOffset + int(gl_FragCoord.y-0.2)*512 + int(gl_FragCoord.x-0.2);" +
+            "vec2 y = mainSound( s, t );" +
+            "vec2 v  = floor((0.5+0.5*y)*65536.0);" +
+            "vec2 vl =   mod(v,256.0)/255.0;" +
+            "vec2 vh = floor(v/256.0)/255.0;" +
+            "outColor = vec4(vl.x,vh.x,vl.y,vh.y);" +
+            "}";
+    }
+    else
+    {
+        header += "void main()" +
+            "{" +
+            "float t = iTimeOffset + ((gl_FragCoord.x-0.5) + (gl_FragCoord.y-0.5)*512.0)/iSampleRate;" +
+            "vec2 y = mainSound( 0, t );" +
+            "vec2 v  = floor((0.5+0.5*y)*65536.0);" +
+            "vec2 vl =   mod(v,256.0)/255.0;" +
+            "vec2 vh = floor(v/256.0)/255.0;" +
+            "gl_FragColor = vec4(vl.x,vh.x,vl.y,vh.y);" +
+            "}";
+    }
+    header += "\n";
+    this.mHeader = header;
+    this.mHeaderLength = 0;
+}
+
+
+EffectPass.prototype.MakeHeader_Common = function ()
+{
+    let header = "";
+    let headerlength = 0;
+
+    header += "uniform vec4      iDate;\n" +
+              "uniform float     iSampleRate;\n";
+    headerlength += 2;
+
+    if (this.mIs20)
+    {
+        header += "out vec4 outColor;\n";
+        headerlength += 1;
+    }
+    header += "void main( void )\n";
+    headerlength += 1;
+
+    if (this.mIs20)
+        header += "{ outColor = vec4(0.0); }";
+    else
+        header += "{ gl_FragColor = vec4(0.0); }";
+    headerlength += 1;
+    header += "\n";
+    headerlength += 1;
+
+    this.mHeader = header;
+    this.mHeaderLength = headerlength;
+}
+
+EffectPass.prototype.MakeHeader = function()
+{
+         if( this.mType==="image" ) this.MakeHeader_Image();
+    else if( this.mType==="sound" ) this.MakeHeader_Sound();
+    else if( this.mType==="buffer") this.MakeHeader_Buffer();
+    else if( this.mType==="common") this.MakeHeader_Common();
+    else if( this.mType==="cubemap") this.MakeHeader_Cubemap();
+    else console.log("ERROR 4");
+}
+
+EffectPass.prototype.Create_Image = function( wa )
+{
+    this.MakeHeader();
+    this.mSampleRate = 44100;
+    this.mSupportsVR = false;
+    this.mProgram = null;
+    this.mError = false;
+    this.mErrorStr = "";
+    this.mTranslatedSource = null;
+    //this.mProgramVR = null;
+}
+EffectPass.prototype.Destroy_Image = function( wa )
+{
+}
+
+EffectPass.prototype.Create_Buffer = function( wa )
+{
+    this.MakeHeader();
+    this.mSampleRate = 44100;
+    this.mSupportsVR = false;
+    this.mProgram = null;
+    this.mError = false;
+    this.mErrorStr = "";
+    this.mTranslatedSource = null;
+    //this.mProgramVR = null;
+}
+
+EffectPass.prototype.Destroy_Buffer = function( wa )
+{
+}
+
+EffectPass.prototype.Create_Cubemap = function( wa )
+{
+    this.MakeHeader();
+    this.mSampleRate = 44100;
+    this.mProgram = null;
+    this.mError = false;
+    this.mErrorStr = "";
+    this.mTranslatedSource = null;
+}
+
+EffectPass.prototype.Destroy_Cubemap = function( wa )
+{
+}
+
+EffectPass.prototype.Create_Common = function( wa )
+{
+    this.mProgram = null;
+    this.mError = false;
+    this.mErrorStr = "";
+    this.MakeHeader();
+}
+EffectPass.prototype.Destroy_Common = function( wa )
+{
+}
+
+EffectPass.prototype.Create_Sound = function (wa)
+{
+    this.MakeHeader();
+
+
+    this.mProgram = null;
+    this.mError = false;
+    this.mErrorStr = "";
+    this.mTranslatedSource = null;
+    this.mSampleRate = 44100;
+    this.mPlayTime = 60*3;
+    this.mPlaySamples = this.mPlayTime*this.mSampleRate;
+    this.mBuffer = wa.createBuffer( 2, this.mPlaySamples, this.mSampleRate );
+
+    //-------------------
+    this.mTextureDimensions = 512;
+    this.mRenderTexture = this.mRenderer.CreateTexture(this.mRenderer.TEXTYPE.T2D,
+                                                       this.mTextureDimensions, this.mTextureDimensions,
+                                                       this.mRenderer.TEXFMT.C4I8,
+                                                       this.mRenderer.FILTER.NONE,
+                                                       this.mRenderer.TEXWRP.CLAMP, null);
+    this.mRenderFBO = this.mRenderer.CreateRenderTarget(this.mRenderTexture, null, null, null, null, false);
+
+    //-----------------------------
+
+    // ArrayBufferView pixels;
+    this.mTmpBufferSamples = this.mTextureDimensions*this.mTextureDimensions;
+    this.mData = new Uint8Array( this.mTmpBufferSamples*4 );
+
+    this.mPlaying = false;
+}
+
+EffectPass.prototype.Destroy_Sound = function( wa )
+{
+    if( this.mPlayNode!==null ) this.mPlayNode.stop();
+    this.mPlayNode = null;
+    this.mBuffer = null;
+    this.mData = null;
+
+    this.mRenderer.DestroyRenderTarget(this.mRenderFBO);
+    this.mRenderer.DestroyTexture(this.mRenderTexture);
+}
+
+EffectPass.prototype.Create = function( passType, wa )
+{
+    this.mType = passType;
+    this.mSource = null;
+
+         if( passType==="image" ) this.Create_Image( wa );
+    else if( passType==="sound" ) this.Create_Sound( wa );
+    else if( passType==="buffer") this.Create_Buffer( wa );
+    else if( passType==="common") this.Create_Common( wa );
+    else if( passType==="cubemap") this.Create_Cubemap( wa );
+    else alert("ERROR 1");
+}
+
+EffectPass.prototype.SetName = function (passName)
+{
+    this.mName = passName;
+}
+
+EffectPass.prototype.SetCode = function (src)
+{
+    this.mSource = src;
+}
+
+EffectPass.prototype.Destroy = function( wa )
+{
+    this.mSource = null;
+         if( this.mType==="image" ) this.Destroy_Image( wa );
+    else if( this.mType==="sound" ) this.Destroy_Sound( wa );
+    else if( this.mType==="buffer") this.Destroy_Buffer( wa );
+    else if( this.mType==="common") this.Destroy_Common( wa );
+    else if( this.mType==="cubemap") this.Destroy_Cubemap( wa );
+    else alert("ERROR 2");
+}
+
+EffectPass.prototype.NewShader_Sound = function( shaderCode, commonShaderCodes)
+{
+    let vsSource = null;
+
+    if( this.mIs20 )
+        vsSource = "layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+    else
+        vsSource = "attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+
+    let fsSource = this.mHeader;
+    for( let i=0; i<commonShaderCodes.length; i++ )
+    {
+        fsSource += commonShaderCodes[i]+'\n';
+    }
+    this.mHeaderLength = fsSource.split(/\r\n|\r|\n/).length;
+    fsSource += shaderCode;
+
+    this.mSoundShaderCompiled = false;
+
+    return [vsSource, fsSource];
+}
+
+EffectPass.prototype.NewShader_Image = function ( shaderCode, commonShaderCodes )
+{
+    this.mSupportsVR = false;
+
+
+    let vsSource = null;
+    if( this.mIs20 )
+        vsSource = "layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+    else
+        vsSource = "attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+
+    let fsSource = this.mHeader;
+    for (let i = 0; i < commonShaderCodes.length; i++)
+    {
+        fsSource += commonShaderCodes[i]+'\n';
+    }
+    this.mHeaderLength = fsSource.split(/\r\n|\r|\n/).length;
+    fsSource += shaderCode;
+
+    return [vsSource, fsSource];
+
+
+    /*
+    let n1 = shaderCode.indexOf("mainVR(");
+    let n2 = shaderCode.indexOf("mainVR (");
+    let n3 = shaderCode.indexOf("mainVR  (");
+    if( n1>0 || n2>0 || n3>0 )
+    {
+        let vsSourceVR;
+        if( this.mIs20 )
+            vsSourceVR = "layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+        else
+            vsSourceVR = "attribute in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+
+        let fsSourceVR = this.mHeader;
+        for (let i = 0; i < commonShaderCodes.length; i++) {
+            fsSourceVR += commonShaderCodes[i];
+        }
+        fsSourceVR += shaderCode;
+        fsSourceVR += this.mImagePassFooterVR;
+
+        let res = this.mRenderer.CreateShader(vsSource, fsSourceVR, preventCache);
+        if( res.mResult == false )
+        {
+            return res.mInfo;
+        }
+        if( this.mProgramVR != null )
+            this.mRenderer.DestroyShader( this.mProgramVR );
+
+        this.mSupportsVR = true;
+        this.mProgramVR = res;
+    }
+    */
+}
+
+EffectPass.prototype.NewShader_Cubemap = function( shaderCode, commonShaderCodes )
+{
+    let vsSource = null;
+    if( this.mIs20 )
+        vsSource = "layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+    else
+        vsSource = "attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+
+    let fsSource = this.mHeader;
+    for (let i = 0; i < commonShaderCodes.length; i++)
+    {
+        fsSource += commonShaderCodes[i]+'\n';
+    }
+
+    this.mHeaderLength = fsSource.split(/\r\n|\r|\n/).length;
+
+    fsSource += shaderCode;
+
+    return [vsSource, fsSource];
+}
+
+
+EffectPass.prototype.NewShader_Common = function (shaderCode )
+{
+    let vsSource = null;
+    if (this.mIs20)
+        vsSource = "layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+    else
+        vsSource = "attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+
+    let fsSource = this.mHeader + shaderCode;
+
+    return [vsSource, fsSource];
+}
+
+EffectPass.prototype.NewShader = function ( commonSourceCodes, preventCache, onResolve)
+{
+    if( this.mRenderer===null ) return;
+
+    let vs_fs = null;
+
+         if( this.mType==="sound"  ) vs_fs = this.NewShader_Sound(   this.mSource, commonSourceCodes );
+    else if( this.mType==="image"  ) vs_fs = this.NewShader_Image(   this.mSource, commonSourceCodes );
+    else if( this.mType==="buffer" ) vs_fs = this.NewShader_Image(   this.mSource, commonSourceCodes );
+    else if( this.mType==="common" ) vs_fs = this.NewShader_Common(  this.mSource,                   );
+    else if( this.mType==="cubemap") vs_fs = this.NewShader_Cubemap( this.mSource, commonSourceCodes );
+    else { console.log("ERROR 3: \"" + this.mType + "\""); return; }
+
+    let me = this;
+    this.mRenderer.CreateShader(vs_fs[0], vs_fs[1], preventCache, false,
+        function (worked, info)
+        {
+            if (worked === true)
+            {
+                if (me.mType === "sound")
+                {
+                    me.mSoundShaderCompiled = true;
+                }
+
+                me.mCompilationTime = info.mTime;
+                me.mError = false;
+                me.mErrorStr = "No Errors";
+                if (me.mProgram !== null)
+                    me.mRenderer.DestroyShader(me.mProgram);
+                me.mTranslatedSource = me.mRenderer.GetTranslatedShaderSource(info);
+                me.mProgram = info;
+            }
+            else
+            {
+                me.mError = true;
+                me.mErrorStr = info.mErrorStr;
+            }
+            onResolve();
+        });
+}
+
+EffectPass.prototype.DestroyInput = function( id )
+{
+    if( this.mInputs[id]===null ) return;
+
+    if( this.mInputs[id].mInfo.mType==="texture" )
+    {
+        if( this.mInputs[id].globject !== null )
+            this.mRenderer.DestroyTexture(this.mInputs[id].globject);
+    }
+    if( this.mInputs[id].mInfo.mType==="volume" )
+    {
+        if( this.mInputs[id].globject !== null )
+            this.mRenderer.DestroyTexture(this.mInputs[id].globject);
+    }
+    else if( this.mInputs[id].mInfo.mType==="webcam" )
+    {
+        this.mInputs[id].video.pause();
+        this.mInputs[id].video.src = "";
+
+        if( this.mInputs[id].video.srcObject!==null )
+        {
+        let tracks = this.mInputs[id].video.srcObject.getVideoTracks();
+        if( tracks ) tracks[0].stop();
+        }
+        this.mInputs[id].video = null;
+        if( this.mInputs[id].globject !== null )
+            this.mRenderer.DestroyTexture(this.mInputs[id].globject);
+    }
+    else if( this.mInputs[id].mInfo.mType==="video" )
+    {
+        this.mInputs[id].video.pause();
+        this.mInputs[id].video = null;
+        if( this.mInputs[id].globject !== null )
+            this.mRenderer.DestroyTexture(this.mInputs[id].globject);
+    }
+    else if( this.mInputs[id].mInfo.mType==="music" || this.mInputs[id].mInfo.mType==="musicstream")
+    {
+        this.mInputs[id].audio.pause();
+        this.mInputs[id].audio.mSound.mFreqData = null;
+        this.mInputs[id].audio.mSound.mWaveData = null;
+        this.mInputs[id].audio = null;
+        if( this.mInputs[id].globject !== null )
+            this.mRenderer.DestroyTexture(this.mInputs[id].globject);
+    }
+    else if( this.mInputs[id].mInfo.mType==="cubemap" )
+    {
+        if( this.mInputs[id].globject !== null )
+            this.mRenderer.DestroyTexture(this.mInputs[id].globject);
+    }
+    else if( this.mInputs[id].mInfo.mType==="keyboard" )
+    {
+        //if( this.mInputs[id].globject != null )
+          //  this.mRenderer.DestroyTexture(this.mInputs[id].globject);
+    }
+    else if( this.mInputs[id].mInfo.mType==="mic" )
+    {
+        this.mInputs[id].mic = null;
+        if( this.mInputs[id].globject !== null )
+            this.mRenderer.DestroyTexture(this.mInputs[id].globject);
+    }
+
+    this.mInputs[id] = null;
+}
+
+EffectPass.prototype.TooglePauseInput = function( wa, id )
+{
+    var me = this;
+    let inp = this.mInputs[id];
+
+    if( inp===null )
+    {
+    }
+    else if( inp.mInfo.mType==="texture" )
+    {
+    }
+    else if( inp.mInfo.mType==="volume" )
+    {
+    }
+    else if( inp.mInfo.mType==="video" )
+    {
+        if( inp.video.mPaused )
+        {
+            inp.video.play();
+            inp.video.mPaused = false;
+        }
+        else
+        {
+            inp.video.pause();
+            inp.video.mPaused = true;
+        }
+        return inp.video.mPaused;
+    }
+    else if( inp.mInfo.mType==="music" || inp.mInfo.mType==="musicstream")
+    {
+        wa.resume()
+        if( inp.audio.mPaused )
+        {
+            if( inp.loaded )
+            {
+                inp.audio.play();
+            }
+            inp.audio.mPaused = false;
+        }
+        else
+        {
+            inp.audio.pause();
+            inp.audio.mPaused = true;
+        }
+        return inp.audio.mPaused;
+    }
+
+    return null;
+}
+
+EffectPass.prototype.StopInput = function( id )
+{
+    let inp = this.mInputs[id];
+
+    if( inp===null )
+    {
+    }
+    else if( inp.mInfo.mType==="texture" )
+    {
+    }
+    else if( inp.mInfo.mType==="volume" )
+    {
+    }
+    else if( inp.mInfo.mType==="video" )
+    {
+        if( inp.video.mPaused === false )
+        {
+            inp.video.pause();
+            inp.video.mPaused = true;
+        }
+        return inp.video.mPaused;
+    }
+    else if( inp.mInfo.mType==="music" || inp.mInfo.mType==="musicstream" )
+    {
+        if( inp.audio.mPaused === false )
+        {
+            inp.audio.pause();
+            inp.audio.mPaused = true;
+        }
+        return inp.audio.mPaused;
+    }
+    return null;
+}
+
+EffectPass.prototype.ResumeInput = function( id )
+{
+    let inp = this.mInputs[id];
+
+    if( inp===null )
+    {
+    }
+    else if( inp.mInfo.mType==="texture" )
+    {
+    }
+    else if( inp.mInfo.mType==="volume" )
+    {
+    }
+    else if( inp.mInfo.mType==="video" )
+    {
+        if( inp.video.mPaused )
+        {
+            inp.video.play();
+            inp.video.mPaused = false;
+        }
+        return inp.video.mPaused;
+    }
+    else if( inp.mInfo.mType==="music" || inp.mInfo.mType==="musicstream" )
+    {
+        if( inp.audio.mPaused )
+        {
+            inp.audio.play();
+            inp.audio.mPaused = false;
+        }
+        return inp.audio.mPaused;
+    }
+    return null;
+}
+
+EffectPass.prototype.RewindInput = function( wa, id )
+{
+    var me = this;
+    let inp = this.mInputs[id];
+
+    if( inp==null )
+    {
+    }
+    else if( inp.mInfo.mType==="texture" )
+    {
+    }
+    else if( inp.mInfo.mType==="volume" )
+    {
+    }
+    else if( inp.mInfo.mType==="video" )
+    {
+        if( inp.loaded )
+        {
+            inp.video.currentTime = 0;
+        }
+    }
+    else if( inp.mInfo.mType==="music" || inp.mInfo.mType==="musicstream")
+    {
+        wa.resume()
+        if( inp.loaded )
+        {
+            inp.audio.currentTime = 0;
+        }
+    }
+}
+
+EffectPass.prototype.MuteInput = function( wa, id )
+{
+    let inp = this.mInputs[id];
+    if( inp===null ) return;
+
+    if( inp.mInfo.mType==="video" )
+    {
+        inp.video.muted = true;
+        inp.video.mMuted = true;
+    }
+    else if( inp.mInfo.mType==="music" || inp.mInfo.mType==="musicstream")
+    {
+        if (wa !== null) inp.audio.mSound.mGain.gain.value = 0.0;
+        inp.audio.mMuted = true;
+    }
+}
+
+EffectPass.prototype.UnMuteInput = function( wa, id )
+{
+    let inp = this.mInputs[id];
+    if( inp===null ) return;
+
+    if( inp.mInfo.mType==="video" )
+    {
+        inp.video.muted = false;
+        inp.video.mMuted = false;
+    }
+    else if( inp.mInfo.mType==="music" || inp.mInfo.mType==="musicstream")
+    {
+        if (wa !== null) inp.audio.mSound.mGain.gain.value = 1.0;
+        inp.audio.mMuted = false;
+    }
+}
+
+EffectPass.prototype.ToggleMuteInput = function( wa, id )
+{
+    var me = this;
+    let inp = this.mInputs[id];
+    if( inp===null ) return null;
+
+    if( inp.mInfo.mType==="video" )
+    {
+        if( inp.video.mMuted ) this.UnMuteInput(wa,id);
+        else                   this.MuteInput(wa,id);
+        return inp.video.mMuted;
+    }
+    else if( inp.mInfo.mType==="music" || inp.mInfo.mType==="musicstream")
+    {
+        if( inp.audio.mMuted ) this.UnMuteInput(wa,id);
+        else                   this.MuteInput(wa,id);
+        return inp.audio.mMuted;
+    }
+
+    return null;
+}
+
+EffectPass.prototype.UpdateInputs = function( wa, forceUpdate, keyboard )
+{
+   for (let i=0; i<this.mInputs.length; i++ )
+   {
+        let inp = this.mInputs[i];
+
+        if( inp===null )
+        {
+            if( forceUpdate )
+            {
+              if( this.mTextureCallbackFun!==null )
+                  this.mTextureCallbackFun( this.mTextureCallbackObj, i, null, false, 0, 0, -1.0, this.mID );
+            }
+        }
+        else if( inp.mInfo.mType==="texture" )
+        {
+            if( inp.loaded && forceUpdate )
+            {
+              if( this.mTextureCallbackFun!==null )
+                  this.mTextureCallbackFun( this.mTextureCallbackObj, i, inp.image, true, 1, 1, -1.0, this.mID );
+            }
+        }
+        else if( inp.mInfo.mType==="volume" )
+        {
+            if( inp.loaded && forceUpdate )
+            {
+              if( this.mTextureCallbackFun!==null )
+                  this.mTextureCallbackFun( this.mTextureCallbackObj, i, inp.mPreview, true, 1, 1, -1.0, this.mID );
+            }
+        }
+        else if( inp.mInfo.mType==="cubemap" )
+        {
+            if( inp.loaded && forceUpdate )
+            {
+                if( this.mTextureCallbackFun!==null )
+                {
+                    let img = (assetID_to_cubemapBuferID(inp.mInfo.mID)===-1) ? inp.image[0] : inp.mImage;
+                    this.mTextureCallbackFun( this.mTextureCallbackObj, i, img, true, 2, 1, -1.0, this.mID );
+                }
+            }
+        }
+        else if( inp.mInfo.mType==="keyboard" )
+        {
+            if( this.mTextureCallbackFun!==null )
+                this.mTextureCallbackFun( this.mTextureCallbackObj, i, {mImage:keyboard.mIcon,mData:keyboard.mData}, false, 6, 0, -1.0, this.mID );
+        }
+        else if( inp.mInfo.mType==="video" )
+        {
+            if( inp.video.readyState === inp.video.HAVE_ENOUGH_DATA )
+            {
+                if( this.mTextureCallbackFun!==null )
+                    this.mTextureCallbackFun( this.mTextureCallbackObj, i, inp.video, false, 3, 1, -1, this.mID );
+            }
+        }
+        else if( inp.mInfo.mType==="music" || inp.mInfo.mType==="musicstream" )
+        {
+              if( inp.loaded && inp.audio.mPaused === false && inp.audio.mForceMuted === false )
+              {
+                  if( wa !== null )
+                  {
+                      inp.audio.mSound.mAnalyser.getByteFrequencyData(  inp.audio.mSound.mFreqData );
+                      inp.audio.mSound.mAnalyser.getByteTimeDomainData( inp.audio.mSound.mWaveData );
+                  }
+
+                  if (this.mTextureCallbackFun!==null)
+                  {
+                           if (inp.mInfo.mType === "music")       this.mTextureCallbackFun(this.mTextureCallbackObj, i, {wave:(wa==null)?null:inp.audio.mSound.mFreqData}, false, 4, 1, inp.audio.currentTime, this.mID);
+                      else if (inp.mInfo.mType === "musicstream") this.mTextureCallbackFun(this.mTextureCallbackObj, i, {wave:(wa==null)?null:inp.audio.mSound.mFreqData, info: inp.audio.soundcloudInfo}, false, 8, 1, inp.audio.currentTime, this.mID);
+                  }
+              }
+              else if( inp.loaded===false )
+              {
+                  if (this.mTextureCallbackFun!==null)
+                      this.mTextureCallbackFun(this.mTextureCallbackObj, i, {wave:null}, false, 4, 0, -1.0, this.mID);
+              }
+        }
+        else if( inp.mInfo.mType==="mic" )
+        {
+              if( inp.loaded && inp.mForceMuted === false )
+              {
+                  if( wa !== null )
+                  {
+                      inp.mAnalyser.getByteFrequencyData(  inp.mFreqData );
+                      inp.mAnalyser.getByteTimeDomainData( inp.mWaveData );
+                  }
+                  if( this.mTextureCallbackFun!==null )
+                      this.mTextureCallbackFun( this.mTextureCallbackObj, i, {wave: ((wa==null)?null:inp.mFreqData) }, false, 5, 1, 0, this.mID );
+              }
+        }
+        else if( inp.mInfo.mType==="buffer" )
+        {
+            if( inp.loaded && forceUpdate )
+            {
+              if( this.mTextureCallbackFun!==null )
+                  this.mTextureCallbackFun( this.mTextureCallbackObj, i, {texture:inp.image, data:null}, true, 9, 1, -1.0, this.mID );
+            }
+        }
+    }
+}
+
+EffectPass.prototype.Sampler2Renderer = function (sampler)
+{
+    let filter = this.mRenderer.FILTER.NONE;
+    if (sampler.filter === "linear") filter = this.mRenderer.FILTER.LINEAR;
+    if (sampler.filter === "mipmap") filter = this.mRenderer.FILTER.MIPMAP;
+    let wrap = this.mRenderer.TEXWRP.REPEAT;
+    if (sampler.wrap === "clamp") wrap = this.mRenderer.TEXWRP.CLAMP;
+    let vflip = false;
+    if (sampler.vflip === "true") vflip = true;
+
+    return { mFilter: filter, mWrap: wrap, mVFlip: vflip };
+}
+
+EffectPass.prototype.GetSamplerVFlip = function (id)
+{
+    let inp = this.mInputs[id];
+    return inp.mInfo.mSampler.vflip;
+}
+
+EffectPass.prototype.GetTranslatedShaderSource = function ()
+{
+    return this.mTranslatedSource;
+}
+
+
+EffectPass.prototype.SetSamplerVFlip = function (id, str)
+{
+    var me = this;
+    var renderer = this.mRenderer;
+    let inp = this.mInputs[id];
+
+    let filter = false;
+    if (str === "true") filter = true;
+
+    if (inp === null)
+    {
+    }
+    else if (inp.mInfo.mType === "texture")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerVFlip(inp.globject, filter, inp.image);
+            inp.mInfo.mSampler.vflip = str;
+        }
+    }
+    else if (inp.mInfo.mType === "volume")
+    {
+    }
+    else if (inp.mInfo.mType === "video")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerVFlip(inp.globject, filter, inp.image);
+            inp.mInfo.mSampler.vflip = str;
+        }
+    }
+    else if (inp.mInfo.mType === "cubemap")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerVFlip(inp.globject, filter, inp.image);
+            inp.mInfo.mSampler.vflip = str;
+        }
+    }
+    else if (inp.mInfo.mType === "webcam")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerVFlip(inp.globject, filter, null);
+            inp.mInfo.mSampler.vflip = str;
+        }
+    }
+}
+
+EffectPass.prototype.GetAcceptsVFlip = function (id)
+{
+    let inp = this.mInputs[id];
+
+    if (inp === null) return false;
+    if (inp.mInfo.mType === "texture") return true;
+    if (inp.mInfo.mType === "volume") return false;
+    if (inp.mInfo.mType === "video")  return true;
+    if (inp.mInfo.mType === "cubemap") return true;
+    if (inp.mInfo.mType === "webcam")  return true;
+    if (inp.mInfo.mType === "music")  return false;
+    if (inp.mInfo.mType === "musicstream") return false;
+    if (inp.mInfo.mType === "mic")  return false;
+    if (inp.mInfo.mType === "keyboard")  return false;
+    if (inp.mInfo.mType === "buffer") return false;
+    return true;
+}
+
+EffectPass.prototype.GetSamplerFilter = function (id)
+{
+    let inp = this.mInputs[id];
+    if( inp===null) return;
+    return inp.mInfo.mSampler.filter;
+}
+
+EffectPass.prototype.SetSamplerFilter = function (id, str, buffers, cubeBuffers)
+{
+    var me = this;
+    var renderer = this.mRenderer;
+    let inp = this.mInputs[id];
+
+    let filter = renderer.FILTER.NONE;
+    if (str === "linear") filter = renderer.FILTER.LINEAR;
+    if (str === "mipmap") filter = renderer.FILTER.MIPMAP;
+
+    if (inp === null)
+    {
+    }
+    else if (inp.mInfo.mType === "texture")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerFilter(inp.globject, filter, true);
+            inp.mInfo.mSampler.filter = str;
+        }
+    }
+    else if (inp.mInfo.mType === "volume")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerFilter(inp.globject, filter, true);
+            inp.mInfo.mSampler.filter = str;
+        }
+    }
+    else if (inp.mInfo.mType === "video")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerFilter(inp.globject, filter, true);
+            inp.mInfo.mSampler.filter = str;
+        }
+    }
+    else if (inp.mInfo.mType === "cubemap")
+    {
+        if (inp.loaded)
+        {
+            if( assetID_to_cubemapBuferID(inp.mInfo.mID)===0)
+            {
+                renderer.SetSamplerFilter(cubeBuffers[0].mTexture[0], filter, true);
+                renderer.SetSamplerFilter(cubeBuffers[0].mTexture[1], filter, true);
+                inp.mInfo.mSampler.filter = str;
+            }
+            else
+            {
+                renderer.SetSamplerFilter(inp.globject, filter, true);
+                inp.mInfo.mSampler.filter = str;
+            }
+        }
+    }
+    else if (inp.mInfo.mType === "webcam")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerFilter(inp.globject, filter, true);
+            inp.mInfo.mSampler.filter = str;
+        }
+    }
+    else if (inp.mInfo.mType === "buffer")
+    {
+        renderer.SetSamplerFilter(buffers[inp.id].mTexture[0], filter, true);
+        renderer.SetSamplerFilter(buffers[inp.id].mTexture[1], filter, true);
+        inp.mInfo.mSampler.filter = str;
+    }
+    else if (inp.mInfo.mType === "keyboard")
+    {
+        inp.mInfo.mSampler.filter = str;
+    }
+}
+
+
+
+EffectPass.prototype.GetAcceptsMipmapping = function (id)
+{
+    let inp = this.mInputs[id];
+
+    if (inp === null) return false;
+    if (inp.mInfo.mType === "texture") return true;
+    if (inp.mInfo.mType === "volume") return true;
+    if (inp.mInfo.mType === "video")  return this.mIs20;
+    if (inp.mInfo.mType === "cubemap") return true;
+    if (inp.mInfo.mType === "webcam")  return this.mIs20;
+    if (inp.mInfo.mType === "music")  return false;
+    if (inp.mInfo.mType === "musicstream") return false;
+    if (inp.mInfo.mType === "mic")  return false;
+    if (inp.mInfo.mType === "keyboard")  return false;
+    if (inp.mInfo.mType === "buffer") return this.mIs20;
+    return false;
+}
+
+EffectPass.prototype.GetAcceptsLinear = function (id)
+{
+    let inp = this.mInputs[id];
+
+    if (inp === null) return false;
+    if (inp.mInfo.mType === "texture") return true;
+    if (inp.mInfo.mType === "volume") return true;
+    if (inp.mInfo.mType === "video")  return true;
+    if (inp.mInfo.mType === "cubemap") return true;
+    if (inp.mInfo.mType === "webcam")  return true;
+    if (inp.mInfo.mType === "music")  return true;
+    if (inp.mInfo.mType === "musicstream") return true;
+    if (inp.mInfo.mType === "mic")  return true;
+    if (inp.mInfo.mType === "keyboard")  return false;
+    if (inp.mInfo.mType === "buffer") return true;
+    return false;
+}
+
+
+EffectPass.prototype.GetAcceptsWrapRepeat = function (id)
+{
+    let inp = this.mInputs[id];
+
+    if (inp === null) return false;
+    if (inp.mInfo.mType === "texture") return true;
+    if (inp.mInfo.mType === "volume") return true;
+    if (inp.mInfo.mType === "video")  return this.mIs20;
+    if (inp.mInfo.mType === "cubemap") return false;
+    if (inp.mInfo.mType === "webcam")  return this.mIs20;
+    if (inp.mInfo.mType === "music")  return false;
+    if (inp.mInfo.mType === "musicstream") return false;
+    if (inp.mInfo.mType === "mic")  return false;
+    if (inp.mInfo.mType === "keyboard")  return false;
+    if (inp.mInfo.mType === "buffer") return this.mIs20;
+    return false;
+}
+
+EffectPass.prototype.GetSamplerWrap = function (id)
+{
+    let inp = this.mInputs[id];
+    return inp.mInfo.mSampler.wrap;
+}
+EffectPass.prototype.SetSamplerWrap = function (id, str, buffers)
+{
+    var me = this;
+    var renderer = this.mRenderer;
+    let inp = this.mInputs[id];
+
+    let restr = renderer.TEXWRP.REPEAT;
+    if (str === "clamp") restr = renderer.TEXWRP.CLAMP;
+
+    if (inp === null)
+    {
+    }
+    else if (inp.mInfo.mType === "texture")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerWrap(inp.globject, restr);
+            inp.mInfo.mSampler.wrap = str;
+        }
+    }
+    else if (inp.mInfo.mType === "volume")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerWrap(inp.globject, restr);
+            inp.mInfo.mSampler.wrap = str;
+        }
+    }
+    else if (inp.mInfo.mType === "video")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerWrap(inp.globject, restr);
+            inp.mInfo.mSampler.wrap = str;
+        }
+    }
+    else if (inp.mInfo.mType === "cubemap")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerWrap(inp.globject, restr);
+            inp.mInfo.mSampler.wrap = str;
+        }
+    }
+    else if (inp.mInfo.mType === "webcam")
+    {
+        if (inp.loaded)
+        {
+            renderer.SetSamplerWrap(inp.globject, restr);
+            inp.mInfo.mSampler.wrap = str;
+        }
+    }
+    else if (inp.mInfo.mType === "buffer")
+    {
+        renderer.SetSamplerWrap(buffers[inp.id].mTexture[0], restr);
+        renderer.SetSamplerWrap(buffers[inp.id].mTexture[1], restr);
+        inp.mInfo.mSampler.wrap = str;
+    }
+}
+
+
+EffectPass.prototype.GetTexture = function( slot )
+{
+    let inp = this.mInputs[slot];
+    if( inp===null ) return null;
+    return inp.mInfo;
+
+}
+
+EffectPass.prototype.SetOutputs = function( slot, id )
+{
+    this.mOutputs[slot] = id;
+}
+
+EffectPass.prototype.SetOutputsByBufferID = function( slot, id )
+{
+    if( this.mType==="buffer" )
+    {
+        this.mOutputs[slot] = bufferID_to_assetID( id );
+
+        this.mEffect.ResizeBuffer( id, this.mEffect.mXres, this.mEffect.mYres, false );
+    }
+    else if( this.mType==="cubemap" )
+    {
+        this.mOutputs[slot] = cubamepBufferID_to_assetID( id );
+        this.mEffect.ResizeCubemapBuffer(id, 1024, 1024 );
+    }
+}
+
+EffectPass.prototype.NewTexture = function( wa, slot, url, buffers, cubeBuffers, keyboard )
+{
+    var me = this;
+    var renderer = this.mRenderer;
+
+    if( renderer===null ) return;
+
+    let texture = null;
+
+    if( url===null || url.mType===null )
+    {
+        if( me.mTextureCallbackFun!==null )
+            me.mTextureCallbackFun( this.mTextureCallbackObj, slot, null, true, 0, 0, -1.0, me.mID );
+        me.DestroyInput( slot );
+        me.mInputs[slot] = null;
+        me.MakeHeader();
+        return { mFailed:false, mNeedsShaderCompile:false };
+    }
+    else if( url.mType==="texture" )
+    {
+        texture = {};
+        texture.mInfo = url;
+        texture.globject = null;
+        texture.loaded = false;
+        texture.image = new Image();
+        texture.image.crossOrigin = '';
+        texture.image.onload = function()
+        {
+            let rti = me.Sampler2Renderer(url.mSampler);
+
+            // O.M.G. FIX THIS
+            let channels = renderer.TEXFMT.C4I8;
+            if (url.mID === "Xdf3zn" || url.mID === "4sf3Rn" || url.mID === "4dXGzn" || url.mID === "4sf3Rr")
+                channels = renderer.TEXFMT.C1I8;
+
+            texture.globject = renderer.CreateTextureFromImage(renderer.TEXTYPE.T2D, texture.image, channels, rti.mFilter, rti.mWrap, rti.mVFlip);
+
+            texture.loaded = true;
+            if( me.mTextureCallbackFun!==null )
+                me.mTextureCallbackFun( me.mTextureCallbackObj, slot, texture.image, true, 1, 1, -1.0, me.mID );
+        }
+        texture.image.src = url.mSrc;
+
+
+        let returnValue = { mFailed:false, mNeedsShaderCompile: (this.mInputs[slot]===null ) || (
+                                                                (this.mInputs[slot].mInfo.mType!=="texture") &&
+                                                                (this.mInputs[slot].mInfo.mType!=="webcam") &&
+                                                                (this.mInputs[slot].mInfo.mType!=="mic") &&
+                                                                (this.mInputs[slot].mInfo.mType!=="music") &&
+                                                                (this.mInputs[slot].mInfo.mType!=="musicstream") &&
+                                                                (this.mInputs[slot].mInfo.mType!=="keyboard") &&
+                                                                (this.mInputs[slot].mInfo.mType!=="video")) };
+        this.DestroyInput( slot );
+        this.mInputs[slot] = texture;
+        this.MakeHeader();
+        return returnValue;
+    }
+    else if( url.mType==="volume" )
+    {
+        texture = {};
+        texture.mInfo = url;
+        texture.globject = null;
+        texture.loaded = false;
+        texture.mImage = { mData:null, mXres:1, mYres:0, mZres:0 };
+        texture.mPreview = new Image();
+        texture.mPreview.crossOrigin = '';
+
+	    var xmlHttp = new XMLHttpRequest();
+        if( xmlHttp===null ) return { mFailed:true };
+
+        xmlHttp.open('GET', url.mSrc, true);
+        xmlHttp.responseType = "arraybuffer";
+        xmlHttp.onerror = function()
+        {
+            console.log( "Error 1 loading Volume" );
+        }
+        xmlHttp.onload = function()
+        {
+            let data = xmlHttp.response;
+            if (!data ) { console.log( "Error 2 loading Volume" ); return; }
+
+            let file = piFile(data);
+
+            let signature = file.ReadUInt32();
+            texture.mImage.mXres = file.ReadUInt32();
+            texture.mImage.mYres = file.ReadUInt32();
+            texture.mImage.mZres = file.ReadUInt32();
+            let binNumChannels = file.ReadUInt8();
+            let binLayout = file.ReadUInt8();
+            let binFormat = file.ReadUInt16();
+            let format = renderer.TEXFMT.C1I8;
+                 if( binNumChannels===1 && binFormat===0 )  format = renderer.TEXFMT.C1I8;
+            else if( binNumChannels===2 && binFormat===0 )  format = renderer.TEXFMT.C2I8;
+            else if( binNumChannels===3 && binFormat===0 )  format = renderer.TEXFMT.C3I8;
+            else if( binNumChannels===4 && binFormat===0 )  format = renderer.TEXFMT.C4I8;
+            else if( binNumChannels===1 && binFormat===10 ) format = renderer.TEXFMT.C1F32;
+            else if( binNumChannels===2 && binFormat===10 ) format = renderer.TEXFMT.C2F32;
+            else if( binNumChannels===3 && binFormat===10 ) format = renderer.TEXFMT.C3F32;
+            else if( binNumChannels===4 && binFormat===10 ) format = renderer.TEXFMT.C4F32;
+            else return;
+
+            let buffer = new Uint8Array(data, 20); // skip 16 bytes (header of .bin)
+
+            let rti = me.Sampler2Renderer(url.mSampler);
+
+            texture.globject = renderer.CreateTexture(renderer.TEXTYPE.T3D, texture.mImage.mXres, texture.mImage.mYres, format, rti.mFilter, rti.mWrap, buffer);
+
+            if( texture.globject===null )
+            {
+                console.log( "Error 4: loading Volume" );
+                return { mFailed:true };
+            }
+
+            if (me.mTextureCallbackFun !== null)
+            {
+                me.mTextureCallbackFun( me.mTextureCallbackObj, slot, texture.mPreview, true, 1, 1, -1.0, me.mID );
+            }
+
+            texture.loaded = true;
+
+            // load icon for it
+            texture.mPreview.onload = function()
+            {
+                if( me.mTextureCallbackFun!==null )
+                    me.mTextureCallbackFun( me.mTextureCallbackObj, slot, texture.mPreview, true, 1, 1, -1.0, me.mID );
+            }
+            texture.mPreview.src = url.mPreviewSrc;
+        }
+        xmlHttp.send("");
+
+
+        let returnValue = { mFailed:false, mNeedsShaderCompile: (this.mInputs[slot]==null ) || (
+                                                                (this.mInputs[slot].mInfo.mType!="volume")) };
+        this.DestroyInput( slot );
+        this.mInputs[slot] = texture;
+        this.MakeHeader();
+        return returnValue;
+    }
+    else if( url.mType==="cubemap" )
+    {
+        texture = {};
+        texture.mInfo = url;
+        texture.globject = null;
+        texture.loaded = false;
+
+        let rti = me.Sampler2Renderer(url.mSampler);
+
+        if( assetID_to_cubemapBuferID(url.mID)!==-1 )
+        {
+            texture.mImage = new Image();
+            texture.mImage.onload = function()
+            {
+                texture.loaded = true;
+                if( me.mTextureCallbackFun!==null )
+                    me.mTextureCallbackFun( me.mTextureCallbackObj, slot, texture.mImage, true, 2, 1, -1.0, me.mID );
+            }
+            texture.mImage.src = "/media/previz/cubemap00.png";
+
+            this.mEffect.ResizeCubemapBuffer(0, 1024, 1024 );
+
+        }
+        else
+        {
+            texture.image = [ new Image(), new Image(), new Image(), new Image(), new Image(), new Image() ];
+
+            let numLoaded = 0;
+            for (var i=0; i<6; i++ )
+            {
+                texture.image[i].mId = i;
+                texture.image[i].crossOrigin = '';
+                texture.image[i].onload = function()
+                {
+                    var id = this.mId;
+                    numLoaded++;
+                    if( numLoaded===6 )
+                    {
+                        texture.globject = renderer.CreateTextureFromImage(renderer.TEXTYPE.CUBEMAP, texture.image, renderer.TEXFMT.C4I8, rti.mFilter, rti.mWrap, rti.mVFlip);
+                        texture.loaded = true;
+                        if (me.mTextureCallbackFun !== null)
+                            me.mTextureCallbackFun(me.mTextureCallbackObj, slot, texture.image[0], true, 2, 1, -1.0, me.mID);
+                    }
+                }
+
+                if( i === 0)
+                {
+                    texture.image[i].src = url.mSrc;
+                }
+                else
+                {
+                    let n = url.mSrc.lastIndexOf(".");
+                    texture.image[i].src = url.mSrc.substring(0, n) + "_" + i + url.mSrc.substring(n, url.mSrc.length);
+                }
+            }
+        }
+
+        let returnValue = { mFailed:false, mNeedsShaderCompile: (this.mInputs[slot]==null ) || (
+                                                                (this.mInputs[slot].mInfo.mType!="cubemap")) };
+
+        this.DestroyInput( slot );
+        this.mInputs[slot] = texture;
+        this.MakeHeader();
+        return returnValue;
+    }
+    else if( url.mType==="buffer" )
+    {
+        texture = {};
+        texture.mInfo = url;
+
+        texture.image = new Image();
+        texture.image.onload = function()
+        {
+            if( me.mTextureCallbackFun!=null )
+                me.mTextureCallbackFun( me.mTextureCallbackObj, slot, {texture: texture.image, data:null}, true, 9, 1, -1.0, me.mID );
+        }
+        texture.image.src = url.mSrc;
+        texture.id = assetID_to_bufferID( url.mID );
+        texture.loaded = true;
+
+        let returnValue = { mFailed:false, mNeedsShaderCompile: (this.mInputs[slot]===null ) || (
+                                                                (this.mInputs[slot].mInfo.mType!="texture") &&
+                                                                (this.mInputs[slot].mInfo.mType!="webcam") &&
+                                                                (this.mInputs[slot].mInfo.mType!="mic") &&
+                                                                (this.mInputs[slot].mInfo.mType!="music") &&
+                                                                (this.mInputs[slot].mInfo.mType!="musicstream") &&
+                                                                (this.mInputs[slot].mInfo.mType!="keyboard") &&
+                                                                (this.mInputs[slot].mInfo.mType!="video")) };
+
+        this.DestroyInput( slot );
+        this.mInputs[slot] = texture;
+
+        this.mEffect.ResizeBuffer(texture.id, this.mEffect.mXres, this.mEffect.mYres, false );
+
+        this.SetSamplerFilter(slot, url.mSampler.filter, buffers, cubeBuffers, true);
+        this.SetSamplerVFlip(slot, url.mSampler.vflip);
+        this.SetSamplerWrap(slot, url.mSampler.wrap, buffers);
+
+        this.MakeHeader();
+        return returnValue;
+    }
+    else
+    {
+        alert( "input type error" );
+        return { mFailed: true };
+    }
+
+}
+
+EffectPass.prototype.Paint_Image = function( vrData, wa, d, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, buffers, cubeBuffers, keyboard )
+{
+    let times = [ 0.0, 0.0, 0.0, 0.0 ];
+
+    let dates = [ d.getFullYear(), // the year (four digits)
+                  d.getMonth(),	   // the month (from 0-11)
+                  d.getDate(),     // the day of the month (from 1-31)
+                  d.getHours()*60.0*60 + d.getMinutes()*60 + d.getSeconds()  + d.getMilliseconds()/1000.0 ];
+
+    let mouse = [  mousePosX, mousePosY, mouseOriX, mouseOriY ];
+
+
+    //------------------------
+
+    let resos = [ 0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 ];
+    let texIsLoaded = [0, 0, 0, 0 ];
+    let texID = [ null, null, null, null];
+
+    for (let i=0; i<this.mInputs.length; i++ )
+    {
+        let inp = this.mInputs[i];
+
+        if( inp===null )
+        {
+        }
+        else if( inp.mInfo.mType==="texture" )
+        {
+            if( inp.loaded===true  )
+            {
+                texID[i] = inp.globject;
+                texIsLoaded[i] = 1;
+                resos[3*i+0] = inp.image.width;
+                resos[3*i+1] = inp.image.height;
+                resos[3*i+2] = 1;
+            }
+        }
+        else if( inp.mInfo.mType==="volume" )
+        {
+            if( inp.loaded===true  )
+            {
+                texID[i] = inp.globject;
+                texIsLoaded[i] = 1;
+                resos[3*i+0] = inp.mImage.mXres;
+                resos[3*i+1] = inp.mImage.mYres;
+                resos[3*i+2] = inp.mImage.mZres;
+            }
+        }
+        else if( inp.mInfo.mType==="keyboard" )
+        {
+            texID[i] = keyboard.mTexture;
+            texIsLoaded[i] = 1;
+            resos[3*i+0] = 256;
+            resos[3*i+1] = 3;
+            resos[3*i+2] = 1;
+        }
+        else if( inp.mInfo.mType==="cubemap" )
+        {
+            if (inp.loaded === true)
+            {
+                let id = assetID_to_cubemapBuferID(inp.mInfo.mID);
+                if( id!==-1 )
+                {
+                    texID[i] = cubeBuffers[id].mTexture[ cubeBuffers[id].mLastRenderDone ];
+                    resos[3*i+0] = cubeBuffers[id].mResolution[0];
+                    resos[3*i+1] = cubeBuffers[id].mResolution[1];
+                    resos[3*i+2] = 1;
+                    texIsLoaded[i] = 1;
+
+                    // hack. in webgl2.0 we have samplers, so we don't need this crap here
+                    let filter = this.mRenderer.FILTER.NONE;
+                         if (inp.mInfo.mSampler.filter === "linear") filter = this.mRenderer.FILTER.LINEAR;
+                    else if (inp.mInfo.mSampler.filter === "mipmap") filter = this.mRenderer.FILTER.MIPMAP;
+                    this.mRenderer.SetSamplerFilter( texID[i], filter, false);
+                }
+                else
+                {
+                    texID[i] = inp.globject;
+                    texIsLoaded[i] = 1;
+                }
+            }
+        }
+        else if( inp.mInfo.mType==="webcam" )
+        {
+            if( inp.loaded===true )
+            {
+                if( inp.mImage !== null )
+                {
+                    if( this.mTextureCallbackFun!==null )
+                        this.mTextureCallbackFun( this.mTextureCallbackObj, i, inp.mImage, false, 7, 1, -1, this.mID );
+
+                    texID[i] = inp.globject;
+                    texIsLoaded[i] = 1;
+                    resos[3*i+0] = inp.mImage.width;
+                    resos[3*i+1] = inp.mImage.height;
+                    resos[3*i+2] = 1;
+                }
+                else  if( inp.video.readyState === inp.video.HAVE_ENOUGH_DATA )
+                {
+
+                    if( this.mTextureCallbackFun!==null )
+                        this.mTextureCallbackFun( this.mTextureCallbackObj, i, inp.video, false, 7, 1, -1, this.mID );
+
+                    texID[i] = inp.globject;
+                    this.mRenderer.UpdateTextureFromImage(inp.globject, inp.video);
+                    if( inp.mInfo.mSampler.filter === "mipmap" )
+                        this.mRenderer.CreateMipmaps(inp.globject);
+                    resos[3*i+0] = inp.video.videoWidth;
+                    resos[3*i+1] = inp.video.videoHeight;
+                    resos[3*i+2] = 1;
+                    texIsLoaded[i] = 1;
+                }
+            }
+            else
+            {
+                texID[i] = null;
+                texIsLoaded[i] = 0;
+                resos[3*i+0] = inp.video.width;
+                resos[3*i+1] = inp.video.height;
+                resos[3*i+2] = 1;
+            }
+        }
+        else if( inp.mInfo.mType==="video" )
+        {
+            if( inp.video.mPaused === false )
+            {
+                if( this.mTextureCallbackFun!==null )
+                    this.mTextureCallbackFun( this.mTextureCallbackObj, i, inp.video, false, 3, 1, inp.video.currentTime, this.mID );
+            }
+
+            if( inp.loaded===true )
+            {
+                times[i] = inp.video.currentTime;
+                texID[i] = inp.globject;
+                texIsLoaded[i] = 1;
+
+      	        if( inp.video.mPaused === false )
+      	        {
+      	            this.mRenderer.UpdateTextureFromImage(inp.globject, inp.video);
+                    if( inp.mInfo.mSampler.filter === "mipmap" )
+                        this.mRenderer.CreateMipmaps(inp.globject);
+                }
+                resos[3*i+0] = inp.video.videoWidth;
+                resos[3*i+1] = inp.video.videoHeight;
+                resos[3*i+2] = 1;
+            }
+        }
+        else if( inp.mInfo.mType==="music" || inp.mInfo.mType==="musicstream" )
+        {
+            if( inp.audio.mPaused === false && inp.audio.mForceMuted === false && inp.loaded===true )
+            {
+                if( wa !== null )
+                {
+                    inp.audio.mSound.mAnalyser.getByteFrequencyData(  inp.audio.mSound.mFreqData );
+                    inp.audio.mSound.mAnalyser.getByteTimeDomainData( inp.audio.mSound.mWaveData );
+                }
+
+                if( this.mTextureCallbackFun!==null )
+                {
+                         if( inp.mInfo.mType==="music")       this.mTextureCallbackFun(this.mTextureCallbackObj, i, (wa === null) ? null : { wave : inp.audio.mSound.mFreqData }, false, 4, 1, inp.audio.currentTime, this.mID);
+                    else if( inp.mInfo.mType==="musicstream") this.mTextureCallbackFun(this.mTextureCallbackObj, i, (wa === null) ? null : { wave : inp.audio.mSound.mFreqData, info : inp.audio.soundcloudInfo}, false, 8, 1, inp.audio.currentTime, this.mID);
+                }
+            }
+
+            if( inp.loaded===true )
+            {
+                times[i] = inp.audio.currentTime;
+                texID[i] = inp.globject;
+                texIsLoaded[i] = 1;
+
+                if( inp.audio.mForceMuted === true )
+                {
+                    times[i] = 10.0 + time;
+                    let num = inp.audio.mSound.mFreqData.length;
+                    for (let j=0; j<num; j++ )
+                    {
+                        let x = j / num;
+                        let f =  (0.75 + 0.25*Math.sin( 10.0*j + 13.0*time )) * Math.exp( -3.0*x );
+
+                        if( j<3 )
+                            f =  Math.pow( 0.50 + 0.5*Math.sin( 6.2831*time ), 4.0 ) * (1.0-j/3.0);
+
+                        inp.audio.mSound.mFreqData[j] = Math.floor(255.0*f) | 0;
+                    }
+
+                  //let num = inp.audio.mSound.mFreqData.length;
+                    for (let j=0; j<num; j++ )
+                    {
+                        let f = 0.5 + 0.15*Math.sin( 17.0*time + 10.0*6.2831*j/num ) * Math.sin( 23.0*time + 1.9*j/num );
+                        inp.audio.mSound.mWaveData[j] = Math.floor(255.0*f) | 0;
+                    }
+
+                }
+
+      	        if( inp.audio.mPaused === false )
+                {
+      	            let waveLen = Math.min(inp.audio.mSound.mWaveData.length, 512);
+      	            this.mRenderer.UpdateTexture(inp.globject, 0, 0, 512, 1, inp.audio.mSound.mFreqData);
+      	            this.mRenderer.UpdateTexture(inp.globject, 0, 1, 512, 1, inp.audio.mSound.mWaveData);
+                }
+
+                resos[3*i+0] = 512;
+                resos[3*i+1] = 2;
+                resos[3*i+2] = 1;
+            }
+        }
+        else if( inp.mInfo.mType==="mic" )
+        {
+            if( inp.loaded===false || inp.mForceMuted || wa === null || inp.mAnalyser == null )
+            {
+                    times[i] = 10.0 + time;
+                    let num = inp.mFreqData.length;
+                    for( let j=0; j<num; j++ )
+                    {
+                        let x = j / num;
+                        let f =  (0.75 + 0.25*Math.sin( 10.0*j + 13.0*time )) * Math.exp( -3.0*x );
+
+                        if( j<3 )
+                            f =  Math.pow( 0.50 + 0.5*Math.sin( 6.2831*time ), 4.0 ) * (1.0-j/3.0);
+
+                        inp.mFreqData[j] = Math.floor(255.0*f) | 0;
+                    }
+
+                    //var num = inp.mFreqData.length;
+                    for( let j=0; j<num; j++ )
+                    {
+                        let f = 0.5 + 0.15*Math.sin( 17.0*time + 10.0*6.2831*j/num ) * Math.sin( 23.0*time + 1.9*j/num );
+                        inp.mWaveData[j] = Math.floor(255.0*f) | 0;
+                    }
+            }
+            else
+            {
+                inp.mAnalyser.getByteFrequencyData(  inp.mFreqData );
+                inp.mAnalyser.getByteTimeDomainData( inp.mWaveData );
+            }
+
+            if( this.mTextureCallbackFun!==null )
+                this.mTextureCallbackFun( this.mTextureCallbackObj, i, {wave:inp.mFreqData}, false, 5, 1, -1, this.mID );
+
+            if( inp.loaded===true )
+            {
+                texID[i] = inp.globject;
+                texIsLoaded[i] = 1;
+                let waveLen = Math.min( inp.mWaveData.length, 512 );
+                this.mRenderer.UpdateTexture(inp.globject, 0, 0, 512,     1, inp.mFreqData);
+                this.mRenderer.UpdateTexture(inp.globject, 0, 1, waveLen, 1, inp.mWaveData);
+                resos[3*i+0] = 512;
+                resos[3*i+1] = 2;
+                resos[3*i+2] = 1;
+            }
+        }
+        else if( inp.mInfo.mType==="buffer" )
+        {
+            let id = inp.id;
+            if( inp.loaded===true  )
+            {
+                texID[i] = buffers[id].mTexture[ buffers[id].mLastRenderDone ];
+                texIsLoaded[i] = 1;
+                resos[3*i+0] = xres;
+                resos[3*i+1] = yres;
+                resos[3*i+2] = 1;
+                // hack. in webgl2.0 we have samplers, so we don't need this crap here
+                let filter = this.mRenderer.FILTER.NONE;
+                     if (inp.mInfo.mSampler.filter === "linear") filter = this.mRenderer.FILTER.LINEAR;
+                else if (inp.mInfo.mSampler.filter === "mipmap") filter = this.mRenderer.FILTER.MIPMAP;
+                this.mRenderer.SetSamplerFilter( texID[i], filter, false);
+            }
+
+            if( this.mTextureCallbackFun!==null )
+            {
+                this.mTextureCallbackFun( this.mTextureCallbackObj, i, {texture:inp.image, data:buffers[id].mThumbnailBuffer}, false, 9, 1, -1, this.mID );
+            }
+        }
+    }
+
+    this.mRenderer.AttachTextures( 4, texID[0], texID[1], texID[2], texID[3] );
+
+    //-----------------------------------
+
+    let prog = this.mProgram;
+
+    //if( vrData!=null && this.mSupportsVR ) prog = this.mProgramVR;
+
+
+
+    this.mRenderer.AttachShader(prog);
+
+    this.mRenderer.SetShaderConstant1F(  "iTime", time);
+    this.mRenderer.SetShaderConstant3F(  "iResolution", xres, yres, 1.0);
+    this.mRenderer.SetShaderConstant4FV( "iMouse", mouse);
+    this.mRenderer.SetShaderConstant1FV( "iChannelTime", times );              // OBSOLETE
+    this.mRenderer.SetShaderConstant4FV( "iDate", dates );
+    this.mRenderer.SetShaderConstant3FV( "iChannelResolution", resos );        // OBSOLETE
+    this.mRenderer.SetShaderConstant1F(  "iSampleRate", this.mSampleRate);
+    this.mRenderer.SetShaderTextureUnit( "iChannel0", 0 );
+    this.mRenderer.SetShaderTextureUnit( "iChannel1", 1 );
+    this.mRenderer.SetShaderTextureUnit( "iChannel2", 2 );
+    this.mRenderer.SetShaderTextureUnit( "iChannel3", 3 );
+    this.mRenderer.SetShaderConstant1I(  "iFrame", this.mFrame );
+    this.mRenderer.SetShaderConstant1F(  "iTimeDelta", dtime);
+    this.mRenderer.SetShaderConstant1F(  "iFrameRate", fps );
+
+    this.mRenderer.SetShaderConstant1F(  "iCh0.time", times[0] );
+    this.mRenderer.SetShaderConstant1F(  "iCh1.time", times[1] );
+    this.mRenderer.SetShaderConstant1F(  "iCh2.time", times[2] );
+    this.mRenderer.SetShaderConstant1F(  "iCh3.time", times[3] );
+    this.mRenderer.SetShaderConstant3F(  "iCh0.size", resos[0], resos[ 1], resos[ 2] );
+    this.mRenderer.SetShaderConstant3F(  "iCh1.size", resos[3], resos[ 4], resos[ 5] );
+    this.mRenderer.SetShaderConstant3F(  "iCh2.size", resos[6], resos[ 7], resos[ 8] );
+    this.mRenderer.SetShaderConstant3F(  "iCh3.size", resos[9], resos[10], resos[11] );
+    this.mRenderer.SetShaderConstant1I(  "iCh0.loaded",       texIsLoaded[0] );
+    this.mRenderer.SetShaderConstant1I(  "iCh1.loaded",       texIsLoaded[1] );
+    this.mRenderer.SetShaderConstant1I(  "iCh2.loaded",       texIsLoaded[2] );
+    this.mRenderer.SetShaderConstant1I(  "iCh3.loaded",       texIsLoaded[3] );
+
+    let l1 = this.mRenderer.GetAttribLocation(this.mProgram, "pos");
+
+
+    if( (vrData !== null) && this.mSupportsVR )
+    {
+        for (let i=0; i<2; i++ )
+        {
+            let ei = (i===0) ? vrData.mLeftEye : vrData.mRightEye;
+
+            let vp = [i * xres / 2, 0, xres / 2, yres];
+
+            this.mRenderer.SetViewport(vp);
+
+            let fov = ei.mProjection;
+            let corA = [ -fov[2], -fov[1], -1.0 ];
+            let corB = [  fov[3], -fov[1], -1.0 ];
+            let corC = [  fov[3],  fov[0], -1.0 ];
+            let corD = [ -fov[2],  fov[0], -1.0 ];
+            let apex = [ 0.0, 0.0, 0.0 ];
+
+            let ma = invertFast( ei.mCamera );
+            corA = matMulpoint( ma, corA );
+            corB = matMulpoint( ma, corB );
+            corC = matMulpoint( ma, corC );
+            corD = matMulpoint( ma, corD );
+            apex = matMulpoint( ma, apex );
+
+            let corners = [ corA[0], corA[1], corA[2],
+                            corB[0], corB[1], corB[2],
+                            corC[0], corC[1], corC[2],
+                            corD[0], corD[1], corD[2],
+                            apex[0], apex[1], apex[2]];
+
+            this.mRenderer.SetShaderConstant3FV("unCorners", corners);
+            this.mRenderer.SetShaderConstant4FV("unViewport", vp);
+
+            this.mRenderer.DrawUnitQuad_XY(l1);
+        }
+    }
+    else
+    {
+        this.mRenderer.SetViewport([0, 0, xres, yres]);
+        this.mRenderer.DrawFullScreenTriangle_XY( l1 );
+    }
+
+    this.mRenderer.DettachTextures();
+}
+
+EffectPass.prototype.iRenderSound = function(d, callback )
+{
+    let dates = [ d.getFullYear(), // the year (four digits)
+                  d.getMonth(),	   // the month (from 0-11)
+                  d.getDate(),     // the day of the month (from 1-31)
+                  d.getHours()*60.0*60 + d.getMinutes()*60 + d.getSeconds() ];
+
+    let resos = [ 0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 ];
+
+    this.mRenderer.SetRenderTarget(this.mRenderFBO);
+
+    this.mRenderer.SetViewport([0, 0, this.mTextureDimensions, this.mTextureDimensions]);
+    this.mRenderer.AttachShader(this.mProgram);
+    this.mRenderer.SetBlend( false );
+
+    let texID = [null, null, null, null];
+    for (let i = 0; i < this.mInputs.length; i++)
+    {
+        let inp = this.mInputs[i];
+
+        if( inp===null )
+        {
+        }
+        else if( inp.mInfo.mType==="texture" )
+        {
+            if( inp.loaded===true  )
+            {
+                texID[i] = inp.globject;
+                resos[3*i+0] = inp.image.width;
+                resos[3*i+1] = inp.image.height;
+                resos[3*i+2] = 1;
+            }
+        }
+        else if( inp.mInfo.mType==="volume" )
+        {
+            if( inp.loaded===true  )
+            {
+                texID[i] = inp.globject;
+                resos[3*i+0] = inp.mImage.mXres;
+                resos[3*i+1] = inp.mImage.mYres;
+                resos[3*i+2] = inp.mImage.mZres;
+            }
+        }
+    }
+
+    this.mRenderer.AttachTextures(4, texID[0], texID[1], texID[2], texID[3]);
+
+    let l2 = this.mRenderer.SetShaderConstantLocation(this.mProgram, "iTimeOffset");
+    let l3 = this.mRenderer.SetShaderConstantLocation(this.mProgram, "iSampleOffset");
+    this.mRenderer.SetShaderConstant4FV("iDate", dates);
+    this.mRenderer.SetShaderConstant3FV("iChannelResolution", resos);
+    this.mRenderer.SetShaderConstant1F("iSampleRate", this.mSampleRate);
+    this.mRenderer.SetShaderTextureUnit("iChannel0", 0);
+    this.mRenderer.SetShaderTextureUnit("iChannel1", 1);
+    this.mRenderer.SetShaderTextureUnit("iChannel2", 2);
+    this.mRenderer.SetShaderTextureUnit("iChannel3", 3);
+
+    let l1 = this.mRenderer.GetAttribLocation(this.mProgram, "pos");
+
+    //--------------------------------
+    let numSamples = this.mTmpBufferSamples;
+    let numBlocks = this.mPlaySamples / numSamples;
+    for (let j=0; j<numBlocks; j++ )
+    {
+        let off = j*numSamples;
+
+        this.mRenderer.SetShaderConstant1F_Pos(l2, off / this.mSampleRate);
+        this.mRenderer.SetShaderConstant1I_Pos(l3, off );
+        this.mRenderer.DrawUnitQuad_XY(l1);
+
+        this.mRenderer.GetPixelData(this.mData, 0, this.mTextureDimensions, this.mTextureDimensions);
+
+        callback( off, this.mData, numSamples );
+    }
+
+    this.mRenderer.DetachShader();
+    this.mRenderer.DettachTextures();
+    this.mRenderer.SetRenderTarget(null);
+}
+
+EffectPass.prototype.Paint_Sound = function( wa, d )
+{
+    let bufL = this.mBuffer.getChannelData(0); // Float32Array
+    let bufR = this.mBuffer.getChannelData(1); // Float32Array
+
+    this.iRenderSound( d, function(off, data, numSamples)
+                         {
+                            for( let i=0; i<numSamples; i++ )
+                            {
+                                bufL[off+i] = -1.0 + 2.0*(data[4*i+0]+256.0*data[4*i+1])/65535.0;
+                                bufR[off+i] = -1.0 + 2.0*(data[4*i+2]+256.0*data[4*i+3])/65535.0;
+                            }
+                         }
+                     );
+}
+
+EffectPass.prototype.SetUniforms = function(vrData, wa, d, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, buffers, cubeBuffers, keyboard )
+{
+    let times = [ 0.0, 0.0, 0.0, 0.0 ];
+
+    let dates = [ d.getFullYear(), // the year (four digits)
+                  d.getMonth(),	   // the month (from 0-11)
+                  d.getDate(),     // the day of the month (from 1-31)
+                  d.getHours()*60.0*60 + d.getMinutes()*60 + d.getSeconds()  + d.getMilliseconds()/1000.0 ];
+
+    let mouse = [  mousePosX, mousePosY, mouseOriX, mouseOriY ];
+
+    let resos = [ 0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 ];
+
+    //------------------------
+
+    let texID = [ null, null, null, null];
+
+    for( let i=0; i<this.mInputs.length; i++ )
+    {
+        let inp = this.mInputs[i];
+
+        if( inp===null )
+        {
+        }
+        else if( inp.mInfo.mType==="texture" )
+        {
+            if( inp.loaded===true  )
+            {
+                texID[i] = inp.globject;
+                resos[3*i+0] = inp.image.width;
+                resos[3*i+1] = inp.image.height;
+                resos[3*i+2] = 1;
+            }
+        }
+        else if( inp.mInfo.mType==="volume" )
+        {
+            if( inp.loaded===true  )
+            {
+                texID[i] = inp.globject;
+                resos[3*i+0] = inp.mImage.mXres;
+                resos[3*i+1] = inp.mImage.mYres;
+                resos[3*i+2] = inp.mImage.mZres;
+            }
+        }
+        else if( inp.mInfo.mType==="keyboard" )
+        {
+            texID[i] = keyboard.mTexture;
+        }
+        else if( inp.mInfo.mType=="cubemap" )
+        {
+            if (inp.loaded === true)
+            {
+                let id = assetID_to_cubemapBuferID(inp.mInfo.mID);
+                if( id!==-1 )
+                {
+                    texID[i] = cubeBuffers[id].mTexture[ cubeBuffers[id].mLastRenderDone ];
+                    resos[3*i+0] = cubeBuffers[id].mResolution[0];
+                    resos[3*i+1] = cubeBuffers[id].mResolution[1];
+                    resos[3*i+2] = 1;
+
+                    // hack. in webgl2.0 we have samplers, so we don't need this crap here
+                    let filter = this.mRenderer.FILTER.NONE;
+                         if (inp.mInfo.mSampler.filter === "linear") filter = this.mRenderer.FILTER.LINEAR;
+                    else if (inp.mInfo.mSampler.filter === "mipmap") filter = this.mRenderer.FILTER.MIPMAP;
+                    this.mRenderer.SetSamplerFilter( texID[i], filter, false);
+                }
+                else
+                {
+                    texID[i] = inp.globject;
+                }
+            }
+
+        }
+        else if( inp.mInfo.mType==="webcam" )
+        {
+            if( inp.loaded===true )
+            {
+                if( inp.mImage !== null )
+                {
+                    texID[i] = inp.globject;
+                    resos[3*i+0] = inp.mImage.width;
+                    resos[3*i+1] = inp.mImage.height;
+                    resos[3*i+2] = 1;
+                }
+                else  if( inp.video.readyState === inp.video.HAVE_ENOUGH_DATA )
+                {
+                    texID[i] = inp.globject;
+                    resos[3*i+0] = inp.video.videoWidth;
+                    resos[3*i+1] = inp.video.videoHeight;
+                    resos[3*i+2] = 1;
+                }
+            }
+            else
+            {
+                texID[i] = null;
+                resos[3*i+0] = inp.video.width;
+                resos[3*i+1] = inp.video.height;
+                resos[3*i+2] = 1;
+            }
+        }
+        else if( inp.mInfo.mType==="video" )
+        {
+           if( inp.loaded===true )
+           {
+                times[i] = inp.video.currentTime;
+                texID[i] = inp.globject;
+                resos[3*i+0] = inp.video.videoWidth;
+                resos[3*i+1] = inp.video.videoHeight;
+                resos[3*i+2] = 1;
+            }
+        }
+        else if( inp.mInfo.mType==="music" || inp.mInfo.mType==="musicstream" )
+        {
+            if( inp.loaded===true )
+            {
+                times[i] = inp.audio.currentTime;
+                texID[i] = inp.globject;
+
+                if( inp.audio.mForceMuted === true )
+                {
+                    times[i] = 10.0 + time;
+                }
+
+                resos[3*i+0] = 512;
+                resos[3*i+1] = 2;
+                resos[3*i+2] = 1;
+            }
+        }
+        else if( inp.mInfo.mType==="mic" )
+        {
+            if( inp.loaded===false || inp.mForceMuted || wa === null || inp.mAnalyser == null )
+            {
+                times[i] = 10.0 + time;
+            }
+
+            if( inp.loaded===true )
+            {
+                texID[i] = inp.globject;
+                resos[3*i+0] = 512;
+                resos[3*i+1] = 2;
+                resos[3*i+2] = 1;
+            }
+        }
+        else if( inp.mInfo.mType==="buffer" )
+        {
+            if( inp.loaded===true  )
+            {
+                texID[i] = buffers[inp.id].mTexture[ buffers[inp.id].mLastRenderDone ];
+                resos[3*i+0] = buffers[inp.id].mResolution[0];
+                resos[3*i+1] = buffers[inp.id].mResolution[1];
+                resos[3*i+2] = 1;
+            }
+        }
+    }
+
+    this.mRenderer.AttachTextures( 4, texID[0], texID[1], texID[2], texID[3] );
+
+    //-----------------------------------
+
+    this.mRenderer.AttachShader(this.mProgram);
+
+    this.mRenderer.SetShaderConstant1F(  "iTime", time);
+    this.mRenderer.SetShaderConstant3F(  "iResolution", xres, yres, 1.0);
+    this.mRenderer.SetShaderConstant4FV( "iMouse", mouse);
+    this.mRenderer.SetShaderConstant1FV( "iChannelTime", times );              // OBSOLETE
+    this.mRenderer.SetShaderConstant4FV( "iDate", dates );
+    this.mRenderer.SetShaderConstant3FV( "iChannelResolution", resos );        // OBSOLETE
+    this.mRenderer.SetShaderConstant1F(  "iSampleRate", this.mSampleRate);
+    this.mRenderer.SetShaderTextureUnit( "iChannel0", 0 );
+    this.mRenderer.SetShaderTextureUnit( "iChannel1", 1 );
+    this.mRenderer.SetShaderTextureUnit( "iChannel2", 2 );
+    this.mRenderer.SetShaderTextureUnit( "iChannel3", 3 );
+    this.mRenderer.SetShaderConstant1I(  "iFrame", this.mFrame );
+    this.mRenderer.SetShaderConstant1F(  "iTimeDelta", dtime);
+    this.mRenderer.SetShaderConstant1F(  "iFrameRate", fps );
+
+    this.mRenderer.SetShaderConstant1F(  "iChannel[0].time",       times[0] );
+    this.mRenderer.SetShaderConstant1F(  "iChannel[1].time",       times[1] );
+    this.mRenderer.SetShaderConstant1F(  "iChannel[2].time",       times[2] );
+    this.mRenderer.SetShaderConstant1F(  "iChannel[3].time",       times[3] );
+    this.mRenderer.SetShaderConstant3F(  "iChannel[0].resolution", resos[0], resos[ 1], resos[ 2] );
+    this.mRenderer.SetShaderConstant3F(  "iChannel[1].resolution", resos[3], resos[ 4], resos[ 5] );
+    this.mRenderer.SetShaderConstant3F(  "iChannel[2].resolution", resos[6], resos[ 7], resos[ 8] );
+    this.mRenderer.SetShaderConstant3F(  "iChannel[3].resolution", resos[9], resos[10], resos[11] );
+}
+
+EffectPass.prototype.ProcessInputs = function(vrData, wa, d, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, buffers, cubeBuffers, keyboard )
+{
+    for (let i=0; i<this.mInputs.length; i++ )
+    {
+        let inp = this.mInputs[i];
+
+        if( inp===null )
+        {
+        }
+        else if( inp.mInfo.mType==="texture" )
+        {
+        }
+        else if( inp.mInfo.mType==="volume" )
+        {
+        }
+        else if( inp.mInfo.mType==="keyboard" )
+        {
+        }
+        else if( inp.mInfo.mType==="cubemap" )
+        {
+        }
+        else if( inp.mInfo.mType==="webcam" )
+        {
+            if( inp.loaded===true )
+            {
+                if( inp.mImage !== null )
+                {
+                    if( this.mTextureCallbackFun!==null )
+                        this.mTextureCallbackFun( this.mTextureCallbackObj, i, inp.mImage, false, 7, 1, -1, this.mID );
+                }
+                else if( inp.video.readyState === inp.video.HAVE_ENOUGH_DATA )
+                {
+                    if( this.mTextureCallbackFun!==null )
+                        this.mTextureCallbackFun( this.mTextureCallbackObj, i, inp.video, false, 7, 1, -1, this.mID );
+
+                    this.mRenderer.UpdateTextureFromImage(inp.globject, inp.video);
+                    if( inp.mInfo.mSampler.filter === "mipmap" )
+                        this.mRenderer.CreateMipmaps(inp.globject);
+                }
+            }
+        }
+        else if( inp.mInfo.mType==="video" )
+        {
+            if( inp.video.mPaused === false )
+            {
+                if( this.mTextureCallbackFun!==null )
+                    this.mTextureCallbackFun( this.mTextureCallbackObj, i, inp.video, false, 3, 1, inp.video.currentTime, this.mID );
+            }
+
+            if( inp.loaded===true )
+            {
+      	        if( inp.video.mPaused === false )
+      	        {
+      	            this.mRenderer.UpdateTextureFromImage(inp.globject, inp.video);
+                    if( inp.mInfo.mSampler.filter === "mipmap" )
+                        this.mRenderer.CreateMipmaps(inp.globject);
+                }
+            }
+        }
+        else if( inp.mInfo.mType==="music" || inp.mInfo.mType==="musicstream" )
+        {
+            if( inp.audio.mPaused === false && inp.audio.mForceMuted === false && inp.loaded===true )
+            {
+                if( wa !== null )
+                {
+                    inp.audio.mSound.mAnalyser.getByteFrequencyData(  inp.audio.mSound.mFreqData );
+                    inp.audio.mSound.mAnalyser.getByteTimeDomainData( inp.audio.mSound.mWaveData );
+                }
+
+                if( this.mTextureCallbackFun!==null )
+                {
+                         if( inp.mInfo.mType==="music")       this.mTextureCallbackFun(this.mTextureCallbackObj, i, (wa == null) ? null : { wave : inp.audio.mSound.mFreqData }, false, 4, 1, inp.audio.currentTime, this.mID);
+                    else if( inp.mInfo.mType==="musicstream") this.mTextureCallbackFun(this.mTextureCallbackObj, i, (wa == null) ? null : { wave : inp.audio.mSound.mFreqData, info : inp.audio.soundcloudInfo}, false, 8, 1, inp.audio.currentTime, this.mID);
+                }
+            }
+
+            if( inp.loaded===true )
+            {
+                if( inp.audio.mForceMuted === true )
+                {
+                    let num = inp.audio.mSound.mFreqData.length;
+                    for (let j=0; j<num; j++ )
+                    {
+                        let x = j / num;
+                        let f =  (0.75 + 0.25*Math.sin( 10.0*j + 13.0*time )) * Math.exp( -3.0*x );
+
+                        if( j<3 )
+                            f =  Math.pow( 0.50 + 0.5*Math.sin( 6.2831*time ), 4.0 ) * (1.0-j/3.0);
+
+                        inp.audio.mSound.mFreqData[j] = Math.floor(255.0*f) | 0;
+                    }
+
+                  //let num = inp.audio.mSound.mFreqData.length;
+                    for (let j=0; j<num; j++ )
+                    {
+                        let f = 0.5 + 0.15*Math.sin( 17.0*time + 10.0*6.2831*j/num ) * Math.sin( 23.0*time + 1.9*j/num );
+                        inp.audio.mSound.mWaveData[j] = Math.floor(255.0*f) | 0;
+                    }
+
+                }
+
+      	        if( inp.audio.mPaused === false )
+                {
+      	            let waveLen = Math.min(inp.audio.mSound.mWaveData.length, 512);
+      	            this.mRenderer.UpdateTexture(inp.globject, 0, 0, 512, 1, inp.audio.mSound.mFreqData);
+      	            this.mRenderer.UpdateTexture(inp.globject, 0, 1, 512, 1, inp.audio.mSound.mWaveData);
+                }
+            }
+        }
+        else if( inp.mInfo.mType==="mic" )
+        {
+            if( inp.loaded===false || inp.mForceMuted || wa === null || inp.mAnalyser == null )
+            {
+                    let num = inp.mFreqData.length;
+                    for( let j=0; j<num; j++ )
+                    {
+                        let x = j / num;
+                        let f =  (0.75 + 0.25*Math.sin( 10.0*j + 13.0*time )) * Math.exp( -3.0*x );
+
+                        if( j<3 )
+                            f =  Math.pow( 0.50 + 0.5*Math.sin( 6.2831*time ), 4.0 ) * (1.0-j/3.0);
+
+                        inp.mFreqData[j] = Math.floor(255.0*f) | 0;
+                    }
+
+                    for( let j=0; j<num; j++ )
+                    {
+                        let f = 0.5 + 0.15*Math.sin( 17.0*time + 10.0*6.2831*j/num ) * Math.sin( 23.0*time + 1.9*j/num );
+                        inp.mWaveData[j] = Math.floor(255.0*f) | 0;
+                    }
+            }
+            else
+            {
+                inp.mAnalyser.getByteFrequencyData(  inp.mFreqData );
+                inp.mAnalyser.getByteTimeDomainData( inp.mWaveData );
+            }
+
+            if( this.mTextureCallbackFun!==null )
+                this.mTextureCallbackFun( this.mTextureCallbackObj, i, {wave:inp.mFreqData}, false, 5, 1, -1, this.mID );
+
+            if( inp.loaded===true )
+            {
+                let waveLen = Math.min( inp.mWaveData.length, 512 );
+                this.mRenderer.UpdateTexture(inp.globject, 0, 0, 512,     1, inp.mFreqData);
+                this.mRenderer.UpdateTexture(inp.globject, 0, 1, waveLen, 1, inp.mWaveData);
+            }
+        }
+        else if( inp.mInfo.mType==="buffer" )
+        {
+            if( inp.loaded===true  )
+            {
+                let id = inp.id;
+                let texID = buffers[id].mTexture[ buffers[id].mLastRenderDone ];
+
+                // hack. in webgl2.0 we have samplers, so we don't need this crap here
+                let filter = this.mRenderer.FILTER.NONE;
+                     if (inp.mInfo.mSampler.filter === "linear") filter = this.mRenderer.FILTER.LINEAR;
+                else if (inp.mInfo.mSampler.filter === "mipmap") filter = this.mRenderer.FILTER.MIPMAP;
+                this.mRenderer.SetSamplerFilter( texID, filter, false);
+            }
+
+            if( this.mTextureCallbackFun!==null )
+            {
+				let id = inp.id;
+                this.mTextureCallbackFun( this.mTextureCallbackObj, i, {texture:inp.image, data:buffers[id].mThumbnailBuffer}, false, 9, 1, -1, this.mID );
+            }
+        }
+    }
+}
+
+EffectPass.prototype.Paint_Cubemap = function( vrData, wa, d, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, buffers, cubeBuffers, keyboard, face )
+{
+    this.ProcessInputs(vrData, wa, d, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, buffers, cubeBuffers, keyboard, face );
+    this.SetUniforms(vrData, wa, d, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, buffers, cubeBuffers, keyboard );
+
+    let l1 = this.mRenderer.GetAttribLocation(this.mProgram, "pos");
+
+    let vp = [0, 0, xres, yres];
+
+    this.mRenderer.SetViewport(vp);
+
+    let corA = [ -1.0, -1.0, -1.0 ];
+    let corB = [  1.0, -1.0, -1.0 ];
+    let corC = [  1.0,  1.0, -1.0 ];
+    let corD = [ -1.0,  1.0, -1.0 ];
+    let apex = [  0.0,  0.0,  0.0 ];
+
+    if( face===0 )
+    {
+        corA = [  1.0,  1.0,  1.0 ];
+        corB = [  1.0,  1.0, -1.0 ];
+        corC = [  1.0, -1.0, -1.0 ];
+        corD = [  1.0, -1.0,  1.0 ];
+    }
+    else if( face===1 ) // -X
+    {
+        corA = [ -1.0,  1.0, -1.0 ];
+        corB = [ -1.0,  1.0,  1.0 ];
+        corC = [ -1.0, -1.0,  1.0 ];
+        corD = [ -1.0, -1.0, -1.0 ];
+    }
+    else if( face===2 ) // +Y
+    {
+        corA = [ -1.0,  1.0, -1.0 ];
+        corB = [  1.0,  1.0, -1.0 ];
+        corC = [  1.0,  1.0,  1.0 ];
+        corD = [ -1.0,  1.0,  1.0 ];
+    }
+    else if( face===3 ) // -Y
+    {
+        corA = [ -1.0, -1.0,  1.0 ];
+        corB = [  1.0, -1.0,  1.0 ];
+        corC = [  1.0, -1.0, -1.0 ];
+        corD = [ -1.0, -1.0, -1.0 ];
+    }
+    else if( face===4 ) // +Z
+    {
+        corA = [ -1.0,  1.0,  1.0 ];
+        corB = [  1.0,  1.0,  1.0 ];
+        corC = [  1.0, -1.0,  1.0 ];
+        corD = [ -1.0, -1.0,  1.0 ];
+    }
+    else //if( face===5 ) // -Z
+    {
+        corA = [  1.0,  1.0, -1.0 ];
+        corB = [ -1.0,  1.0, -1.0 ];
+        corC = [ -1.0, -1.0, -1.0 ];
+        corD = [  1.0, -1.0, -1.0 ];
+    }
+
+    let corners = [ corA[0], corA[1], corA[2],
+                    corB[0], corB[1], corB[2],
+                    corC[0], corC[1], corC[2],
+                    corD[0], corD[1], corD[2],
+                    apex[0], apex[1], apex[2]];
+
+    this.mRenderer.SetShaderConstant3FV("unCorners", corners);
+    this.mRenderer.SetShaderConstant4FV("unViewport", vp);
+
+    this.mRenderer.DrawUnitQuad_XY(l1);
+
+    this.mRenderer.DettachTextures();
+}
+
+
+EffectPass.prototype.Paint = function( vrData, wa, da, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, isPaused, bufferID, bufferNeedsMimaps, buffers, cubeBuffers, keyboard, effect )
+{
+    if( this.mType==="sound" )
+    {
+        if (this.mSoundShaderCompiled === true)
+        {
+            // make sure all textures are loaded
+            for (let i=0; i<this.mInputs.length; i++ )
+            {
+                let inp = this.mInputs[i];
+                if (inp === null) continue;
+
+                if (inp.mInfo.mType === "texture" && !inp.loaded) return;
+                if (inp.mInfo.mType === "cubemap" && !inp.loaded) return;
+            }
+
+            this.Paint_Sound(wa, da);
+            this.mSoundShaderCompiled = false;
+        }
+        if (this.mFrame === 0)
+        {
+            if (this.mPlaying===true)
+            {
+                this.mPlayNode.disconnect();
+                this.mPlayNode.stop();
+                this.mPlayNode = null;
+            }
+            this.mPlaying = true;
+
+            this.mPlayNode = wa.createBufferSource();
+            this.mPlayNode.buffer = this.mBuffer;
+            this.mPlayNode.connect(this.mGainNode);
+            this.mPlayNode.start(0);
+        }
+        this.mFrame++;
+    }
+    else if( this.mType==="image" )
+    {
+        this.mRenderer.SetRenderTarget( null );
+        this.Paint_Image( vrData, wa, da, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, buffers, cubeBuffers, keyboard );
+        this.mFrame++;
+    }
+    else if( this.mType==="common" )
+    {
+        //console.log("rendering common");
+    }
+    else if( this.mType==="buffer" )
+    {
+        this.mEffect.ResizeBuffer(bufferID, this.mEffect.mXres, this.mEffect.mYres, false );
+
+        let buffer = buffers[bufferID];
+
+        let dstID = 1 - buffer.mLastRenderDone;
+
+        this.mRenderer.SetRenderTarget( buffer.mTarget[dstID] );
+        this.Paint_Image( vrData, wa, da, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, buffers, cubeBuffers, keyboard );
+
+        // compute mipmaps if needd
+        if( bufferNeedsMimaps )
+        {
+            this.mRenderer.CreateMipmaps( buffer.mTexture[dstID]);
+        }
+
+        // make thumbnail
+        //if( this.mTextureCallbackFun != null )
+        /*
+        {
+            this.mRenderer.SetRenderTarget( buffer.mThumbnailRenderTarget );
+            let v = [0, 0, buffer.mThumbnailRes[0], buffer.mThumbnailRes[1]];
+            this.mRenderer.SetBlend(false);
+            this.mRenderer.SetViewport(v);
+            this.mRenderer.AttachShader(this.mProgramCopy);
+            let l1 = this.mRenderer.GetAttribLocation(this.mProgramCopy, "pos");
+            this.mRenderer.SetShaderConstant4FV("v", v);
+            this.mRenderer.AttachTextures(1, buffer.mTexture[dstID], null, null, null);
+            this.mRenderer.DrawUnitQuad_XY(l1);
+            this.mRenderer.DettachTextures();
+            this.mRenderer.DetachShader();
+            this.mRenderer.GetPixelData( new Uint8Array(buffer.mThumbnailBuffer.data.buffer), buffer.mThumbnailRes[0], buffer.mThumbnailRes[1] );
+            this.mRenderer.SetRenderTarget(null);
+        }
+        */
+        buffers[bufferID].mLastRenderDone = 1 - buffers[bufferID].mLastRenderDone;
+        this.mFrame++;
+    }
+    else if( this.mType==="cubemap" )
+    {
+        this.mEffect.ResizeCubemapBuffer(bufferID, 1024, 1024, false );
+
+        let buffer = cubeBuffers[bufferID];
+
+        xres = buffer.mResolution[0];
+        yres = buffer.mResolution[1];
+        let dstID = 1 - buffer.mLastRenderDone;
+        for( let face=0; face<6; face++ )
+        {
+            this.mRenderer.SetRenderTargetCubeMap( buffer.mTarget[dstID], face );
+            this.Paint_Cubemap( vrData, wa, da, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, buffers, cubeBuffers, keyboard, face );
+        }
+        this.mRenderer.SetRenderTargetCubeMap( null, 0 );
+
+        // compute mipmaps if needd
+        if( bufferNeedsMimaps )
+        {
+            this.mRenderer.CreateMipmaps( buffer.mTexture[dstID]);
+        }
+        cubeBuffers[bufferID].mLastRenderDone = 1 - cubeBuffers[bufferID].mLastRenderDone;
+
+        this.mFrame++;
+    }
+
+}
+
+EffectPass.prototype.StopOutput_Sound = function( wa )
+{
+    if( this.mPlayNode===null ) return;
+    this.mPlayNode.disconnect();
+
+};
+
+EffectPass.prototype.ResumeOutput_Sound = function( wa )
+{
+    if( this.mPlayNode===null ) return;
+
+    wa.resume()
+    this.mPlayNode.connect( this.mGainNode );
+};
+
+EffectPass.prototype.StopOutput_Image = function( wa )
+{
+};
+
+EffectPass.prototype.ResumeOutput_Image = function( wa )
+{
+};
+
+EffectPass.prototype.StopOutput = function( wa )
+{
+    for (let j=0; j<this.mInputs.length; j++ )
+        this.StopInput(j);
+
+    if( this.mType==="sound" )
+         this.StopOutput_Sound( wa );
+    else
+         this.StopOutput_Image( wa );
+}
+
+EffectPass.prototype.ResumeOutput = function( wa )
+{
+    for (let j=0; j<this.mInputs.length; j++ )
+        this.ResumeInput(j);
+
+    if( this.mType==="sound" )
+         this.ResumeOutput_Sound( wa );
+    else
+         this.ResumeOutput_Image( wa );
+}
+
+EffectPass.prototype.GetCompilationTime = function()
+{
+    return this.mCompilationTime;
+}
+
+//============================================================================================================
+function Screenshots()
+{
+    // private
+    let mTexture = null;
+    let mTarget = null;
+    let mXres = 0;
+    let mYres = 0;
+    let mCubemapToEquirectProgram;
+    let mRenderer = null;
+
+    // public
+    var me = {};
+
+    me.Initialize = function(renderer)
+    {
+        mRenderer = renderer;
+        let caps = mRenderer.GetCaps();
+        let is20 = caps.mIsGL20;
+
+
+        let vsSourceC, fsSourceC;
+        if( is20 )
+        {
+            vsSourceC = "layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+            fsSourceC = "uniform samplerCube t; out vec4 outColor; void main() { vec2 px = gl_FragCoord.xy/vec2(4096.0,2048.0); vec2 an = 3.1415926535898 * (px*vec2(2.0, 1.0) - vec2(0.0,0.5)); vec3 rd = vec3(-cos(an.y) * sin(an.x), sin(an.y), cos(an.y) * cos(an.x)); outColor = texture(t, rd); }";
+        }
+        else
+        {
+            vsSourceC = "attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+            fsSourceC = "uniform samplerCube t; void main() { vec2 px = gl_FragCoord.xy/vec2(4096.0,2048.0); vec2 an = 3.1415926535898 * (px*vec2(2.0, 1.0) - vec2(0.0,0.5)); vec3 rd = vec3(-cos(an.y) * sin(an.x), sin(an.y), cos(an.y) * cos(an.x)); gl_FragColor = texture(t, rd); }";
+        }
+
+        let compileShader = function (worked, info)
+        {
+            if (worked === false)
+            {
+                console.log("Failed to compile cubemap resample shader (" + errorType + "): " + log);
+            }
+            else
+            {
+                mCubemapToEquirectProgram = info;
+            }
+        }
+        mRenderer.CreateShader(vsSourceC, fsSourceC, false, true, compileShader);
+
+        return true;
+    };
+
+    me.Allocate = function( xres, yres )
+    {
+        if( xres>mXres || yres>mYres )
+        {
+            let texture = mRenderer.CreateTexture(mRenderer.TEXTYPE.T2D, xres, yres, mRenderer.TEXFMT.C4F32, mRenderer.FILTER.NONE, mRenderer.TEXWRP.CLAMP, null);
+            let target = mRenderer.CreateRenderTarget( texture, null, null, null, null, false);
+
+            if( mXres!==0 )
+            {
+                mRenderer.DestroyTexture(mTexture);
+                mRenderer.DestroyRenderTarget(mTarget);
+            }
+
+            mTexture = texture;
+            mTarget = target;
+            mXres = xres;
+            mYres = yres;
+        }
+    };
+
+    me.GetProgram = function()
+    {
+        return mCubemapToEquirectProgram;
+    };
+    me.GetTarget = function()
+    {
+        return mTarget;
+    };
+
+    return me;
+};
+
+//============================================================================================================
+
+function Effect(vr, ac, canvas, callback, obj, forceMuted, forcePaused, resizeCallback, crashCallback )
+{
+    let xres = canvas.width;
+    let yres = canvas.height;
+
+    let me = this;
+    this.mCanvas = canvas;
+    this.mCreated = false;
+    this.mRenderer = null;
+    this.mAudioContext = ac;
+    this.mGLContext = null;
+    this.mWebVR = vr;
+    this.mRenderingStereo = false;
+    this.mXres = xres;
+    this.mYres = yres;
+    this.mForceMuted = forceMuted;
+    if( ac===null ) this.mForceMuted = true;
+    this.mForcePaused = forcePaused;
+    this.mGainNode = null;
+    this.mPasses = [];
+    this.mFrame = 0;
+    this.mTextureCallbackFun = callback;
+    this.mTextureCallbackObj = obj;
+    this.mMaxBuffers = 4;
+    this.mMaxCubeBuffers = 1;
+    this.mMaxPasses = this.mMaxBuffers + 1 + 1 + 1 + 1; // some day decouple passes from buffers (4 buffers + common + Imagen + sound + cubemap)
+    this.mBuffers = [];
+    this.mCubeBuffers = [];
+    this.mScreenshotSytem = null;
+    this.mCompilationTime = 0;
+    this.mIsLowEnd = piIsMobile();
+
+    this.mGLContext = piCreateGlContext(canvas, false, false, true, false); // need preserve-buffe to true in order to capture screenshots
+    if (this.mGLContext === null)
+    {
+        return;
+    }
+
+    canvas.addEventListener("webglcontextlost", function (event)
+        {
+            event.preventDefault();
+            crashCallback();
+        }, false);
+
+    this.mRenderer = piRenderer();
+    if (!this.mRenderer.Initialize(this.mGLContext))
+        return;
+
+    this.mScreenshotSytem = Screenshots();
+    if (!this.mScreenshotSytem.Initialize(this.mRenderer))
+        return;
+
+    var caps = this.mRenderer.GetCaps();
+    this.mIs20 = caps.mIsGL20;
+    this.mShaderTextureLOD = caps.mShaderTextureLOD;
+    //-------------
+    if( ac!==null )
+    {
+        this.mGainNode = ac.createGain();
+        if( !forceMuted )
+        {
+            this.mGainNode.connect( ac.destination);
+        }
+        if (this.mForceMuted )
+            this.mGainNode.gain.value = 0.0;
+        else
+            this.mGainNode.gain.value = 1.0;
+    }
+
+    //-------------
+    let vsSourceC, fsSourceC;
+    if( this.mIs20 )
+    {
+        vsSourceC = "layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+        fsSourceC = "uniform vec4 v; uniform sampler2D t; out vec4 outColor; void main() { outColor = textureLod(t, gl_FragCoord.xy / v.zw, 0.0); }";
+    }
+    else
+    {
+        vsSourceC = "attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+        fsSourceC = "uniform vec4 v; uniform sampler2D t; void main() { gl_FragColor = texture2D(t, gl_FragCoord.xy / v.zw, -100.0); }";
+    }
+
+    this.mRenderer.CreateShader(vsSourceC, fsSourceC, false, true, function(worked, info)
+        {
+            if (worked === false) console.log("Failed to compile shader to copy buffers : " + info.mErrorStr);
+            else me.mProgramCopy = info;
+        });
+
+    let vsSourceD, fsSourceD;
+    if( this.mIs20 )
+    {
+        vsSourceD = "layout(location = 0) in vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+        fsSourceD = "uniform vec4 v; uniform sampler2D t; out vec4 outColor; void main() { vec2 uv = gl_FragCoord.xy / v.zw; outColor = texture(t, vec2(uv.x,1.0-uv.y)); }";
+    }
+    else
+    {
+        vsSourceD = "attribute vec2 pos; void main() { gl_Position = vec4(pos.xy,0.0,1.0); }";
+        fsSourceD = "uniform vec4 v; uniform sampler2D t; void main() { vec2 uv = gl_FragCoord.xy / v.zw; gl_FragColor = texture2D(t, vec2(uv.x,1.0-uv.y)); }";
+    }
+
+    this.mRenderer.CreateShader(vsSourceD, fsSourceD, false, true, function (worked, info)
+        {
+            if (worked === false) console.log("Failed to compile shader to downscale buffers : " + info.mErrorStr);
+            else me.mProgramDownscale = info;
+        });
+
+
+    // set all buffers and cubemaps to null
+    for( let i=0; i<this.mMaxBuffers; i++ )
+    {
+        this.mBuffers[i] = { mTexture: [null, null],
+                             mTarget:  [null, null],
+                             mResolution: [0, 0],
+                             mLastRenderDone: 0,
+                             mThumbnailRenderTarget: null,
+                             mThumbnailTexture: null,
+                             mThumbnailBuffer:  null,
+                             mThumbnailRes: [0, 0] };
+    }
+
+    for( let i=0; i<this.mMaxCubeBuffers; i++ )
+    {
+        this.mCubeBuffers[i] = { mTexture: [null, null],
+                                mTarget:  [null, null],
+                                mResolution: [0, 0],
+                                mLastRenderDone: 0,
+                                mThumbnailRenderTarget: null,
+                                mThumbnailTexture: null,
+                                mThumbnailBuffer:  null,
+                                mThumbnailRes: [0, 0] };
+    }
+
+    //-------
+
+    let keyboardData = new Uint8Array( 256*3 );
+    for (let j=0; j<(256*3); j++ ) { keyboardData[j] = 0; }
+    let kayboardTexture = this.mRenderer.CreateTexture( this.mRenderer.TEXTYPE.T2D, 256, 3, this.mRenderer.TEXFMT.C1I8, this.mRenderer.FILTER.NONE, this.mRenderer.TEXWRP.CLAMP, null);
+    this.mKeyboard = { mData: keyboardData, mTexture: kayboardTexture };
+
+    let iResize = function( xres, yres )
+    {
+        me.mCanvas.width = xres;
+        me.mCanvas.height = yres;
+        me.mXres = xres;
+        me.mYres = yres;
+        me.ResizeBuffers(xres, yres);
+        resizeCallback(xres, yres);
+    };
+
+    let bestAttemptFallback = function()
+    {
+        let devicePixelRatio = globalThis.devicePixelRatio || 1;
+        let xres = Math.round(globalThis.demoCanvasRect?.width || me.mCanvas.offsetWidth || me.mCanvas.width  * devicePixelRatio) | 0;
+        let yres = Math.round(globalThis.demoCanvasRect?.height || me.mCanvas.offsetHeight || me.mCanvas.height * devicePixelRatio) | 0;
+        iResize(xres, yres);
+    };
+
+    bestAttemptFallback();
+
+    // TODO: Handle resizing with worker
+    globalThis.updateLandscapeSize = bestAttemptFallback;
+
+    this.mCreated = true;
+}
+
+
+Effect.prototype.ResizeCubemapBuffer = function(i, xres, yres )
+{
+    let oldXres = this.mCubeBuffers[i].mResolution[0];
+    let oldYres = this.mCubeBuffers[i].mResolution[1];
+
+    if( this.mCubeBuffers[i].mTexture[0]===null || oldXres !== xres || oldYres !== yres )
+    {
+        let texture1 = this.mRenderer.CreateTexture(this.mRenderer.TEXTYPE.CUBEMAP,
+            xres, yres,
+            this.mRenderer.TEXFMT.C4F16,
+            this.mRenderer.FILTER.LINEAR,
+            this.mRenderer.TEXWRP.CLAMP,
+            null);
+        let target1 = this.mRenderer.CreateRenderTargetCubeMap( texture1, null, false);
+
+        let texture2 = this.mRenderer.CreateTexture(this.mRenderer.TEXTYPE.CUBEMAP,
+            xres, yres,
+            this.mRenderer.TEXFMT.C4F16,
+            this.mRenderer.FILTER.LINEAR,
+            this.mRenderer.TEXWRP.CLAMP,
+            null);
+
+        let target2 = this.mRenderer.CreateRenderTargetCubeMap( texture2, null, false);
+
+        // Store new buffers
+        this.mCubeBuffers[i].mTexture = [texture1,texture2],
+        this.mCubeBuffers[i].mTarget =  [target1, target2 ],
+        this.mCubeBuffers[i].mLastRenderDone = 0;
+        this.mCubeBuffers[i].mResolution[0] = xres;
+        this.mCubeBuffers[i].mResolution[1] = yres;
+    }
+}
+
+
+Effect.prototype.ResizeBuffer = function( i, xres, yres, skipIfNotExists )
+{
+    if( skipIfNotExists && this.mBuffers[i].mTexture[0]===null ) return;
+
+    let oldXres = this.mBuffers[i].mResolution[0];
+    let oldYres = this.mBuffers[i].mResolution[1];
+
+    if( oldXres !== xres || oldYres !== yres )
+    {
+        let needCopy = (this.mBuffers[i].mTexture[0]!==null);
+
+        let texture1 = this.mRenderer.CreateTexture(this.mRenderer.TEXTYPE.T2D,
+            xres, yres,
+            this.mRenderer.TEXFMT.C4F32,
+            (needCopy) ? this.mBuffers[i].mTexture[0].mFilter : this.mRenderer.FILTER.NONE,
+            (needCopy) ? this.mBuffers[i].mTexture[0].mWrap   : this.mRenderer.TEXWRP.CLAMP,
+            null);
+
+        let texture2 = this.mRenderer.CreateTexture(this.mRenderer.TEXTYPE.T2D,
+            xres, yres,
+            this.mRenderer.TEXFMT.C4F32,
+            (needCopy) ? this.mBuffers[i].mTexture[1].mFilter : this.mRenderer.FILTER.NONE,
+            (needCopy) ? this.mBuffers[i].mTexture[1].mWrap   : this.mRenderer.TEXWRP.CLAMP,
+            null);
+
+        let target1 = this.mRenderer.CreateRenderTarget( texture1, null, null, null, null, false);
+        let target2 = this.mRenderer.CreateRenderTarget( texture2, null, null, null, null, false);
+
+        if( needCopy )
+        {
+            let v = [0, 0, Math.min(xres, oldXres), Math.min(yres, oldYres)];
+            this.mRenderer.SetBlend(false);
+            this.mRenderer.SetViewport(v);
+            this.mRenderer.AttachShader(this.mProgramCopy);
+            let l1 = this.mRenderer.GetAttribLocation(this.mProgramCopy, "pos");
+            let vOld = [0, 0, oldXres, oldYres];
+            this.mRenderer.SetShaderConstant4FV("v", vOld);
+
+            // Copy old buffers 1 to new buffer
+            this.mRenderer.SetRenderTarget(target1);
+            this.mRenderer.AttachTextures(1, this.mBuffers[i].mTexture[0], null, null, null);
+            this.mRenderer.DrawUnitQuad_XY(l1);
+
+            // Copy old buffers 2 to new buffer
+            this.mRenderer.SetRenderTarget(target2);
+            this.mRenderer.AttachTextures(1, this.mBuffers[i].mTexture[1], null, null, null);
+            this.mRenderer.DrawUnitQuad_XY(l1);
+
+            // Deallocate old memory
+            this.mRenderer.DestroyTexture(this.mBuffers[i].mTexture[0]);
+            this.mRenderer.DestroyRenderTarget(this.mBuffers[i].mTarget[0]);
+            this.mRenderer.DestroyTexture(this.mBuffers[i].mTexture[1]);
+            this.mRenderer.DestroyRenderTarget(this.mBuffers[i].mTarget[1]);
+            //this.mRenderer.DestroyTexture(this.mBuffers[i].thumbnailTexture);
+        }
+
+        // Store new buffers
+        this.mBuffers[i].mTexture = [texture1,texture2],
+        this.mBuffers[i].mTarget =  [target1, target2 ],
+        this.mBuffers[i].mLastRenderDone = 0;
+        this.mBuffers[i].mResolution[0] = xres;
+        this.mBuffers[i].mResolution[1] = yres;
+    }
+}
+
+Effect.prototype.saveScreenshot = function(passid)
+{
+    let pass = this.mPasses[passid];
+
+    if( pass.mType === "buffer" )
+    {
+        let bufferID = assetID_to_bufferID( this.mPasses[passid].mOutputs[0] );
+
+        let texture = this.mBuffers[bufferID].mTarget[ this.mBuffers[bufferID].mLastRenderDone ];
+
+        let numComponents = 3;
+        let width = texture.mTex0.mXres;
+        let height = texture.mTex0.mYres;
+        let type = "Float"; // Other options Float, Half, Uint
+        let bytes = new Float32Array(width * height * 4 );//numComponents);
+        this.mRenderer.GetPixelDataRenderTarget( texture, bytes, width, height );
+        let blob = piExportToEXR(width, height, numComponents, type, bytes);
+
+        // Offer download automatically to the user
+        piTriggerDownload("image.exr", blob);
+    }
+    else if( pass.mType === "cubemap" )
+    {
+        let xres = 4096;
+        let yres = 2048;
+        this.mScreenshotSytem.Allocate( xres, yres );
+
+        let cubeBuffer = this.mCubeBuffers[0];
+
+        let target = this.mScreenshotSytem.GetTarget();
+        this.mRenderer.SetRenderTarget( target );
+
+        let program = this.mScreenshotSytem.GetProgram();
+
+        this.mRenderer.AttachShader(program);
+        let l1 = this.mRenderer.GetAttribLocation(program, "pos");
+        this.mRenderer.SetViewport( [0, 0, xres, yres] );
+        this.mRenderer.AttachTextures(1, cubeBuffer.mTexture[ cubeBuffer.mLastRenderDone ], null, null, null);
+        this.mRenderer.DrawUnitQuad_XY(l1);
+        this.mRenderer.DettachTextures();
+        this.mRenderer.SetRenderTarget( null );
+
+        let data = new Float32Array(xres*yres*4);
+        this.mRenderer.GetPixelDataRenderTarget( target, data, xres, yres );
+
+        let blob = piExportToEXR(xres, yres, 3, "Float", data );
+        piTriggerDownload("image.exr", blob);
+    }
+    else if( pass.mType === "sound" )
+    {
+        let offset = 0;
+        const bits = 16;
+        const numChannels = 2;
+        let words = new Int16Array(60*pass.mSampleRate*numChannels );
+
+        pass.iRenderSound( new Date(), function(off, data, numSamples)
+                                         {
+                                            for( let i=0; i<numSamples; i++ )
+                                            {
+                                                words[offset++] = (data[4*i+0]+256.0*data[4*i+1]) - 32767;
+                                                words[offset++] = (data[4*i+2]+256.0*data[4*i+3]) - 32767;
+                                            }
+                                         }
+                                     );
+
+        let blob = piExportToWAV( 60*pass.mSampleRate, pass.mSampleRate, bits, numChannels, words);
+
+        piTriggerDownload("sound.wav", blob);
+    }
+}
+
+Effect.prototype.ResizeBuffers = function(xres, yres)
+{
+    for (let i=0; i<this.mMaxBuffers; i++ )
+    {
+        this.ResizeBuffer(i, xres, yres, true);
+    }
+}
+
+Effect.prototype.IsEnabledVR = function ()
+{
+    if (this.mRenderingStereo) return true;
+    return false;
+}
+
+Effect.prototype.EnableVR = function()
+{
+    if( !this.mWebVR.IsSupported() ) return;
+    if( this.mRenderingStereo ) return;
+
+    this.mRenderingStereo = true;
+    this.mWebVR.Enable();
+}
+
+Effect.prototype.DisableVR = function()
+{
+    if( !this.mWebVR.IsSupported() ) return;
+    if( !this.mRenderingStereo ) return;
+
+    this.mRenderingStereo = false;
+    this.mWebVR.Disable();
+}
+
+Effect.prototype.GetTexture = function( passid, slot )
+{
+    return this.mPasses[passid].GetTexture( slot );
+}
+
+Effect.prototype.NewTexture = function( passid, slot, url )
+{
+    return this.mPasses[passid].NewTexture( this.mAudioContext, slot, url, this.mBuffers, this.mCubeBuffers, this.mKeyboard );
+}
+
+Effect.prototype.SetOutputs = function( passid, slot, url )
+{
+    this.mPasses[passid].SetOutputs( slot, url );
+}
+
+Effect.prototype.SetOutputsByBufferID = function( passid, slot, id )
+{
+    this.mPasses[passid].SetOutputsByBufferID( slot, id );
+}
+
+Effect.prototype.GetAcceptsLinear = function (passid, slot)
+{
+    return this.mPasses[passid].GetAcceptsLinear(slot);
+}
+
+Effect.prototype.GetAcceptsMipmapping = function (passid, slot)
+{
+    return this.mPasses[passid].GetAcceptsMipmapping(slot);
+}
+
+Effect.prototype.GetAcceptsWrapRepeat = function (passid, slot)
+{
+    return this.mPasses[passid].GetAcceptsWrapRepeat(slot);
+}
+
+Effect.prototype.GetAcceptsVFlip = function (passid, slot)
+{
+    return this.mPasses[passid].GetAcceptsVFlip(slot);
+}
+
+Effect.prototype.SetSamplerFilter = function (passid, slot, str)
+{
+    this.mPasses[passid].SetSamplerFilter(slot, str, this.mBuffers, this.mCubeBuffers);
+}
+
+Effect.prototype.GetTranslatedShaderSource = function (passid)
+{
+    return this.mPasses[passid].GetTranslatedShaderSource();
+}
+
+Effect.prototype.GetSamplerFilter = function (passid, slot) {
+    return this.mPasses[passid].GetSamplerFilter(slot);
+}
+
+Effect.prototype.SetSamplerWrap = function (passid, slot, str) {
+    this.mPasses[passid].SetSamplerWrap(slot, str, this.mBuffers);
+}
+
+Effect.prototype.GetSamplerWrap = function (passid, slot) {
+    return this.mPasses[passid].GetSamplerWrap(slot);
+}
+
+Effect.prototype.SetSamplerVFlip = function (passid, slot, str) {
+    this.mPasses[passid].SetSamplerVFlip(slot, str);
+}
+
+Effect.prototype.GetSamplerVFlip = function (passid, slot) {
+    return this.mPasses[passid].GetSamplerVFlip(slot);
+}
+
+Effect.prototype.GetHeaderSize = function (passid)
+{
+    return this.mPasses[passid].mHeaderLength +
+           this.mRenderer.GetShaderHeaderLines(1);
+
+}
+
+Effect.prototype.ToggleVolume = function()
+{
+    this.mForceMuted = !this.mForceMuted;
+
+    // outp
+    if (this.mForceMuted)
+        this.mGainNode.gain.value = 0.0;
+    else
+        this.mGainNode.gain.value = 1.0;
+
+    // inp
+    let num = this.mPasses.length;
+    for( let j=0; j<num; j++ )
+    {
+        for( let i=0; i<this.mPasses[j].mInputs.length; i++ )
+        {
+            if( this.mForceMuted )
+                this.mPasses[j].MuteInput( this.mAudioContext, i );
+            else
+                this.mPasses[j].UnMuteInput( this.mAudioContext, i );
+        }
+    }
+
+    return this.mForceMuted;
+}
+
+Effect.prototype.SetKeyDown = function( passid, k )
+{
+    if( this.mKeyboard.mData[ k + 0*256 ] == 255 ) return;
+
+    this.mKeyboard.mData[ k + 0*256 ] = 255;
+    this.mKeyboard.mData[ k + 1*256 ] = 255;
+    this.mKeyboard.mData[ k + 2*256 ] = 255 - this.mKeyboard.mData[ k + 2*256 ];
+    this.mRenderer.UpdateTexture( this.mKeyboard.mTexture, 0, 0, 256, 3, this.mKeyboard.mData );
+
+    let num = this.mPasses.length;
+    for (let j=0; j<num; j++ )
+    {
+        for (let i=0; i<this.mPasses[j].mInputs.length; i++ )
+        {
+            let inp = this.mPasses[j].mInputs[i];
+            if( inp!==null && inp.mInfo.mType==="keyboard" )
+            {
+                if( this.mTextureCallbackFun!==null )
+                    this.mTextureCallbackFun( this.mTextureCallbackObj, i, {mImage:this.mKeyboard.mIcon, mData: this.mKeyboard.mData}, false, 6, 1, -1.0, this.mPasses[j].mID );
+            }
+        }
+    }
+}
+
+Effect.prototype.SetKeyUp = function( passid, k )
+{
+    this.mKeyboard.mData[ k + 0*256 ] = 0;
+    this.mKeyboard.mData[ k + 1*256 ] = 0;
+    this.mRenderer.UpdateTexture( this.mKeyboard.mTexture, 0, 0, 256, 3, this.mKeyboard.mData );
+
+    let num = this.mPasses.length;
+    for (let j=0; j<num; j++ )
+    {
+        for (let i=0; i<this.mPasses[j].mInputs.length; i++ )
+        {
+            let inp = this.mPasses[j].mInputs[i];
+            if( inp!==null && inp.mInfo.mType==="keyboard" )
+            {
+                if( this.mTextureCallbackFun!==null )
+                    this.mTextureCallbackFun( this.mTextureCallbackObj, i, {mImage:this.mKeyboard.mIcon, mData: this.mKeyboard.mData}, false, 6, 1, -1.0, this.mPasses[j].mID );
+            }
+        }
+    }
+
+}
+
+Effect.prototype.StopOutputs = function()
+{
+    let wa = this.mAudioContext;
+
+    let num = this.mPasses.length;
+    for (let i=0; i<num; i++ )
+    {
+        this.mPasses[i].StopOutput( wa );
+    }
+}
+
+Effect.prototype.ResumeOutputs = function()
+{
+    let wa = this.mAudioContext;
+
+    let num = this.mPasses.length;
+    for (let i=0; i<num; i++ )
+    {
+        this.mPasses[i].ResumeOutput( wa );
+    }
+}
+
+Effect.prototype.PauseInput = function( passid, id )
+{
+    return this.mPasses[passid].TooglePauseInput( this.mAudioContext, id );
+}
+
+Effect.prototype.ToggleMuteInput = function( passid, id )
+{
+    return this.mPasses[passid].ToggleMuteInput( this.mAudioContext, id );
+}
+
+Effect.prototype.RewindInput = function( passid, id )
+{
+    this.mPasses[passid].RewindInput( this.mAudioContext, id );
+}
+
+Effect.prototype.UpdateInputs = function( passid, forceUpdate )
+{
+   this.mPasses[passid].UpdateInputs( this.mAudioContext, forceUpdate, this.mKeyboard );
+}
+
+Effect.prototype.ResetTime = function()
+{
+    this.mFrame = 0;
+    this.mAudioContext.resume()
+
+    let num = this.mPasses.length;
+    for( let i=0; i<num; i++ )
+    {
+        this.mPasses[i].mFrame = 0;
+        for( let j=0; j<this.mPasses[i].mInputs.length; j++ )
+            this.mPasses[i].RewindInput(this.mAudioContext, j)
+    }
+}
+
+Effect.prototype.RequestAnimationFrame = function (id)
+{
+    if (this.mRenderingStereo && this.mWebVR.IsPresenting())
+    {
+        this.mWebVR.RequestAnimationFrame(id);
+    }
+    else
+    {
+        setTimeout(id,1000/60);
+    }
+}
+
+Effect.prototype.Paint = function(time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, isPaused)
+{
+    let wa = this.mAudioContext;
+    let da = new Date();
+    let vrData = null; if (this.mRenderingStereo) vrData = this.mWebVR.GetData();
+    let xres = this.mXres / 1;
+    let yres = this.mYres / 1;
+
+    if( this.mFrame===0 )
+    {
+        for( let i=0; i<this.mMaxBuffers; i++ )
+        {
+            if( this.mBuffers[i].mTexture[0]!==null )
+            {
+                this.mRenderer.SetRenderTarget( this.mBuffers[i].mTarget[0] );
+                this.mRenderer.Clear( this.mRenderer.CLEAR.Color, [0.0,0.0,0.0,0.0], 1.0, 0   );
+                this.mRenderer.SetRenderTarget( this.mBuffers[i].mTarget[1] );
+                this.mRenderer.Clear( this.mRenderer.CLEAR.Color, [0.0,0.0,0.0,0.0], 1.0, 0   );
+
+				this.mRenderer.CreateMipmaps( this.mBuffers[i].mTexture[0] );
+				this.mRenderer.CreateMipmaps( this.mBuffers[i].mTexture[1] );
+            }
+        }
+        for( let i=0; i<this.mMaxCubeBuffers; i++ )
+        {
+            if( this.mCubeBuffers[i].mTexture[0]!==null )
+            {
+                for( let face=0; face<6; face++ )
+                {
+                    this.mRenderer.SetRenderTargetCubeMap( this.mCubeBuffers[i].mTarget[0], face );
+                    this.mRenderer.Clear( this.mRenderer.CLEAR.Color, [0.0,0.0,0.0,0.0], 1.0, 0   );
+                    this.mRenderer.SetRenderTargetCubeMap( this.mCubeBuffers[i].mTarget[1], face );
+                    this.mRenderer.Clear( this.mRenderer.CLEAR.Color, [0.0,0.0,0.0,0.0], 1.0, 0   );
+					this.mRenderer.CreateMipmaps( this.mCubeBuffers[i].mTexture[0] );
+				    this.mRenderer.CreateMipmaps( this.mCubeBuffers[i].mTexture[1] );
+                }
+            }
+        }
+    }
+
+    let num = this.mPasses.length;
+
+    // render sound first
+    for( let i=0; i<num; i++ )
+    {
+        if( this.mPasses[i].mType !== "sound" ) continue;
+        if( this.mPasses[i].mProgram===null ) continue;
+        this.mPasses[i].Paint( vrData, wa, da, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, isPaused, null, false, this.mBuffers, this.mCubeBuffers, this.mKeyboard, this );
+    }
+
+    // render buffers second
+    for( let i=0; i<num; i++ )
+    {
+        if( this.mPasses[i].mType !== "buffer" ) continue;
+        if( this.mPasses[i].mProgram===null ) continue;
+        let bufferID = assetID_to_bufferID( this.mPasses[i].mOutputs[0] );
+
+        // check if any downstream pass needs mipmaps when reading from this buffer
+        let needMipMaps = false;
+        for (let j=0; j<num; j++ )
+        {
+            for (let k=0; k<this.mPasses[j].mInputs.length; k++ )
+            {
+                let inp = this.mPasses[j].mInputs[k];
+                if( inp!==null && inp.mInfo.mType==="buffer" && inp.id === bufferID && inp.mInfo.mSampler.filter === "mipmap")
+                {
+                    needMipMaps = true;
+                    break;
+                }
+            }
+        }
+
+        this.mPasses[i].Paint( vrData, wa, da, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, isPaused, bufferID, needMipMaps, this.mBuffers, this.mCubeBuffers, this.mKeyboard, this );
+    }
+
+
+    // render cubemap buffers second
+    for( let i=0; i<num; i++ )
+    {
+        if( this.mPasses[i].mType !== "cubemap" ) continue;
+        if( this.mPasses[i].mProgram===null ) continue;
+        let bufferID = 0;//assetID_to_bufferID( this.mPasses[i].mOutputs[0] );
+
+        // check if any downstream pass needs mipmaps when reading from this buffer
+        let needMipMaps = false;
+
+        for (let j=0; j<num; j++ )
+        {
+            for (let k=0; k<this.mPasses[j].mInputs.length; k++ )
+            {
+                let inp = this.mPasses[j].mInputs[k];
+                if( inp!==null && inp.mInfo.mType==="cubemap" )
+                {
+                    if( assetID_to_cubemapBuferID(inp.mInfo.mID)===0 && inp.mInfo.mSampler.filter === "mipmap" )
+                    {
+                        needMipMaps = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        this.mPasses[i].Paint( vrData, wa, da, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, isPaused, bufferID, needMipMaps, this.mBuffers, this.mCubeBuffers, this.mKeyboard, this );
+    }
+
+    // render image last
+    for( let i=0; i<num; i++ )
+    {
+        if( this.mPasses[i].mType !== "image" ) continue;
+        if( this.mPasses[i].mProgram===null ) continue;
+        this.mPasses[i].Paint( vrData, wa, da, time, dtime, fps, mouseOriX, mouseOriY, mousePosX, mousePosY, xres, yres, isPaused, null, false, this.mBuffers, this.mCubeBuffers, this.mKeyboard, this );
+    }
+
+    // erase keypresses
+    for (let k=0; k<256; k++ )
+    {
+       this.mKeyboard.mData[ k + 1*256 ] = 0;
+    }
+    this.mRenderer.UpdateTexture( this.mKeyboard.mTexture, 0, 0, 256, 3, this.mKeyboard.mData );
+
+    if( this.mRenderingStereo ) this.mWebVR.Finish();
+
+    this.mFrame++;
+}
+
+Effect.prototype.NewShader = function( passid, preventCache, onResolve )
+{
+    let commonSourceCodes = [];
+    for (let i=0; i<this.mPasses.length; i++ )
+    {
+        if( this.mPasses[i].mType==="common")
+        {
+            commonSourceCodes.push(this.mPasses[i].mSource);
+        }
+    }
+
+    this.mPasses[passid].NewShader(commonSourceCodes, preventCache, onResolve );
+}
+
+Effect.prototype.GetNumPasses = function()
+{
+    return this.mPasses.length;
+}
+
+Effect.prototype.GetNumOfType = function(passtype)
+{
+    let id = 0;
+    for (let j=0; j<this.mPasses.length; j++ )
+    {
+        if( this.mPasses[j].mType===passtype )
+        {
+            id++;
+        }
+    }
+    return id;
+}
+
+Effect.prototype.GetPassType = function( id )
+{
+    return this.mPasses[id].mType;
+}
+Effect.prototype.GetPassName = function( id )
+{
+    return this.mPasses[id].mName;
+}
+Effect.prototype.GetCode = function( id )
+{
+    return this.mPasses[id].mSource;
+}
+Effect.prototype.SetCode = function( id, source )
+{
+    this.mPasses[id].SetCode(source);
+}
+Effect.prototype.GetError = function (id)
+{
+    return this.mPasses[id].mError;
+}
+Effect.prototype.GetErrorStr = function (id)
+{
+    return this.mPasses[id].mErrorStr;
+}
+Effect.prototype.GetErrorGlobal = function()
+{
+    for (let i = 0; i < this.mPasses.length; i++)
+    {
+        if (this.mPasses[i].mError)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+Effect.prototype.Load = function (jobj )
+{
+    if (jobj.ver !== "0.1")
+    {
+        console.log("Wrong Format");
+        return false;
+    }
+
+    let numPasses = jobj.renderpass.length;
+
+    if( numPasses<1 || numPasses>this.mMaxPasses )
+    {
+        console.log("Corrupted Shader - " + numPasses);
+        return false;
+    }
+
+    this.mPasses = [];
+    for (let j = 0; j < numPasses; j++)
+    {
+        let rpass = jobj.renderpass[j];
+
+        // skip sound passes if in thumbnail mode
+        if( this.mForceMuted && rpass.type === "sound" ) continue;
+
+        let wpass = new EffectPass(this.mRenderer, this.mIs20, this.mIsLowEnd, this.mShaderTextureLOD,
+                                   this.mTextureCallbackFun, this.mTextureCallbackObj, this.mForceMuted, this.mForcePaused, this.mGainNode,
+                                   this.mProgramDownscale, j, this);
+
+        wpass.Create(rpass.type, this.mAudioContext);
+
+        let numInputs = rpass.inputs.length;
+
+        for (let i = 0; i < 4; i++)
+        {
+            wpass.NewTexture(this.mAudioContext, i, null, null, null);
+        }
+        for (let i = 0; i < numInputs; i++)
+        {
+            let lid  = rpass.inputs[i].channel;
+            let styp = rpass.inputs[i].type;
+            let sid  = rpass.inputs[i].id;
+            let ssrc = rpass.inputs[i].filepath;
+            let psrc = rpass.inputs[i].previewfilepath;
+            let samp = rpass.inputs[i].sampler;
+
+            wpass.NewTexture(this.mAudioContext, lid, { mType: styp, mID: sid, mSrc: ssrc, mSampler: samp, mPreviewSrc: psrc }, this.mBuffers, this.mCubeBuffers, this.mKeyboard);
+        }
+
+        for (let i = 0; i < 4; i++)
+        {
+            wpass.SetOutputs(i, null);
+        }
+
+        let numOutputs = rpass.outputs.length;
+        for (let i = 0; i < numOutputs; i++)
+        {
+            let outputID = rpass.outputs[i].id;
+            let outputCH = rpass.outputs[i].channel;
+            wpass.SetOutputs(outputCH, outputID);
+        }
+
+        // create some hardcoded names. This should come from the DB
+        let rpassName = "";
+        if (rpass.type === "common" ) rpassName = "Common";
+        if (rpass.type === "sound"  ) rpassName = "Sound";
+        if (rpass.type === "image"  ) rpassName = "Image";
+        if (rpass.type === "buffer") rpassName = "Buffer " + String.fromCharCode(65 + assetID_to_bufferID(wpass.mOutputs[0]));
+        if (rpass.type === "cubemap") rpassName = "Cube A";// " + String.fromCharCode(65 + assetID_to_bufferID(this.mPasses[j].mOutputs[0]));
+        wpass.SetName(rpassName);
+        wpass.SetCode(rpass.code);
+
+        this.mPasses.push(wpass);
+    }
+    return true;
+}
+
+Effect.prototype.CompileSome = function ( passes, preventCache, onResolve )
+{
+    let me = this;
+
+    let to = (new Date()).getTime();
+    let allPromisses = [];
+    for (let j = 0; j < passes.length; j++)
+    {
+        allPromisses.push(new Promise(function (resolve, reject)
+        {
+            me.NewShader(passes[j], preventCache, function () { resolve(1); });
+        }));
+    }
+
+    // aggregated callback when all passes have been compiled
+    Promise.all(allPromisses).then(function (values)
+    {
+        let totalError = false;
+        for (let j = 0; j < me.mPasses.length; j++)
+        {
+            if (me.mPasses[j].mError)
+            {
+                totalError = true;
+                break;
+            }
+        }
+        me.mCompilationTime = (new Date()).getTime() - to;
+        onResolve(!totalError);
+    }).catch(console.log);
+}
+
+Effect.prototype.Compile = function (preventCache, onResolve )
+{
+    let me = this;
+
+    let to = (new Date()).getTime();
+    let allPromisses = [];
+    let numPasses = this.mPasses.length;
+    for (let j = 0; j < numPasses; j++)
+    {
+        allPromisses.push(new Promise(function (resolve, reject)
+        {
+            me.NewShader(j, preventCache, function () { resolve(1); });
+        }));
+    }
+
+    // aggregated callback when all passes have been compiled
+    Promise.all(allPromisses).then(function (values)
+    {
+        let totalError = false;
+        for (let j = 0; j < numPasses; j++)
+        {
+            if (me.mPasses[j].mError)
+            {
+                totalError = true;
+                break;
+            }
+        }
+        me.mCompilationTime = (new Date()).getTime() - to;
+        onResolve(!totalError);
+    }).catch(console.log);
+}
+
+Effect.prototype.GetCompilationTime = function( id )
+{
+    return this.mPasses[id].GetCompilationTime()/1000.0;
+}
+Effect.prototype.GetTotalCompilationTime = function()
+{
+    return this.mCompilationTime/1000.0;
+}
+
+Effect.prototype.DestroyPass = function( id )
+{
+   this.mPasses[id].Destroy( this.mAudioContext );
+   this.mPasses.splice(id, 1);
+}
+
+Effect.prototype.AddPass = function( passType, passName, onResolve )
+{
+    let shaderStr = null;
+
+    if( passType==="sound"   ) shaderStr = "vec2 mainSound( int samp, float time )\n{\n    // A 440 Hz wave that attenuates quickly overt time\n    return vec2( sin(6.2831*440.0*time)*exp(-3.0*time) );\n}";
+    if( passType==="buffer"  ) shaderStr = "void mainImage( out vec4 fragColor, in vec2 fragCoord )\n{\n    fragColor = vec4(0.0,0.0,1.0,1.0);\n}";
+    if( passType==="common"  ) shaderStr = "vec4 someFunction( vec4 a, float b )\n{\n    return a+b;\n}";
+    if( passType==="cubemap" ) shaderStr = "void mainCubemap( out vec4 fragColor, in vec2 fragCoord, in vec3 rayOri, in vec3 rayDir )\n{\n    // Ray direction as color\n    vec3 col = 0.5 + 0.5*rayDir;\n\n    // Output to cubemap\n    fragColor = vec4(col,1.0);\n}";
+
+    let id = this.GetNumPasses();
+    this.mPasses[id] = new EffectPass( this.mRenderer, this.mIs20, this.mIsLowEnd, this.mShaderTextureLOD,
+                                       this.mTextureCallbackFun, this.mTextureCallbackObj, this.mForceMuted, this.mForcePaused, this.mGainNode,
+                                       this.mProgramDownscale, id, this );
+
+    this.mPasses[id].Create( passType, this.mAudioContext );
+    this.mPasses[id].SetName( passName );
+    this.mPasses[id].SetCode( shaderStr );
+    this.NewShader(id, false, function ()
+    {
+        onResolve();
+    });
+
+    return { mId : id, mShader : shaderStr };
+}
+
+// this should be removed once we have MultiPass 2.0 and passes render to arbitrary buffers
+Effect.prototype.IsBufferPassUsed = function( bufferID )
+{
+    for (let j=0; j<this.mPasses.length; j++ )
+    {
+        if( this.mPasses[j].mType !== "buffer" ) continue;
+        if( this.mPasses[j].mOutputs[0] === bufferID_to_assetID(bufferID) ) return true;
+    }
+    return false;
+}
+
+Effect.prototype.Save = function()
+{
+    var result = {};
+
+    result.ver = "0.1";
+
+    result.renderpass = [];
+
+    let numPasses = this.mPasses.length;
+    for (let j=0; j<numPasses; j++ )
+    {
+        result.renderpass[j] = {};
+
+        result.renderpass[j].outputs = new Array();
+        for (let i = 0; i<4; i++ )
+        {
+            let outputID = this.mPasses[j].mOutputs[i];
+            if( outputID===null ) continue;
+            result.renderpass[j].outputs.push( { channel: i, id: outputID } );
+        }
+        result.renderpass[j].inputs = new Array();
+        for (let i = 0; i<4; i++ )
+        {
+            if( this.mPasses[j].mInputs[i]===null ) continue;
+            result.renderpass[j].inputs.push( {channel: i,
+                                               type    : this.mPasses[j].mInputs[i].mInfo.mType,
+                                               id      : this.mPasses[j].mInputs[i].mInfo.mID,
+                                               filepath: this.mPasses[j].mInputs[i].mInfo.mSrc,
+                                               sampler : this.mPasses[j].mInputs[i].mInfo.mSampler });
+        }
+
+        result.renderpass[j].code = this.mPasses[j].mSource;
+        result.renderpass[j].name = this.mPasses[j].mName
+        result.renderpass[j].description = "";
+        result.renderpass[j].type = this.mPasses[j].mType;
+    }
+
+    result.flags = this.calcFlags();
+
+    return result;
+}
+
+Effect.prototype.calcFlags = function ()
+{
+    let flagVR = false;
+    let flagWebcam = false;
+    let flagSoundInput = false;
+    let flagSoundOutput = false;
+    let flagKeyboard = false;
+    let flagMultipass = false;
+    let flagMusicStream = false;
+
+    let numPasses = this.mPasses.length;
+    for (let j = 0; j < numPasses; j++)
+    {
+        let pass = this.mPasses[j];
+
+        if (pass.mType === "sound") flagSoundOutput = true;
+        if (pass.mType === "buffer") flagMultipass = true;
+
+        for (let i = 0; i < 4; i++)
+        {
+            if (pass.mInputs[i] === null) continue;
+
+            if (pass.mInputs[i].mInfo.mType === "webcam") flagWebcam = true;
+            else if (pass.mInputs[i].mInfo.mType === "keyboard") flagKeyboard = true;
+            else if (pass.mInputs[i].mInfo.mType === "mic") flagSoundInput = true;
+            else if (pass.mInputs[i].mInfo.mType === "musicstream") flagMusicStream = true;
+        }
+
+        let n1 = pass.mSource.indexOf("mainVR(");
+        let n2 = pass.mSource.indexOf("mainVR (");
+        if (n1 > 0 || n2 > 0) flagVR = true;
+    }
+
+    return {
+        mFlagVR: flagVR,
+        mFlagWebcam: flagWebcam,
+        mFlagSoundInput: flagSoundInput,
+        mFlagSoundOutput: flagSoundOutput,
+        mFlagKeyboard: flagKeyboard,
+        mFlagMultipass: flagMultipass,
+        mFlagMusicStream: flagMusicStream
+    };
+}

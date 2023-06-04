@@ -1,1 +1,821 @@
-const vs_code="\n    attribute vec4 position;\n    varying vec2 uv;\n    void main() {\n        uv = position.xy*0.5 + 0.5;\n        gl_Position = position;\n    }\n";function defInput(e){return`\n        uniform Tensor ${e};\n        uniform sampler2D ${e}_tex;\n\n        vec4 ${e}_read(vec2 pos, float ch) {return _read(${e}, ${e}_tex, pos, ch);}\n        vec4 ${e}_read01(vec2 pos, float ch) {return _read01(${e}, ${e}_tex, pos, ch);}\n        vec4 ${e}_readUV(vec2 uv) {return _readUV(${e}, ${e}_tex, uv);}\n    `}const PREFIX=`\n    #extension GL_OES_standard_derivatives : enable\n    precision highp float;\n\n    const float PI = 3.14159265359;\n\n    // "Hash without Sine" by David Hoskins (https://www.shadertoy.com/view/4djSRW)\n    float hash13(vec3 p3) {\n      p3  = fract(p3 * .1031);\n      p3 += dot(p3, p3.yzx + 33.33);\n      return fract((p3.x + p3.y) * p3.z);\n    }\n    vec2 hash23(vec3 p3)\n    {\n        p3 = fract(p3 * vec3(.1031, .1030, .0973));\n        p3 += dot(p3, p3.yzx+33.33);\n        return fract((p3.xx+p3.yz)*p3.zy);\n    }\n\n    struct Tensor {\n        vec2 size;\n        vec2 gridSize;\n        float depth, depth4;\n        vec2 packScaleZero;\n    };\n    uniform Tensor u_output;\n\n    vec4 _readUV(Tensor tensor, sampler2D tex, vec2 uv) {\n        vec4 v = texture2D(tex, uv);\n        vec2 p = tensor.packScaleZero;\n        v = (v-p.y)*p.x;\n        return v;\n    }\n    vec2 _getUV(Tensor tensor, vec2 pos, float ch) {\n        ch += 0.5;\n        float tx = floor(mod(ch, tensor.gridSize.x));\n        float ty = floor(ch / tensor.gridSize.x);\n        vec2 p = fract(pos/tensor.size) + vec2(tx, ty);\n        p /= tensor.gridSize;\n        return p;\n    }\n    vec4 _read01(Tensor tensor, sampler2D tex, vec2 pos, float ch) {\n        return texture2D(tex, _getUV(tensor, pos, ch));\n    }\n    vec4 _read(Tensor tensor, sampler2D tex, vec2 pos, float ch) {\n        vec2 p = _getUV(tensor, pos, ch);\n        return _readUV(tensor, tex, p);\n    }\n    vec2 getOutputXY() {\n        return mod(gl_FragCoord.xy, u_output.size);\n    }\n    float getOutputChannel() {\n        vec2 xy = floor(gl_FragCoord.xy/u_output.size);\n        return xy.y*u_output.gridSize.x+xy.x;\n    }\n\n    void setOutput(vec4 v) {\n        vec2 p = u_output.packScaleZero;\n        v = v/p.x + p.y;\n        gl_FragColor = v;\n    }\n\n    #ifdef SPARSE_UPDATE\n        uniform sampler2D u_shuffleTex, u_unshuffleTex;\n        uniform vec2 u_shuffleOfs;\n    #endif\n\n    ${defInput("u_input")}\n\n    uniform float u_angle, u_alignment;\n    const float u_hexGrid = 1.0;\n\n    mat2 rotate(float ang) {\n        float s = sin(ang), c = cos(ang);\n        return mat2(c, s, -s, c);\n    }\n\n    vec2 ang2vec(float a) {\n        return vec2(cos(a), sin(a));\n    }\n\n    ${defInput("u_alignTex")}\n    vec2 getCellDirection(vec2 xy) {\n        return u_alignTex_read(xy, 0.0).xy;\n    }\n\n    vec4 conv3x3(vec2 xy, float inputCh, mat3 filter) {\n        vec4 a = vec4(0.0);\n        for (int y=0; y<3; ++y)\n        for (int x=0; x<3; ++x) {\n          vec2 p = xy+vec2(float(x-1), float(y-1));\n          a += filter[y][x] * u_input_read(p, inputCh);\n        }\n        return a;\n    }\n\n    // https://www.shadertoy.com/view/Xljczw\n    // https://www.shadertoy.com/view/MlXyDl\n    // returns xy - in cell pos, zw - skewed cell id\n    vec4 getHex(vec2 u) {\n        vec2 s = vec2(1., mix(2.0, 1.732, u_hexGrid));\n        vec2 p = vec2(0.5*u_hexGrid, 0.5);\n        vec2 a = mod(u    ,s)*2.-s;\n        vec2 b = mod(u+s*p,s)*2.-s;\n        vec2 ai = floor(u/s);\n        vec2 bi = floor(u/s+p);\n        // skewed coords\n        ai = vec2(ai.x-ai.y*u_hexGrid, ai.y*2.0+1.0);\n        bi = vec2(bi.x-bi.y*u_hexGrid, bi.y*2.0);\n        return dot(a,a)<dot(b,b) ? vec4(a, ai) : vec4(b, bi);\n    }\n\n    float hex(in vec2 p){\n        vec2 s = vec2(1., 1.732);\n        p = abs(p);\n        return max(dot(p, s*.5), p.x); // Hexagon.\n    }\n\n    // https://www.shadertoy.com/view/XtXcWs\n    vec2 cmul(vec2 a, vec2 b) {\n        return vec2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x);\n    }\n\n    vec2 cdiv(vec2 a, vec2 b) {\n        return cmul(a, vec2(b.x, -b.y)) / dot(b, b);\n    }\n\n    uniform vec2 u_viewSize;\n\n    struct Hexel {\n        vec2 cellXY;\n        vec2 p;\n        float zoom;\n    };\n\n    Hexel screen2hex(vec2 xy) {\n        xy /= u_viewSize;\n        xy.y = 1.0-xy.y;\n        vec2 normViewSize = u_viewSize/length(u_viewSize);\n        xy = (xy*0.85+0.25) * normViewSize;\n\n        Hexel h;\n        float nxy = length(xy);\n        h.zoom = 4.0/(nxy*nxy);\n        xy = cmul(xy, xy);\n        xy = cmul(xy, xy);\n        xy *= 160.0;\n        vec4 r = getHex(xy);\n        h.cellXY = r.zw;\n        h.p = r.xy;\n        return h;\n    }\n\n    float calcMouseDist(vec2 mousePosScr) {\n        Hexel h = screen2hex(mousePosScr);\n        h.cellXY = mod(h.cellXY, u_output.size);\n        vec2 diff = abs(getOutputXY()-h.cellXY-0.5);\n        return length(min(diff, u_output.size-diff))*h.zoom;\n    }\n`,PROGRAMS={paint:"\n    uniform vec2 u_pos;\n    uniform float u_r;\n    uniform vec4 u_brush;\n\n    void main() {\n        if (u_r>0.0 && calcMouseDist(u_pos)>=80.0)\n          discard;\n        setOutput(u_brush);\n    }",peek:"\n    uniform vec2 u_pos;\n\n    vec2 getPeekPos(float i) {\n        float a = i*0.61803398875*2.0*PI;\n        float r = (u_viewSize.x+u_viewSize.y)/1000.0;\n        return vec2(cos(a), sin(a)) * sqrt(i) * r;\n    }\n\n    void main() {\n        float out_i = getOutputXY().x;\n        float i = floor(out_i / u_input.depth4);\n        float channel = floor(mod(out_i, u_input.depth4));\n        Hexel h = screen2hex(u_pos + getPeekPos(i));\n        setOutput(u_input_read(h.cellXY, channel));\n    }",align:"\n    uniform vec2 u_pos;\n    uniform float u_r;\n    uniform float u_init;\n\n    const mat3 blur = mat3(1.0/9.0);\n    const mat3 blurHex = mat3(0.0,       1.0, 1.0,\n                                       1.0, 1.0, 1.0,\n                                          1.0, 1.0,        0.0)/7.0;\n\n    void main() {\n        vec2 xy = getOutputXY();\n        vec4 v = conv3x3(xy, 0.0, blur*(1.0-u_hexGrid) + blurHex*u_hexGrid);\n        v.xy = normalize(mix(u_input_read(xy, 0.0).xy, v.xy, 1.0));\n        setOutput(v);\n\n        if (u_init > 0.0) {\n            if (u_r>0.0 && calcMouseDist(u_pos)>=80.0)\n              return;\n            float a = hash13(vec3(xy+vec2(34299.0, -56593.0), u_init)) * 2.0 * PI;\n            vec2 v = normalize(ang2vec(a)+0.2*ang2vec(u_init));\n            setOutput(vec4(v, 0.0, 0.0));\n        }\n    }",perception:"\n    const mat3 sobelX = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;\n    const mat3 sobelY = mat3(-1.0,-2.0,-1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0)/8.0;\n    const mat3 gauss = mat3(1.0, 2.0, 1.0, 2.0, 4.0-16.0, 2.0, 1.0, 2.0, 1.0)/8.0;\n    const mat3 sobelXhex = mat3( 0.0,    -1.0, 1.0,\n                                       -2.0, 0.0, 2.0,\n                                         -1.0, 1.0,        0.0)/8.0;\n\n    const mat3 sobelYhex = mat3( 0.0,    -2.0,-2.0,\n                                        0.0, 0.0, 0.0,\n                                          2.0, 2.0,        0.0)/8.0;\n\n    const mat3 gaussHex = mat3(0.0,       2.0, 2.0,\n                                       2.0, 4.0-16.0, 2.0,\n                                          2.0, 2.0,        0.0)/8.0;\n\n    void main() {\n        vec2 xy = getOutputXY();\n        #ifdef SPARSE_UPDATE\n            xy = texture2D(u_shuffleTex, xy/u_output.size).xy*255.0+0.5 + u_shuffleOfs;\n            xy = mod(xy, u_input.size);\n        #endif\n        float ch = getOutputChannel();\n        if (ch >= u_output.depth4)\n            return;\n\n        float filterBand = floor((ch+0.5)/u_input.depth4);\n        float inputCh = ch-filterBand*u_input.depth4;\n        if (filterBand < 0.5) {\n            setOutput(u_input_read(xy, inputCh));\n        } else if (filterBand < 2.5) {\n            vec4 dx = conv3x3(xy, inputCh, sobelX*(1.0-u_hexGrid) + sobelXhex*u_hexGrid);\n            vec4 dy = conv3x3(xy, inputCh, sobelY*(1.0-u_hexGrid) + sobelYhex*u_hexGrid);\n            vec2 dir = getCellDirection(xy);\n            float s = dir.x, c = dir.y;\n            setOutput(filterBand < 1.5 ? dx*c-dy*s : dx*s+dy*c);\n        } else {\n            setOutput(conv3x3(xy, inputCh, gauss*(1.0-u_hexGrid) + gaussHex*u_hexGrid));\n        }\n    }",dense:`\n    ${defInput("u_control")}\n    uniform sampler2D u_weightTex;\n    uniform float u_seed, u_fuzz;\n    uniform vec2 u_weightCoefs; // scale, center\n    uniform vec2 u_layout;\n\n    const float MAX_PACKED_DEPTH = 32.0;\n\n    vec4 readWeightUnscaled(vec2 p) {\n        vec4 w = texture2D(u_weightTex, p);\n        return w-u_weightCoefs.y;\n    }\n\n    void main() {\n      vec2 xy = getOutputXY();\n      float ch = getOutputChannel();\n      if (ch >= u_output.depth4)\n          return;\n\n      float dy = 1.0/(u_input.depth+1.0)/u_layout.y;\n      vec2 p = vec2((ch+0.5)/u_output.depth4, dy*0.5);\n      vec2 fuzz = (hash23(vec3(xy, u_seed+ch))-0.5)*u_fuzz;\n\n      vec2 realXY = xy;\n      #ifdef SPARSE_UPDATE\n        realXY = texture2D(u_shuffleTex, xy/u_output.size).xy*255.0+0.5 + u_shuffleOfs;\n      #endif\n      float modelIdx = u_control_read(realXY+fuzz, 0.0).x+0.5;\n      p.x += floor(mod(modelIdx, u_layout.x));\n      p.y += floor(modelIdx/u_layout.x);\n      p /= u_layout;\n      vec4 result = vec4(0.0);\n      for (float i=0.0; i < MAX_PACKED_DEPTH; i+=1.0) {\n          vec4 inVec = u_input_read(xy, i);\n          result += inVec.x * readWeightUnscaled(p); p.y += dy;\n          result += inVec.y * readWeightUnscaled(p); p.y += dy;\n          result += inVec.z * readWeightUnscaled(p); p.y += dy;\n          result += inVec.w * readWeightUnscaled(p); p.y += dy;\n          if (i+1.5>u_input.depth4) {\n              break;\n          }\n      }\n      result += readWeightUnscaled(p);  // bias\n      setOutput(result*u_weightCoefs.x);\n    }`,update:`\n    ${defInput("u_update")}\n    uniform float u_seed, u_updateProbability;\n\n    varying vec2 uv;\n\n    void main() {\n      vec2 xy = getOutputXY();\n      vec4 state = u_input_readUV(uv);\n      vec4 update = vec4(0.0);\n      #ifdef SPARSE_UPDATE\n        vec4 shuffleInfo = texture2D(u_unshuffleTex, fract((xy-u_shuffleOfs)/u_output.size));\n        if (shuffleInfo.z > 0.5) {\n            update = u_update_read(shuffleInfo.xy*255.0+0.5, getOutputChannel());\n        }\n      #else\n        if (hash13(vec3(xy, u_seed)) <= u_updateProbability) {\n            update = u_update_readUV(uv);\n        }\n      #endif\n      setOutput(state + update);\n    }`,vis:"\n    uniform float u_raw;\n    uniform float u_zoom;\n    uniform float u_perceptionCircle, u_arrows;\n    uniform float u_devicePixelRatio;\n\n    varying vec2 uv;\n\n    float clip01(float x) {\n        return min(max(x, 0.0), 1.0);\n    }\n\n    float peak(float x, float r) {\n        float y = x/r;\n        return exp(-y*y);\n    }\n\n    float getElement(vec4 v, float i) {\n        if (i<1.0) return v.x;\n        if (i<2.0) return v.y;\n        if (i<3.0) return v.z;\n        return v.w;\n    }\n\n    vec3 onehot3(float i) {\n        if (i<1.0) return vec3(1.0, 0.0, 0.0);\n        if (i<2.0) return vec3(0.0, 1.0, 0.0);\n        return vec3(0.0, 0.0, 1.0);\n    }\n\n    float sdTriangleIsosceles( in vec2 p, in vec2 q ) {\n        p.x = abs(p.x);\n        vec2 a = p - q*clamp( dot(p,q)/dot(q,q), 0.0, 1.0 );\n        vec2 b = p - q*vec2( clamp( p.x/q.x, 0.0, 1.0 ), 1.0 );\n        float s = -sign( q.y );\n        vec2 d = min( vec2( dot(a,a), s*(p.x*q.y-p.y*q.x) ),\n                      vec2( dot(b,b), s*(p.y-q.y)  ));\n        return -sqrt(d.x)*sign(d.y);\n    }\n\n    float aastep(float v) {\n        return clip01(v/fwidth(v)/u_devicePixelRatio);\n    }\n\n    float smoothstep(float t) {\n        t = clip01(t);\n        return t * t * (3.0 - 2.0 * t);\n    }\n\n    void spot(vec2 pos, float v, vec2 xy, inout vec3 rgb) {\n        v = sqrt(abs(v))*sign(v);\n        pos *= v*0.6;\n        float r = abs(v)*0.30;\n        rgb += clip01((r-length(xy-pos))/r)*0.2;\n    }\n\n    float sdBox( in vec2 p, in vec2 b )\n    {\n        vec2 d = abs(p)-b;\n        return length(max(d,0.0)) + min(max(d.x,d.y),0.0);\n    }\n\n    void main() {\n        vec2 xy = vec2(uv.x, 1.0-uv.y);\n        if (u_raw > 0.5) {\n            gl_FragColor = texture2D(u_input_tex, xy);\n            gl_FragColor.a = 1.0;\n        } else {\n            vec2 screenPos = xy*u_viewSize;\n            Hexel h = screen2hex(screenPos);\n            vec2 p = h.p;\n            h.cellXY += 0.5;\n\n            vec3 rgb = u_input_read(h.cellXY, 0.0).rgb/2.0+0.5;\n            if (4.0<h.zoom) {\n                vec2 dir = getCellDirection(floor(h.cellXY)+0.5);\n                float s = dir.x, c = dir.y;\n                float fade = clip01((h.zoom-4.0)/4.0);\n                float r = clip01((1.0-hex(p))*8.0);\n                r = pow(r, 0.2);\n                rgb *= mix(1.0, r, fade);\n\n                p = mat2(c, s, -s, c) * p;\n\n                if (12.0 < h.zoom) {\n                    float da = PI/12.0;\n                    float a = -da;\n                    vec4 v4;\n                    vec3 spots;\n                    for (float ch=0.0; ch<2.5; ++ch) {\n                        v4 = (u_input_read01(h.cellXY, ch)-127.0/255.0)*2.0;\n                        spot(ang2vec(a+=da), v4.x, p, spots);\n                        spot(ang2vec(a+=da), v4.y, p, spots);\n                        spot(ang2vec(a+=da), v4.z, p, spots);\n                        spot(ang2vec(a+=da), v4.w, p, spots);\n                    }\n                    spots *= clip01((h.zoom-12.0)/3.0);\n                    rgb += spots;\n                }\n            }\n            gl_FragColor = vec4(rgb, 1.0);\n        }\n    }"};function createPrograms(e,n){n=n||"";const t={};for(const i in PROGRAMS){const r=n+PREFIX+PROGRAMS[i],s=twgl.createProgramInfo(e,[vs_code,r]);s.name=i,t[i]=s}return t}function createTensor(e,n,t,i,r){const s=Math.ceil(i/4),o=Math.ceil(Math.sqrt(s)),u=Math.floor((s+o-1)/o),a=n*o,c=t*u,l=[{minMag:e.NEAREST}],h=twgl.createFramebufferInfo(e,l,a,c);return{_type:"tensor",fbi:h,w:n,h:t,depth:i,gridW:o,gridH:u,depth4:s,tex:h.attachments[0],packScaleZero:r}}function setTensorUniforms(e,n,t){e[n+".size"]=[t.w,t.h],e[n+".gridSize"]=[t.gridW,t.gridH],e[n+".depth"]=t.depth,e[n+".depth4"]=t.depth4,e[n+".packScaleZero"]=t.packScaleZero,"u_output"!=n&&(e[n+"_tex"]=t.tex)}function decodeBase64(e){const n=atob(e),t=new Uint8Array(n.length);for(let e=0;e<n.length;e++)t[e]=n.charCodeAt(e);return t}function createDenseInfo(e,n,t){const i=[n.scale,127/255],[r,s]=n.shape,o={coefs:i,layout:n.layout,in_n:r-1,out_n:s,quantScaleZero:n.quant_scale_zero,ready:!1},u=UPNG.decode(decodeBase64(n.data.split(",")[1])),a=new Uint8Array(UPNG.toRGBA8(u)[0]);return o.tex=twgl.createTexture(e,{width:u.width,height:u.height,minMag:e.NEAREST,src:a},(()=>{})),setTimeout((()=>{o.ready=!0,t()}),0),o}class CA{constructor(e,n,t,i){this.onready=i||(()=>{}),this.gl=e,this.gridSize=t||[96,96],e.getExtension("OES_standard_derivatives"),this.updateProbability=.5,this.shuffledMode=!0,this.rotationAngle=0,this.alignment=1,this.fuzz=8,this.perceptionCircle=0,this.arrowsCoef=0,this.visMode="color",this.hexGrid=1,this.devicePixelRatio=globalThis.devicePixelRatio||1,this.layers=[],this.setWeights(n),this.progs=createPrograms(e,this.shuffledMode?"#define SPARSE_UPDATE\n":""),this.quad=twgl.createBufferInfoFromArrays(e,{position:[-1,-1,0,1,-1,0,-1,1,0,-1,1,0,1,-1,0,1,1,0]}),this.setupBuffers();Object.getOwnPropertyNames(this.buf).push("color"),this.clearCircle(0,0,-1),this.disturb()}disturb(){this.runLayer(this.progs.align,this.buf.align,{u_input:this.buf.newAlign,u_hexGrid:this.hexGrid,u_init:1e3*Math.random()+1,u_r:-1})}disturbCircle(e,n,t,i){i=i||[128,128],this.runLayer(this.progs.align,this.buf.align,{u_input:this.buf.newAlign,u_hexGrid:this.hexGrid,u_init:1e3*Math.random()+1,u_pos:[e,n],u_r:t,u_viewSize:i})}setupBuffers(){const e=this.gl,[n,t]=this.gridSize,i=Math.ceil(t*this.updateProbability),r=i*n,s=n*t,o=new Uint8Array(4*r),u=new Uint8Array(4*s);let a=0;for(let e=0;e<s;++e)Math.random()<(r-a)/(s-e)&&(o[4*a+0]=e%n,o[4*a+1]=Math.floor(e/n),u[4*e+0]=a%n,u[4*e+1]=Math.floor(a/n),u[4*e+2]=255,a+=1);this.shuffleTex=twgl.createTexture(e,{minMag:e.NEAREST,width:n,height:i,src:o}),this.unshuffleTex=twgl.createTexture(e,{minMag:e.NEAREST,width:n,height:t,src:u}),this.shuffleOfs=[0,0];const c=this.shuffledMode?i:t,l=this.layers[0].in_n,h=this.layers[this.layers.length-1],f=h.out_n;this.channel_n=f;const p=h.quantScaleZero;this.buf={control:createTensor(e,n,t,4,[255,0]),align:createTensor(e,n,t,4,[2,127/255]),newAlign:createTensor(e,n,t,4,[2,127/255]),state:createTensor(e,n,t,f,p),newState:createTensor(e,n,t,f,p),perception:createTensor(e,n,c,l,p),sonic:createTensor(e,16*f/4,1,4,p)};{const{width:e,height:n}=this.buf.sonic.fbi;this.sonicBuf=new Uint8Array(n*e*4)}for(let t=0;t<this.layers.length;++t){const i=this.layers[t];this.buf[`layer${t}`]=createTensor(e,n,c,i.out_n,i.quantScaleZero)}}step(e){if(e=e||"all",!this.layers.every((e=>e.ready)))return;if("all"==e){const[e,n]=this.gridSize;this.shuffleOfs=[Math.floor(Math.random()*e),Math.floor(Math.random()*n)]}"all"!=e&&"align"!=e||this.runLayer(this.progs.align,this.buf.newAlign,{u_input:this.buf.align,u_hexGrid:this.hexGrid,u_init:0}),"all"!=e&&"perception"!=e||this.runLayer(this.progs.perception,this.buf.perception,{u_input:this.buf.state,u_angle:this.rotationAngle/180*Math.PI,u_alignTex:this.buf.newAlign,u_alignment:this.alignment,u_hexGrid:this.hexGrid});let n=this.buf.perception;for(let t=0;t<this.layers.length;++t)"all"!=e&&e!=`layer${t}`||this.runDense(this.buf[`layer${t}`],n,this.layers[t]),n=this.buf[`layer${t}`];"all"!=e&&"newState"!=e||this.runLayer(this.progs.update,this.buf.newState,{u_input:this.buf.state,u_update:n,u_unshuffleTex:this.unshuffleTex,u_seed:1e3*Math.random(),u_updateProbability:this.updateProbability}),"all"==e&&([this.buf.state,this.buf.newState]=[this.buf.newState,this.buf.state],[this.buf.align,this.buf.newAlign]=[this.buf.newAlign,this.buf.align])}benchmark(){const e=this.gl,n=new Uint8Array(4),t=t=>{t=t||this.buf.state,twgl.bindFramebufferInfo(e,t.fbi),e.readPixels(0,0,1,1,e.RGBA,e.UNSIGNED_BYTE,n)};t();const i=100,r=Date.now();for(let e=0;e<i;++e)this.step();t();const s=(Date.now()-r)/i,o=["align","perception"];for(let e=0;e<this.layers.length;++e)o.push(`layer${e}`);o.push("newState");let u=0;const a=[];for(const e of o){const n=Date.now();for(let n=0;n<i;++n)this.step(e);t(this.buf[e]);const r=(Date.now()-n)/i;u+=r,a.push([e,r])}const c=a.map((e=>{const[n,t]=e;return`${n}: ${(100*t/u).toFixed(1)}%`})).join(", ");return`${s.toFixed(2)} ms/step, ${(1e3/s).toFixed(2)} step/sec\n`+c+"\n\n"}paint(e,n,t,i,r){r=r||[128,128],this.runLayer(this.progs.paint,this.buf.control,{u_pos:[e,n],u_r:t,u_brush:[i,0,0,0],u_viewSize:r})}peek(e,n,t){this.runLayer(this.progs.peek,this.buf.sonic,{u_pos:[e,n],u_viewSize:t,u_input:this.buf.state});const{width:i,height:r}=this.buf.sonic.fbi,s=this.gl;return twgl.bindFramebufferInfo(s,this.buf.sonic.fbi),s.readPixels(0,0,i,r,s.RGBA,s.UNSIGNED_BYTE,this.sonicBuf),{buf:this.sonicBuf,tex:this.buf.sonic.tex,pos:[e,n]}}clearCircle(e,n,t,i){i=i||[128,128],this.runLayer(this.progs.paint,this.buf.state,{u_pos:[e,n],u_r:t,u_brush:[0,0,0,0],u_viewSize:i})}setWeights(e){const n=this.gl;this.layers.forEach((e=>n.deleteTexture(e)));const t=()=>{this.layers.every((e=>e.ready))&&this.onready()};this.layers=e.layers.map((e=>createDenseInfo(n,e,t)))}runLayer(e,n,t){const i=this.gl;t=t||{};const r={};for(const e in t){const n=t[e];"tensor"==n._type?setTensorUniforms(r,e,n):r[e]=n}return r.u_shuffleTex=this.shuffleTex,r.u_shuffleOfs=this.shuffleOfs,setTensorUniforms(r,"u_output",n),twgl.bindFramebufferInfo(i,n.fbi),i.useProgram(e.program),twgl.setBuffersAndAttributes(i,e,this.quad),twgl.setUniforms(e,r),twgl.drawBufferInfo(i,this.quad),{programName:e.name,output:n}}runDense(e,n,t){return this.runLayer(this.progs.dense,e,{u_input:n,u_control:this.buf.control,u_weightTex:t.tex,u_weightCoefs:t.coefs,u_layout:t.layout,u_seed:1e3*Math.random(),u_fuzz:this.fuzz})}draw(e,n){n=n||this.visMode;const t=this.gl;t.useProgram(this.progs.vis.program),twgl.setBuffersAndAttributes(t,this.progs.vis,this.quad);const i={u_raw:0,u_angle:this.rotationAngle/180*Math.PI,u_alignment:this.alignment,u_perceptionCircle:this.perceptionCircle,u_arrows:this.arrowsCoef,u_devicePixelRatio:this.devicePixelRatio,u_viewSize:e};let r=this.buf.state;"color"!=n&&(r=this.buf[n],i.u_raw=1),setTensorUniforms(i,"u_input",r),setTensorUniforms(i,"u_alignTex",this.buf.align),twgl.setUniforms(this.progs.vis,i),twgl.drawBufferInfo(t,this.quad)}}
+/*
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+/*
+Usage:
+  const gui = new dat.GUI();
+  const ca = new CA(gl, models_json, [W, H], gui); // gui is optional
+  ca.step();
+
+  ca.paint(x, y, radius, modelIndex);
+  ca.clearCircle(x, y, radius;
+
+  const stats = ca.benchmark();
+  ca.draw();
+  ca.draw(zoom);
+*/
+
+const vs_code = `
+    attribute vec4 position;
+    varying vec2 uv;
+    void main() {
+        uv = position.xy*0.5 + 0.5;
+        gl_Position = position;
+    }
+`
+
+function defInput(name) {
+    return `
+        uniform Tensor ${name};
+        uniform sampler2D ${name}_tex;
+
+        vec4 ${name}_read(vec2 pos, float ch) {return _read(${name}, ${name}_tex, pos, ch);}
+        vec4 ${name}_read01(vec2 pos, float ch) {return _read01(${name}, ${name}_tex, pos, ch);}
+        vec4 ${name}_readUV(vec2 uv) {return _readUV(${name}, ${name}_tex, uv);}
+    `
+}
+
+const PREFIX = `
+    #extension GL_OES_standard_derivatives : enable
+    precision highp float;
+
+    const float PI = 3.14159265359;
+
+    // "Hash without Sine" by David Hoskins (https://www.shadertoy.com/view/4djSRW)
+    float hash13(vec3 p3) {
+      p3  = fract(p3 * .1031);
+      p3 += dot(p3, p3.yzx + 33.33);
+      return fract((p3.x + p3.y) * p3.z);
+    }
+    vec2 hash23(vec3 p3)
+    {
+        p3 = fract(p3 * vec3(.1031, .1030, .0973));
+        p3 += dot(p3, p3.yzx+33.33);
+        return fract((p3.xx+p3.yz)*p3.zy);
+    }
+
+    struct Tensor {
+        vec2 size;
+        vec2 gridSize;
+        float depth, depth4;
+        vec2 packScaleZero;
+    };
+    uniform Tensor u_output;
+
+    vec4 _readUV(Tensor tensor, sampler2D tex, vec2 uv) {
+        vec4 v = texture2D(tex, uv);
+        vec2 p = tensor.packScaleZero;
+        v = (v-p.y)*p.x;
+        return v;
+    }
+    vec2 _getUV(Tensor tensor, vec2 pos, float ch) {
+        ch += 0.5;
+        float tx = floor(mod(ch, tensor.gridSize.x));
+        float ty = floor(ch / tensor.gridSize.x);
+        vec2 p = fract(pos/tensor.size) + vec2(tx, ty);
+        p /= tensor.gridSize;
+        return p;
+    }
+    vec4 _read01(Tensor tensor, sampler2D tex, vec2 pos, float ch) {
+        return texture2D(tex, _getUV(tensor, pos, ch));
+    }
+    vec4 _read(Tensor tensor, sampler2D tex, vec2 pos, float ch) {
+        vec2 p = _getUV(tensor, pos, ch);
+        return _readUV(tensor, tex, p);
+    }
+    vec2 getOutputXY() {
+        return mod(gl_FragCoord.xy, u_output.size);
+    }
+    float getOutputChannel() {
+        vec2 xy = floor(gl_FragCoord.xy/u_output.size);
+        return xy.y*u_output.gridSize.x+xy.x;
+    }
+
+    void setOutput(vec4 v) {
+        vec2 p = u_output.packScaleZero;
+        v = v/p.x + p.y;
+        gl_FragColor = v;
+    }
+
+    #ifdef SPARSE_UPDATE
+        uniform sampler2D u_shuffleTex, u_unshuffleTex;
+        uniform vec2 u_shuffleOfs;
+    #endif
+
+    ${defInput('u_input')}
+
+    uniform float u_angle, u_alignment;
+    const float u_hexGrid = 1.0;
+
+    mat2 rotate(float ang) {
+        float s = sin(ang), c = cos(ang);
+        return mat2(c, s, -s, c);
+    }
+
+    vec2 ang2vec(float a) {
+        return vec2(cos(a), sin(a));
+    }
+
+    ${defInput('u_alignTex')}
+    vec2 getCellDirection(vec2 xy) {
+        return u_alignTex_read(xy, 0.0).xy;
+    }
+
+    vec4 conv3x3(vec2 xy, float inputCh, mat3 filter) {
+        vec4 a = vec4(0.0);
+        for (int y=0; y<3; ++y)
+        for (int x=0; x<3; ++x) {
+          vec2 p = xy+vec2(float(x-1), float(y-1));
+          a += filter[y][x] * u_input_read(p, inputCh);
+        }
+        return a;
+    }
+
+    // https://www.shadertoy.com/view/Xljczw
+    // https://www.shadertoy.com/view/MlXyDl
+    // returns xy - in cell pos, zw - skewed cell id
+    vec4 getHex(vec2 u) {
+        vec2 s = vec2(1., mix(2.0, 1.732, u_hexGrid));
+        vec2 p = vec2(0.5*u_hexGrid, 0.5);
+        vec2 a = mod(u    ,s)*2.-s;
+        vec2 b = mod(u+s*p,s)*2.-s;
+        vec2 ai = floor(u/s);
+        vec2 bi = floor(u/s+p);
+        // skewed coords
+        ai = vec2(ai.x-ai.y*u_hexGrid, ai.y*2.0+1.0);
+        bi = vec2(bi.x-bi.y*u_hexGrid, bi.y*2.0);
+        return dot(a,a)<dot(b,b) ? vec4(a, ai) : vec4(b, bi);
+    }
+
+    float hex(in vec2 p){
+        vec2 s = vec2(1., 1.732);
+        p = abs(p);
+        return max(dot(p, s*.5), p.x); // Hexagon.
+    }
+
+    // https://www.shadertoy.com/view/XtXcWs
+    vec2 cmul(vec2 a, vec2 b) {
+        return vec2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x);
+    }
+
+    vec2 cdiv(vec2 a, vec2 b) {
+        return cmul(a, vec2(b.x, -b.y)) / dot(b, b);
+    }
+
+    uniform vec2 u_viewSize;
+
+    struct Hexel {
+        vec2 cellXY;
+        vec2 p;
+        float zoom;
+    };
+
+    Hexel screen2hex(vec2 xy) {
+        xy /= u_viewSize;
+        xy.y = 1.0-xy.y;
+        vec2 normViewSize = u_viewSize/length(u_viewSize);
+        xy = (xy*0.85+0.25) * normViewSize;
+
+        Hexel h;
+        float nxy = length(xy);
+        h.zoom = 4.0/(nxy*nxy);
+        xy = cmul(xy, xy);
+        xy = cmul(xy, xy);
+        xy *= 160.0;
+        vec4 r = getHex(xy);
+        h.cellXY = r.zw;
+        h.p = r.xy;
+        return h;
+    }
+
+    float calcMouseDist(vec2 mousePosScr) {
+        Hexel h = screen2hex(mousePosScr);
+        h.cellXY = mod(h.cellXY, u_output.size);
+        vec2 diff = abs(getOutputXY()-h.cellXY-0.5);
+        return length(min(diff, u_output.size-diff))*h.zoom;
+    }
+`;
+
+const PROGRAMS = {
+    paint: `
+    uniform vec2 u_pos;
+    uniform float u_r;
+    uniform vec4 u_brush;
+
+    void main() {
+        if (u_r>0.0 && calcMouseDist(u_pos)>=80.0)
+          discard;
+        setOutput(u_brush);
+    }`,
+    peek: `
+    uniform vec2 u_pos;
+
+    vec2 getPeekPos(float i) {
+        float a = i*0.61803398875*2.0*PI;
+        float r = (u_viewSize.x+u_viewSize.y)/1000.0;
+        return vec2(cos(a), sin(a)) * sqrt(i) * r;
+    }
+
+    void main() {
+        float out_i = getOutputXY().x;
+        float i = floor(out_i / u_input.depth4);
+        float channel = floor(mod(out_i, u_input.depth4));
+        Hexel h = screen2hex(u_pos + getPeekPos(i));
+        setOutput(u_input_read(h.cellXY, channel));
+    }`,
+    align: `
+    uniform vec2 u_pos;
+    uniform float u_r;
+    uniform float u_init;
+
+    const mat3 blur = mat3(1.0/9.0);
+    const mat3 blurHex = mat3(0.0,       1.0, 1.0,
+                                       1.0, 1.0, 1.0,
+                                          1.0, 1.0,        0.0)/7.0;
+
+    void main() {
+        vec2 xy = getOutputXY();
+        vec4 v = conv3x3(xy, 0.0, blur*(1.0-u_hexGrid) + blurHex*u_hexGrid);
+        v.xy = normalize(mix(u_input_read(xy, 0.0).xy, v.xy, 1.0));
+        setOutput(v);
+
+        if (u_init > 0.0) {
+            if (u_r>0.0 && calcMouseDist(u_pos)>=80.0)
+              return;
+            float a = hash13(vec3(xy+vec2(34299.0, -56593.0), u_init)) * 2.0 * PI;
+            vec2 v = normalize(ang2vec(a)+0.2*ang2vec(u_init));
+            setOutput(vec4(v, 0.0, 0.0));
+        }
+    }`,
+    perception: `
+    const mat3 sobelX = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;
+    const mat3 sobelY = mat3(-1.0,-2.0,-1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0)/8.0;
+    const mat3 gauss = mat3(1.0, 2.0, 1.0, 2.0, 4.0-16.0, 2.0, 1.0, 2.0, 1.0)/8.0;
+    const mat3 sobelXhex = mat3( 0.0,    -1.0, 1.0,
+                                       -2.0, 0.0, 2.0,
+                                         -1.0, 1.0,        0.0)/8.0;
+
+    const mat3 sobelYhex = mat3( 0.0,    -2.0,-2.0,
+                                        0.0, 0.0, 0.0,
+                                          2.0, 2.0,        0.0)/8.0;
+
+    const mat3 gaussHex = mat3(0.0,       2.0, 2.0,
+                                       2.0, 4.0-16.0, 2.0,
+                                          2.0, 2.0,        0.0)/8.0;
+
+    void main() {
+        vec2 xy = getOutputXY();
+        #ifdef SPARSE_UPDATE
+            xy = texture2D(u_shuffleTex, xy/u_output.size).xy*255.0+0.5 + u_shuffleOfs;
+            xy = mod(xy, u_input.size);
+        #endif
+        float ch = getOutputChannel();
+        if (ch >= u_output.depth4)
+            return;
+
+        float filterBand = floor((ch+0.5)/u_input.depth4);
+        float inputCh = ch-filterBand*u_input.depth4;
+        if (filterBand < 0.5) {
+            setOutput(u_input_read(xy, inputCh));
+        } else if (filterBand < 2.5) {
+            vec4 dx = conv3x3(xy, inputCh, sobelX*(1.0-u_hexGrid) + sobelXhex*u_hexGrid);
+            vec4 dy = conv3x3(xy, inputCh, sobelY*(1.0-u_hexGrid) + sobelYhex*u_hexGrid);
+            vec2 dir = getCellDirection(xy);
+            float s = dir.x, c = dir.y;
+            setOutput(filterBand < 1.5 ? dx*c-dy*s : dx*s+dy*c);
+        } else {
+            setOutput(conv3x3(xy, inputCh, gauss*(1.0-u_hexGrid) + gaussHex*u_hexGrid));
+        }
+    }`,
+    dense: `
+    ${defInput('u_control')}
+    uniform sampler2D u_weightTex;
+    uniform float u_seed, u_fuzz;
+    uniform vec2 u_weightCoefs; // scale, center
+    uniform vec2 u_layout;
+
+    const float MAX_PACKED_DEPTH = 32.0;
+
+    vec4 readWeightUnscaled(vec2 p) {
+        vec4 w = texture2D(u_weightTex, p);
+        return w-u_weightCoefs.y;
+    }
+
+    void main() {
+      vec2 xy = getOutputXY();
+      float ch = getOutputChannel();
+      if (ch >= u_output.depth4)
+          return;
+
+      float dy = 1.0/(u_input.depth+1.0)/u_layout.y;
+      vec2 p = vec2((ch+0.5)/u_output.depth4, dy*0.5);
+      vec2 fuzz = (hash23(vec3(xy, u_seed+ch))-0.5)*u_fuzz;
+
+      vec2 realXY = xy;
+      #ifdef SPARSE_UPDATE
+        realXY = texture2D(u_shuffleTex, xy/u_output.size).xy*255.0+0.5 + u_shuffleOfs;
+      #endif
+      float modelIdx = u_control_read(realXY+fuzz, 0.0).x+0.5;
+      p.x += floor(mod(modelIdx, u_layout.x));
+      p.y += floor(modelIdx/u_layout.x);
+      p /= u_layout;
+      vec4 result = vec4(0.0);
+      for (float i=0.0; i < MAX_PACKED_DEPTH; i+=1.0) {
+          vec4 inVec = u_input_read(xy, i);
+          result += inVec.x * readWeightUnscaled(p); p.y += dy;
+          result += inVec.y * readWeightUnscaled(p); p.y += dy;
+          result += inVec.z * readWeightUnscaled(p); p.y += dy;
+          result += inVec.w * readWeightUnscaled(p); p.y += dy;
+          if (i+1.5>u_input.depth4) {
+              break;
+          }
+      }
+      result += readWeightUnscaled(p);  // bias
+      setOutput(result*u_weightCoefs.x);
+    }`,
+    update: `
+    ${defInput('u_update')}
+    uniform float u_seed, u_updateProbability;
+
+    varying vec2 uv;
+
+    void main() {
+      vec2 xy = getOutputXY();
+      vec4 state = u_input_readUV(uv);
+      vec4 update = vec4(0.0);
+      #ifdef SPARSE_UPDATE
+        vec4 shuffleInfo = texture2D(u_unshuffleTex, fract((xy-u_shuffleOfs)/u_output.size));
+        if (shuffleInfo.z > 0.5) {
+            update = u_update_read(shuffleInfo.xy*255.0+0.5, getOutputChannel());
+        }
+      #else
+        if (hash13(vec3(xy, u_seed)) <= u_updateProbability) {
+            update = u_update_readUV(uv);
+        }
+      #endif
+      setOutput(state + update);
+    }`,
+    vis: `
+    uniform float u_raw;
+    uniform float u_zoom;
+    uniform float u_perceptionCircle, u_arrows;
+    uniform float u_devicePixelRatio;
+
+    varying vec2 uv;
+
+    float clip01(float x) {
+        return min(max(x, 0.0), 1.0);
+    }
+
+    float peak(float x, float r) {
+        float y = x/r;
+        return exp(-y*y);
+    }
+
+    float getElement(vec4 v, float i) {
+        if (i<1.0) return v.x;
+        if (i<2.0) return v.y;
+        if (i<3.0) return v.z;
+        return v.w;
+    }
+
+    vec3 onehot3(float i) {
+        if (i<1.0) return vec3(1.0, 0.0, 0.0);
+        if (i<2.0) return vec3(0.0, 1.0, 0.0);
+        return vec3(0.0, 0.0, 1.0);
+    }
+
+    float sdTriangleIsosceles( in vec2 p, in vec2 q ) {
+        p.x = abs(p.x);
+        vec2 a = p - q*clamp( dot(p,q)/dot(q,q), 0.0, 1.0 );
+        vec2 b = p - q*vec2( clamp( p.x/q.x, 0.0, 1.0 ), 1.0 );
+        float s = -sign( q.y );
+        vec2 d = min( vec2( dot(a,a), s*(p.x*q.y-p.y*q.x) ),
+                      vec2( dot(b,b), s*(p.y-q.y)  ));
+        return -sqrt(d.x)*sign(d.y);
+    }
+
+    float aastep(float v) {
+        return clip01(v/fwidth(v)/u_devicePixelRatio);
+    }
+
+    float smoothstep(float t) {
+        t = clip01(t);
+        return t * t * (3.0 - 2.0 * t);
+    }
+
+    void spot(vec2 pos, float v, vec2 xy, inout vec3 rgb) {
+        v = sqrt(abs(v))*sign(v);
+        pos *= v*0.6;
+        float r = abs(v)*0.30;
+        rgb += clip01((r-length(xy-pos))/r)*0.2;
+    }
+
+    float sdBox( in vec2 p, in vec2 b )
+    {
+        vec2 d = abs(p)-b;
+        return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+    }
+
+    void main() {
+        vec2 xy = vec2(uv.x, 1.0-uv.y);
+        if (u_raw > 0.5) {
+            gl_FragColor = texture2D(u_input_tex, xy);
+            gl_FragColor.a = 1.0;
+        } else {
+            vec2 screenPos = xy*u_viewSize;
+            Hexel h = screen2hex(screenPos);
+            vec2 p = h.p;
+            h.cellXY += 0.5;
+
+            vec3 rgb = u_input_read(h.cellXY, 0.0).rgb/2.0+0.5;
+            if (4.0<h.zoom) {
+                vec2 dir = getCellDirection(floor(h.cellXY)+0.5);
+                float s = dir.x, c = dir.y;
+                float fade = clip01((h.zoom-4.0)/4.0);
+                float r = clip01((1.0-hex(p))*8.0);
+                r = pow(r, 0.2);
+                rgb *= mix(1.0, r, fade);
+
+                p = mat2(c, s, -s, c) * p;
+
+                if (12.0 < h.zoom) {
+                    float da = PI/12.0;
+                    float a = -da;
+                    vec4 v4;
+                    vec3 spots;
+                    for (float ch=0.0; ch<2.5; ++ch) {
+                        v4 = (u_input_read01(h.cellXY, ch)-127.0/255.0)*2.0;
+                        spot(ang2vec(a+=da), v4.x, p, spots);
+                        spot(ang2vec(a+=da), v4.y, p, spots);
+                        spot(ang2vec(a+=da), v4.z, p, spots);
+                        spot(ang2vec(a+=da), v4.w, p, spots);
+                    }
+                    spots *= clip01((h.zoom-12.0)/3.0);
+                    rgb += spots;
+                }
+            }
+            gl_FragColor = vec4(rgb, 1.0);
+        }
+    }`
+}
+
+function createPrograms(gl, defines) {
+    defines = defines || '';
+    const res = {};
+    for (const name in PROGRAMS) {
+        const fs_code = defines + PREFIX + PROGRAMS[name];
+        const progInfo = twgl.createProgramInfo(gl, [vs_code, fs_code]);
+        progInfo.name = name;
+        res[name] = progInfo;
+    }
+    return res;
+}
+
+function createTensor(gl, w, h, depth, packScaleZero) {
+    const depth4 = Math.ceil(depth / 4);
+    const gridW = Math.ceil(Math.sqrt(depth4));
+    const gridH = Math.floor((depth4 + gridW - 1) / gridW);
+    const texW = w * gridW, texH = h * gridH;
+
+    const attachments = [{ minMag: gl.NEAREST }];
+    const fbi = twgl.createFramebufferInfo(gl, attachments, texW, texH);
+    const tex = fbi.attachments[0];
+    return {
+        _type: 'tensor',
+        fbi, w, h, depth, gridW, gridH, depth4, tex, packScaleZero
+    };
+}
+
+function setTensorUniforms(uniforms, name, tensor) {
+    uniforms[name + '.size'] = [tensor.w, tensor.h];
+    uniforms[name + '.gridSize'] = [tensor.gridW, tensor.gridH];
+    uniforms[name + '.depth'] = tensor.depth;
+    uniforms[name + '.depth4'] = tensor.depth4;
+    uniforms[name + '.packScaleZero'] = tensor.packScaleZero;
+    if (name != 'u_output') {
+        uniforms[name + '_tex'] = tensor.tex;
+    }
+}
+
+function decodeBase64(b64) {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+        bytes[i] = bin.charCodeAt(i);
+    }
+    return bytes;
+}
+
+function createDenseInfo(gl, params, onready) {
+    const coefs = [params.scale, 127.0 / 255.0];
+    const [in_n, out_n] = params.shape;
+    const info = { coefs, layout: params.layout, in_n: in_n - 1, out_n,
+        quantScaleZero: params.quant_scale_zero, ready: false };
+    // workaround against iOS WebKit bug (https://bugs.webkit.org/show_bug.cgi?id=138477)
+    // non-premultiplied PNG were decoded incorrectly
+    const img = UPNG.decode(decodeBase64(params.data.split(',')[1]));
+    const data = new Uint8Array(UPNG.toRGBA8(img)[0]);
+    info.tex = twgl.createTexture(gl, {
+        width: img.width, height: img.height,
+        minMag: gl.NEAREST, src: data,//, flipY: false, premultiplyAlpha: false,
+    }, ()=>{
+        //info.ready = true;
+        //onready();
+    });
+    setTimeout(()=>{
+        info.ready = true;
+        onready();
+    }, 0);
+    return info;
+}
+
+class CA {
+    constructor(gl, models, gridSize, onready) {
+        this.onready = onready || (()=>{});
+        this.gl = gl;
+        this.gridSize = gridSize || [96, 96];
+        gl.getExtension('OES_standard_derivatives');
+
+        this.updateProbability = 0.5;
+        this.shuffledMode = true;
+
+        this.rotationAngle = 0.0;
+        this.alignment = 1;
+        this.fuzz = 8.0;
+        this.perceptionCircle = 0.0;
+        this.arrowsCoef = 0.0;
+        this.visMode = 'color';
+        this.hexGrid = 1.0;
+        this.devicePixelRatio = globalThis.devicePixelRatio || 1;
+
+        this.layers = [];
+        this.setWeights(models);
+
+        this.progs = createPrograms(gl, this.shuffledMode ? '#define SPARSE_UPDATE\n' : '');
+        this.quad = twgl.createBufferInfoFromArrays(gl, {
+            position: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0],
+        });
+
+        this.setupBuffers();
+        const visNames = Object.getOwnPropertyNames(this.buf);
+        visNames.push('color');
+
+        this.clearCircle(0, 0, -1);
+        this.disturb();
+    }
+
+    disturb() {
+        this.runLayer(this.progs.align, this.buf.align, {
+            u_input: this.buf.newAlign, u_hexGrid: this.hexGrid, u_init: Math.random()*1000+1,
+            u_r: -1,
+        });
+    }
+
+    disturbCircle(x, y, r, viewSize) {
+        viewSize = viewSize || [128, 128];
+        this.runLayer(this.progs.align, this.buf.align, {
+            u_input: this.buf.newAlign, u_hexGrid: this.hexGrid, u_init: Math.random()*1000+1,
+            u_pos: [x, y], u_r: r, u_viewSize: viewSize,
+        });
+    }
+
+
+    setupBuffers() {
+        const gl = this.gl;
+        const [gridW, gridH] = this.gridSize;
+        const shuffleH = Math.ceil(gridH * this.updateProbability);
+        const shuffleCellN = shuffleH * gridW;
+        const totalCellN = gridW * gridH;
+        const shuffleBuf = new Uint8Array(shuffleCellN * 4);
+        const unshuffleBuf = new Uint8Array(totalCellN * 4);
+        let k = 0;
+        for (let i = 0; i < totalCellN; ++i) {
+            if (Math.random() < (shuffleCellN - k) / (totalCellN - i)) {
+                shuffleBuf[k * 4 + 0] = i % gridW;
+                shuffleBuf[k * 4 + 1] = Math.floor(i / gridW);
+                unshuffleBuf[i * 4 + 0] = k % gridW;
+                unshuffleBuf[i * 4 + 1] = Math.floor(k / gridW);
+                unshuffleBuf[i * 4 + 2] = 255;
+                k += 1;
+            }
+        }
+        this.shuffleTex = twgl.createTexture(gl, { minMag: gl.NEAREST, width: gridW, height: shuffleH, src: shuffleBuf});
+        this.unshuffleTex = twgl.createTexture(gl, { minMag: gl.NEAREST, width: gridW, height: gridH, src: unshuffleBuf});
+        this.shuffleOfs = [0, 0];
+
+        const updateH = this.shuffledMode ? shuffleH : gridH;
+        const perception_n = this.layers[0].in_n;
+        const lastLayer = this.layers[this.layers.length-1];
+        const channel_n = lastLayer.out_n;
+        this.channel_n = channel_n;
+        const stateQuantization = lastLayer.quantScaleZero;
+        const sonicN = 16;
+        this.buf = {
+            control: createTensor(gl, gridW, gridH, 4, [255.0, 0.0]),
+            align: createTensor(gl, gridW, gridH, 4, [2.0, 127.0 / 255.0]),
+            newAlign: createTensor(gl, gridW, gridH, 4, [2.0, 127.0 / 255.0]),
+            state: createTensor(gl, gridW, gridH, channel_n, stateQuantization),
+            newState: createTensor(gl, gridW, gridH, channel_n, stateQuantization),
+            perception: createTensor(gl, gridW, updateH, perception_n, stateQuantization),
+            sonic: createTensor(gl, sonicN*channel_n/4, 1, 4, stateQuantization),
+        };
+        {
+            const {width, height} = this.buf.sonic.fbi;
+            this.sonicBuf = new Uint8Array(height*width*4);
+        }
+
+        for (let i=0; i<this.layers.length; ++i) {
+            const layer = this.layers[i];
+            this.buf[`layer${i}`] = createTensor(gl, gridW, updateH, layer.out_n, layer.quantScaleZero);
+        }
+    }
+
+    step(stage) {
+        stage = stage || 'all';
+        if (!this.layers.every(l=>l.ready))
+            return;
+
+        if (stage == 'all') {
+            const [gridW, gridH] = this.gridSize;
+            this.shuffleOfs = [Math.floor(Math.random() * gridW), Math.floor(Math.random() * gridH)];
+        }
+
+        if (stage == 'all' || stage == 'align') {
+            this.runLayer(this.progs.align, this.buf.newAlign, {
+                u_input: this.buf.align, u_hexGrid: this.hexGrid, u_init: 0.0
+            });
+        }
+        if (stage == 'all' || stage == 'perception') {
+            this.runLayer(this.progs.perception, this.buf.perception, {
+                u_input: this.buf.state, u_angle: this.rotationAngle / 180.0 * Math.PI,
+                u_alignTex: this.buf.newAlign,
+                u_alignment: this.alignment, u_hexGrid: this.hexGrid
+            });
+        }
+        let inputBuf = this.buf.perception;
+        for (let i=0; i<this.layers.length; ++i) {
+            if (stage == 'all' || stage == `layer${i}`)
+                this.runDense(this.buf[`layer${i}`], inputBuf, this.layers[i]);
+            inputBuf = this.buf[`layer${i}`];
+        }
+        if (stage == 'all' || stage == 'newState') {
+            this.runLayer(this.progs.update, this.buf.newState, {
+                u_input: this.buf.state, u_update: inputBuf,
+                u_unshuffleTex: this.unshuffleTex,
+                u_seed: Math.random() * 1000, u_updateProbability: this.updateProbability
+            });
+        }
+
+        if (stage == 'all') {
+            [this.buf.state, this.buf.newState] = [this.buf.newState, this.buf.state];
+            [this.buf.align, this.buf.newAlign] = [this.buf.newAlign, this.buf.align];
+        }
+    }
+
+    benchmark() {
+        const gl = this.gl;
+        const flushBuf = new Uint8Array(4);
+        const flush = buf=>{
+            buf = buf || this.buf.state;
+            // gl.flush/finish don't seem to do anything, so reading a single
+            // pixel from the state buffer to flush the GPU command pipeline
+            twgl.bindFramebufferInfo(gl, buf.fbi);
+            gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, flushBuf);
+        }
+
+        flush();
+        const stepN = 100;
+        const start = Date.now();
+        for (let i = 0; i < stepN; ++i)
+            this.step();
+        flush();
+        const total = (Date.now() - start) / stepN;
+
+        const ops = ['align', 'perception'];
+        for (let i=0; i<this.layers.length; ++i)
+            ops.push(`layer${i}`);
+        ops.push('newState');
+        let perOpTotal = 0.0;
+        const perOp = [];
+        for (const op of ops) {
+            const start = Date.now();
+            for (let i = 0; i < stepN; ++i) {
+                this.step(op);
+            }
+            flush(this.buf[op]);
+            const dt = (Date.now() - start) / stepN;
+            perOpTotal += dt
+            perOp.push([op, dt]);
+        }
+        const perOpStr = perOp.map((p) => {
+            const [programName, dt] = p;
+            const percent = 100.0 * dt / perOpTotal;
+            return `${programName}: ${percent.toFixed(1)}%`;
+        }).join(', ');
+        return `${(total).toFixed(2)} ms/step, ${(1000.0 / total).toFixed(2)} step/sec\n` + perOpStr + '\n\n';
+    }
+
+    paint(x, y, r, brush, viewSize) {
+        viewSize = viewSize || [128, 128];
+        this.runLayer(this.progs.paint, this.buf.control, {
+            u_pos: [x, y], u_r: r, u_brush: [brush, 0, 0, 0], u_viewSize: viewSize,
+        });
+    }
+
+    peek(x, y, viewSize) {
+        this.runLayer(this.progs.peek, this.buf.sonic, {
+            u_pos: [x, y], u_viewSize: viewSize, u_input: this.buf.state
+        });
+        const {width, height} = this.buf.sonic.fbi;
+        const gl = this.gl;
+        twgl.bindFramebufferInfo(gl, this.buf.sonic.fbi);
+        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, this.sonicBuf);
+        return {buf: this.sonicBuf, tex: this.buf.sonic.tex, pos: [x, y]};
+    }
+
+    clearCircle(x, y, r, viewSize) {
+        viewSize = viewSize || [128, 128];
+        this.runLayer(this.progs.paint, this.buf.state, {
+            u_pos: [x, y], u_r: r, u_brush: [0, 0, 0, 0], u_viewSize: viewSize,
+        });
+    }
+
+    setWeights(models) {
+        const gl = this.gl;
+        this.layers.forEach(layer=>gl.deleteTexture(layer));
+        const onready = ()=>{
+            if (this.layers.every(l=>l.ready))
+                this.onready();
+        }
+        this.layers = models.layers.map(layer=>createDenseInfo(gl, layer, onready));
+    }
+
+    runLayer(program, output, inputs) {
+        const gl = this.gl;
+        inputs = inputs || {};
+        const uniforms = {};
+        for (const name in inputs) {
+            const val = inputs[name];
+            if (val._type == 'tensor') {
+                setTensorUniforms(uniforms, name, val);
+            } else {
+                uniforms[name] = val;
+            }
+        }
+        uniforms['u_shuffleTex'] = this.shuffleTex;
+        uniforms['u_shuffleOfs'] = this.shuffleOfs;
+        setTensorUniforms(uniforms, 'u_output', output);
+
+        twgl.bindFramebufferInfo(gl, output.fbi);
+        gl.useProgram(program.program);
+        twgl.setBuffersAndAttributes(gl, program, this.quad);
+        twgl.setUniforms(program, uniforms);
+        twgl.drawBufferInfo(gl, this.quad);
+        return { programName: program.name, output }
+    }
+
+    runDense(output, input, layer) {
+        return this.runLayer(this.progs.dense, output, {
+            u_input: input, u_control: this.buf.control,
+            u_weightTex: layer.tex, u_weightCoefs: layer.coefs, u_layout: layer.layout,
+            u_seed: Math.random() * 1000, u_fuzz: this.fuzz
+        });
+    }
+
+    draw(viewSize, visMode) {
+        visMode = visMode || this.visMode;
+        const gl = this.gl;
+
+        gl.useProgram(this.progs.vis.program);
+        twgl.setBuffersAndAttributes(gl, this.progs.vis, this.quad);
+        const uniforms = { u_raw: 0.0,
+            u_angle: this.rotationAngle / 180.0 * Math.PI,
+            u_alignment: this.alignment,
+            u_perceptionCircle: this.perceptionCircle,
+            u_arrows: this.arrowsCoef,
+            u_devicePixelRatio: this.devicePixelRatio,
+            u_viewSize: viewSize,
+        };
+        let inputBuf = this.buf.state;
+        if (visMode != 'color') {
+            inputBuf = this.buf[visMode];
+            uniforms.u_raw = 1.0;
+        }
+        setTensorUniforms(uniforms, 'u_input', inputBuf);
+        setTensorUniforms(uniforms, 'u_alignTex', this.buf.align);
+        twgl.setUniforms(this.progs.vis, uniforms);
+        twgl.drawBufferInfo(gl, this.quad);
+    }
+}

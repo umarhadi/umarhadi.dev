@@ -1,1 +1,2934 @@
-"use strict";function piCamera(){var e=setIdentity(),t=setIdentity(),r=[0,0,0],n=0,m=0,E=[0,0,0],i=0,T=0,a={SetPos:function(e){r=e},LocalMove:function(e){e=matMulvec(setRotationY(-m),e),E=sub(E,e)},RotateXY:function(e,t){i-=e,T-=t,i=Math.min(Math.max(i,-Math.PI/2),Math.PI/2)},CameraExectue:function(a){n+=12*(i-n)*a,m+=12*(T-m)*a,r=add(r,mul(sub(E,r),12*a)),e=matMul(matMul(setRotationX(n),setRotationY(m)),setTranslation(r)),t=invertFast(e)},GetMatrix:function(){return e},GetMatrixInverse:function(){return t},SetMatrix:function(n){t=invertFast(e=n),r=getXYZ(matMulpoint(n,[0,0,0])),E=r},GetPos:function(){return getXYZ(matMulpoint(t,[0,0,0]))},GetDir:function(){return getXYZ(normalize(matMulvec(t,[0,0,-1])))}};return a}function piFile(e){var t=e,r=0,n={mDummy:0,Seek:function(e){r=e},ReadUInt8:function(){var e=new Uint8Array(t,r)[0];return r+=1,e},ReadUInt16:function(){var e=new Uint16Array(t,r)[0];return r+=2,e},ReadUInt32:function(){var e=new Uint32Array(t,r)[0];return r+=4,e},ReadUInt64:function(){return n.ReadUInt32()+(n.ReadUInt32()<<32)},ReadFloat32:function(){var e=new Float32Array(t,r)[0];return r+=4,e},ReadFloat32Array:function(e){for(var n=new Float32Array(t,r),m=[],E=0;E<e;E++)m[E]=n[E];return r+=4*e,m},ReadFloat32ArrayNative:function(e){var n=new Float32Array(t,r);return r+=4*e,n}};return n}function piMesh(){this.mChunks=[],this.mPrimitiveType=0,this.mVertexFormat=null}function piRenderer(){var e,t,r,n,m,E,i,T,a,R,o=null,u=null,U=!1,s=null,_=null,l=null,f=null,A=["",""],x=[0,0],F={CLEAR:{Color:1,Zbuffer:2,Stencil:4},TEXFMT:{C4I8:0,C1I8:1,C1F16:2,C4F16:3,C1F32:4,C4F32:5,Z16:6,Z24:7,Z32:8,C3F32:9},TEXWRP:{CLAMP:0,REPEAT:1},BUFTYPE:{STATIC:0,DYNAMIC:1},PRIMTYPE:{POINTS:0,LINES:1,LINE_LOOP:2,LINE_STRIP:3,TRIANGLES:4,TRIANGLE_STRIP:5},RENDSTGATE:{WIREFRAME:0,FRONT_FACE:1,CULL_FACE:2,DEPTH_TEST:3,ALPHA_TO_COVERAGE:4},TEXTYPE:{T2D:0,T3D:1,CUBEMAP:2},FILTER:{NONE:0,LINEAR:1,MIPMAP:2,NONE_MIPMAP:3},TYPE:{UINT8:0,UINT16:1,UINT32:2,FLOAT16:3,FLOAT32:4,FLOAT64:5}},I=function(e){if(U){if(e===F.TEXFMT.C4I8)return{mGLFormat:o.RGBA8,mGLExternal:o.RGBA,mGLType:o.UNSIGNED_BYTE};if(e===F.TEXFMT.C1I8)return{mGLFormat:o.R8,mGLExternal:o.RED,mGLType:o.UNSIGNED_BYTE};if(e===F.TEXFMT.C1F16)return{mGLFormat:o.R16F,mGLExternal:o.RED,mGLType:o.FLOAT};if(e===F.TEXFMT.C4F16)return{mGLFormat:o.RGBA16F,mGLExternal:o.RGBA,mGLType:o.FLOAT};if(e===F.TEXFMT.C1F32)return{mGLFormat:o.R32F,mGLExternal:o.RED,mGLType:o.FLOAT};if(e===F.TEXFMT.C4F32)return{mGLFormat:o.RGBA32F,mGLExternal:o.RGBA,mGLType:o.FLOAT};if(e===F.TEXFMT.C3F32)return{mGLFormat:o.RGB32F,mGLExternal:o.RGB,mGLType:o.FLOAT};if(e===F.TEXFMT.Z16)return{mGLFormat:o.DEPTH_COMPONENT16,mGLExternal:o.DEPTH_COMPONENT,mGLType:o.UNSIGNED_SHORT};if(e===F.TEXFMT.Z24)return{mGLFormat:o.DEPTH_COMPONENT24,mGLExternal:o.DEPTH_COMPONENT,mGLType:o.UNSIGNED_SHORT};if(e===F.TEXFMT.Z32)return{mGLFormat:o.DEPTH_COMPONENT32F,mGLExternal:o.DEPTH_COMPONENT,mGLType:o.UNSIGNED_SHORT}}else{if(e===F.TEXFMT.C4I8)return{mGLFormat:o.RGBA,mGLExternal:o.RGBA,mGLType:o.UNSIGNED_BYTE};if(e===F.TEXFMT.C1I8)return{mGLFormat:o.LUMINANCE,mGLExternal:o.LUMINANCE,mGLType:o.UNSIGNED_BYTE};if(e===F.TEXFMT.C1F16)return{mGLFormat:o.LUMINANCE,mGLExternal:o.LUMINANCE,mGLType:o.FLOAT};if(e===F.TEXFMT.C4F16)return{mGLFormat:o.RGBA,mGLExternal:o.RGBA,mGLType:o.FLOAT};if(e===F.TEXFMT.C1F32)return{mGLFormat:o.LUMINANCE,mGLExternal:o.RED,mGLType:o.FLOAT};if(e===F.TEXFMT.C4F32)return{mGLFormat:o.RGBA,mGLExternal:o.RGBA,mGLType:o.FLOAT};if(e===F.TEXFMT.Z16)return{mGLFormat:o.DEPTH_COMPONENT,mGLExternal:o.DEPTH_COMPONENT,mGLType:o.UNSIGNED_SHORT}}return null};return F.Initialize=function(u){o=u,(U=!(u instanceof WebGLRenderingContext))?(e=!0,o.getExtension("OES_texture_float_linear"),t=!0,o.getExtension("OES_texture_half_float_linear"),m=!0,r=!0,n=!0,E=!0,i=o.getExtension("EXT_texture_filter_anisotropic"),T=o.getExtension("EXT_color_buffer_float"),a=o.getExtension("WEBGL_debug_shaders"),R=o.getExtension("KHR_parallel_shader_compile"),o.hint(o.FRAGMENT_SHADER_DERIVATIVE_HINT,o.NICEST)):(e=o.getExtension("OES_texture_float"),o.getExtension("OES_texture_float_linear"),t=o.getExtension("OES_texture_half_float"),o.getExtension("OES_texture_half_float_linear"),m=o.getExtension("OES_standard_derivatives"),r=o.getExtension("WEBGL_draw_buffers"),n=o.getExtension("WEBGL_depth_texture"),E=o.getExtension("EXT_shader_texture_lod"),i=o.getExtension("EXT_texture_filter_anisotropic"),T=e,a=null,R=null,null!==m&&o.hint(m.FRAGMENT_SHADER_DERIVATIVE_HINT_OES,o.NICEST));var F=o.getParameter(o.MAX_TEXTURE_SIZE),I=o.getParameter(o.MAX_CUBE_MAP_TEXTURE_SIZE),P=o.getParameter(o.MAX_RENDERBUFFER_SIZE),c=(o.getSupportedExtensions(),o.getParameter(o.MAX_TEXTURE_IMAGE_UNITS));console.log("WebGL (2.0="+U+"): Asynch Compile: "+(null!==R?"yes":"no")+", Textures: F32 ["+(null!==e?"yes":"no")+"], F16 ["+(null!==t?"yes":"no")+"], Depth ["+(null!==n?"yes":"no")+"], LOD ["+(null!==E?"yes":"no")+"], Aniso ["+(null!==i?"yes":"no")+"], Units ["+c+"], Max Size ["+F+"], Cube Max Size ["+I+"], Targets: MRT ["+(null!==r?"yes":"no")+"], F32 ["+(null!==T?"yes":"no")+"], Max Size ["+P+"]");var L=new Float32Array([-1,-1,1,-1,-1,1,1,-1,1,1,-1,1]);return s=o.createBuffer(),o.bindBuffer(o.ARRAY_BUFFER,s),o.bufferData(o.ARRAY_BUFFER,L,o.STATIC_DRAW),o.bindBuffer(o.ARRAY_BUFFER,null),_=o.createBuffer(),o.bindBuffer(o.ARRAY_BUFFER,_),o.bufferData(o.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),o.STATIC_DRAW),o.bindBuffer(o.ARRAY_BUFFER,null),l=o.createBuffer(),o.bindBuffer(o.ARRAY_BUFFER,l),o.bufferData(o.ARRAY_BUFFER,new Float32Array([-1,-1,-1,-1,0,0,-1,-1,1,-1,0,0,-1,1,-1,-1,0,0,-1,1,1,-1,0,0,1,1,-1,1,0,0,1,1,1,1,0,0,1,-1,-1,1,0,0,1,-1,1,1,0,0,1,1,1,0,1,0,1,1,-1,0,1,0,-1,1,1,0,1,0,-1,1,-1,0,1,0,1,-1,-1,0,-1,0,1,-1,1,0,-1,0,-1,-1,-1,0,-1,0,-1,-1,1,0,-1,0,-1,1,1,0,0,1,-1,-1,1,0,0,1,1,1,1,0,0,1,1,-1,1,0,0,1,-1,-1,-1,0,0,-1,-1,1,-1,0,0,-1,1,-1,-1,0,0,-1,1,1,-1,0,0,-1]),o.STATIC_DRAW),o.bindBuffer(o.ARRAY_BUFFER,null),f=o.createBuffer(),o.bindBuffer(o.ARRAY_BUFFER,f),o.bufferData(o.ARRAY_BUFFER,new Float32Array([-1,-1,-1,-1,-1,1,-1,1,-1,-1,1,1,1,1,-1,1,1,1,1,-1,-1,1,-1,1,1,1,1,1,1,-1,-1,1,1,-1,1,-1,1,-1,-1,1,-1,1,-1,-1,-1,-1,-1,1,-1,1,1,-1,-1,1,1,1,1,1,-1,1,-1,-1,-1,-1,1,-1,1,-1,-1,1,1,-1]),o.STATIC_DRAW),o.bindBuffer(o.ARRAY_BUFFER,null),A[0]="",x[0]=0,U?(A[0]+="#version 300 es\n#ifdef GL_ES\nprecision highp float;\nprecision highp int;\nprecision mediump sampler3D;\n#endif\n",x[0]+=6):(A[0]+="#ifdef GL_ES\nprecision highp float;\nprecision highp int;\n#endif\nfloat round( float x ) { return floor(x+0.5); }\nvec2 round(vec2 x) { return floor(x + 0.5); }\nvec3 round(vec3 x) { return floor(x + 0.5); }\nvec4 round(vec4 x) { return floor(x + 0.5); }\nfloat trunc( float x, float n ) { return floor(x*n)/n; }\nmat3 transpose(mat3 m) { return mat3(m[0].x, m[1].x, m[2].x, m[0].y, m[1].y, m[2].y, m[0].z, m[1].z, m[2].z); }\nfloat determinant( in mat2 m ) { return m[0][0]*m[1][1] - m[0][1]*m[1][0]; }\nfloat determinant( mat4 m ) { float b00 = m[0][0] * m[1][1] - m[0][1] * m[1][0], b01 = m[0][0] * m[1][2] - m[0][2] * m[1][0], b02 = m[0][0] * m[1][3] - m[0][3] * m[1][0], b03 = m[0][1] * m[1][2] - m[0][2] * m[1][1], b04 = m[0][1] * m[1][3] - m[0][3] * m[1][1], b05 = m[0][2] * m[1][3] - m[0][3] * m[1][2], b06 = m[2][0] * m[3][1] - m[2][1] * m[3][0], b07 = m[2][0] * m[3][2] - m[2][2] * m[3][0], b08 = m[2][0] * m[3][3] - m[2][3] * m[3][0], b09 = m[2][1] * m[3][2] - m[2][2] * m[3][1], b10 = m[2][1] * m[3][3] - m[2][3] * m[3][1], b11 = m[2][2] * m[3][3] - m[2][3] * m[3][2];  return b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;}\nmat2 inverse(mat2 m) { float det = determinant(m); return mat2(m[1][1], -m[0][1], -m[1][0], m[0][0]) / det; }\nmat4 inverse(mat4 m ) { float inv0 = m[1].y*m[2].z*m[3].w - m[1].y*m[2].w*m[3].z - m[2].y*m[1].z*m[3].w + m[2].y*m[1].w*m[3].z + m[3].y*m[1].z*m[2].w - m[3].y*m[1].w*m[2].z; float inv4 = -m[1].x*m[2].z*m[3].w + m[1].x*m[2].w*m[3].z + m[2].x*m[1].z*m[3].w - m[2].x*m[1].w*m[3].z - m[3].x*m[1].z*m[2].w + m[3].x*m[1].w*m[2].z; float inv8 = m[1].x*m[2].y*m[3].w - m[1].x*m[2].w*m[3].y - m[2].x  * m[1].y * m[3].w + m[2].x  * m[1].w * m[3].y + m[3].x * m[1].y * m[2].w - m[3].x * m[1].w * m[2].y; float inv12 = -m[1].x  * m[2].y * m[3].z + m[1].x  * m[2].z * m[3].y +m[2].x  * m[1].y * m[3].z - m[2].x  * m[1].z * m[3].y - m[3].x * m[1].y * m[2].z + m[3].x * m[1].z * m[2].y; float inv1 = -m[0].y*m[2].z * m[3].w + m[0].y*m[2].w * m[3].z + m[2].y  * m[0].z * m[3].w - m[2].y  * m[0].w * m[3].z - m[3].y * m[0].z * m[2].w + m[3].y * m[0].w * m[2].z; float inv5 = m[0].x  * m[2].z * m[3].w - m[0].x  * m[2].w * m[3].z - m[2].x  * m[0].z * m[3].w + m[2].x  * m[0].w * m[3].z + m[3].x * m[0].z * m[2].w - m[3].x * m[0].w * m[2].z; float inv9 = -m[0].x  * m[2].y * m[3].w +  m[0].x  * m[2].w * m[3].y + m[2].x  * m[0].y * m[3].w - m[2].x  * m[0].w * m[3].y - m[3].x * m[0].y * m[2].w + m[3].x * m[0].w * m[2].y; float inv13 = m[0].x  * m[2].y * m[3].z - m[0].x  * m[2].z * m[3].y - m[2].x  * m[0].y * m[3].z + m[2].x  * m[0].z * m[3].y + m[3].x * m[0].y * m[2].z - m[3].x * m[0].z * m[2].y; float inv2 = m[0].y  * m[1].z * m[3].w - m[0].y  * m[1].w * m[3].z - m[1].y  * m[0].z * m[3].w + m[1].y  * m[0].w * m[3].z + m[3].y * m[0].z * m[1].w - m[3].y * m[0].w * m[1].z; float inv6 = -m[0].x  * m[1].z * m[3].w + m[0].x  * m[1].w * m[3].z + m[1].x  * m[0].z * m[3].w - m[1].x  * m[0].w * m[3].z - m[3].x * m[0].z * m[1].w + m[3].x * m[0].w * m[1].z; float inv10 = m[0].x  * m[1].y * m[3].w - m[0].x  * m[1].w * m[3].y - m[1].x  * m[0].y * m[3].w + m[1].x  * m[0].w * m[3].y + m[3].x * m[0].y * m[1].w - m[3].x * m[0].w * m[1].y; float inv14 = -m[0].x  * m[1].y * m[3].z + m[0].x  * m[1].z * m[3].y + m[1].x  * m[0].y * m[3].z - m[1].x  * m[0].z * m[3].y - m[3].x * m[0].y * m[1].z + m[3].x * m[0].z * m[1].y; float inv3 = -m[0].y * m[1].z * m[2].w + m[0].y * m[1].w * m[2].z + m[1].y * m[0].z * m[2].w - m[1].y * m[0].w * m[2].z - m[2].y * m[0].z * m[1].w + m[2].y * m[0].w * m[1].z; float inv7 = m[0].x * m[1].z * m[2].w - m[0].x * m[1].w * m[2].z - m[1].x * m[0].z * m[2].w + m[1].x * m[0].w * m[2].z + m[2].x * m[0].z * m[1].w - m[2].x * m[0].w * m[1].z; float inv11 = -m[0].x * m[1].y * m[2].w + m[0].x * m[1].w * m[2].y + m[1].x * m[0].y * m[2].w - m[1].x * m[0].w * m[2].y - m[2].x * m[0].y * m[1].w + m[2].x * m[0].w * m[1].y; float inv15 = m[0].x * m[1].y * m[2].z - m[0].x * m[1].z * m[2].y - m[1].x * m[0].y * m[2].z + m[1].x * m[0].z * m[2].y + m[2].x * m[0].y * m[1].z - m[2].x * m[0].z * m[1].y; float det = m[0].x * inv0 + m[0].y * inv4 + m[0].z * inv8 + m[0].w * inv12; det = 1.0 / det; return det*mat4( inv0, inv1, inv2, inv3,inv4, inv5, inv6, inv7,inv8, inv9, inv10, inv11,inv12, inv13, inv14, inv15);}\nfloat sinh(float x)  { return (exp(x)-exp(-x))/2.; }\nfloat cosh(float x)  { return (exp(x)+exp(-x))/2.; }\nfloat tanh(float x)  { return sinh(x)/cosh(x); }\nfloat coth(float x)  { return cosh(x)/sinh(x); }\nfloat sech(float x)  { return 1./cosh(x); }\nfloat csch(float x)  { return 1./sinh(x); }\nfloat asinh(float x) { return    log(x+sqrt(x*x+1.)); }\nfloat acosh(float x) { return    log(x+sqrt(x*x-1.)); }\nfloat atanh(float x) { return .5*log((1.+x)/(1.-x)); }\nfloat acoth(float x) { return .5*log((x+1.)/(x-1.)); }\nfloat asech(float x) { return    log((1.+sqrt(1.-x*x))/x); }\nfloat acsch(float x) { return    log((1.+sqrt(1.+x*x))/x); }\n",x[0]+=26),A[1]="",x[1]=0,U?(A[1]+="#version 300 es\n#ifdef GL_ES\nprecision highp float;\nprecision highp int;\nprecision mediump sampler3D;\n#endif\n",x[1]+=6):(m&&(A[1]+="#ifdef GL_OES_standard_derivatives\n#extension GL_OES_standard_derivatives : enable\n#endif\n",x[1]+=3),E&&(A[1]+="#extension GL_EXT_shader_texture_lod : enable\n",x[1]++),A[1]+="#ifdef GL_ES\nprecision highp float;\nprecision highp int;\n#endif\nvec4 texture(     sampler2D   s, vec2 c)                   { return texture2D(s,c); }\nvec4 texture(     sampler2D   s, vec2 c, float b)          { return texture2D(s,c,b); }\nvec4 texture(     samplerCube s, vec3 c )                  { return textureCube(s,c); }\nvec4 texture(     samplerCube s, vec3 c, float b)          { return textureCube(s,c,b); }\nfloat round( float x ) { return floor(x+0.5); }\nvec2 round(vec2 x) { return floor(x + 0.5); }\nvec3 round(vec3 x) { return floor(x + 0.5); }\nvec4 round(vec4 x) { return floor(x + 0.5); }\nfloat trunc( float x, float n ) { return floor(x*n)/n; }\nmat3 transpose(mat3 m) { return mat3(m[0].x, m[1].x, m[2].x, m[0].y, m[1].y, m[2].y, m[0].z, m[1].z, m[2].z); }\nfloat determinant( in mat2 m ) { return m[0][0]*m[1][1] - m[0][1]*m[1][0]; }\nfloat determinant( mat4 m ) { float b00 = m[0][0] * m[1][1] - m[0][1] * m[1][0], b01 = m[0][0] * m[1][2] - m[0][2] * m[1][0], b02 = m[0][0] * m[1][3] - m[0][3] * m[1][0], b03 = m[0][1] * m[1][2] - m[0][2] * m[1][1], b04 = m[0][1] * m[1][3] - m[0][3] * m[1][1], b05 = m[0][2] * m[1][3] - m[0][3] * m[1][2], b06 = m[2][0] * m[3][1] - m[2][1] * m[3][0], b07 = m[2][0] * m[3][2] - m[2][2] * m[3][0], b08 = m[2][0] * m[3][3] - m[2][3] * m[3][0], b09 = m[2][1] * m[3][2] - m[2][2] * m[3][1], b10 = m[2][1] * m[3][3] - m[2][3] * m[3][1], b11 = m[2][2] * m[3][3] - m[2][3] * m[3][2];  return b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;}\nmat2 inverse(mat2 m) { float det = determinant(m); return mat2(m[1][1], -m[0][1], -m[1][0], m[0][0]) / det; }\nmat4 inverse(mat4 m ) { float inv0 = m[1].y*m[2].z*m[3].w - m[1].y*m[2].w*m[3].z - m[2].y*m[1].z*m[3].w + m[2].y*m[1].w*m[3].z + m[3].y*m[1].z*m[2].w - m[3].y*m[1].w*m[2].z; float inv4 = -m[1].x*m[2].z*m[3].w + m[1].x*m[2].w*m[3].z + m[2].x*m[1].z*m[3].w - m[2].x*m[1].w*m[3].z - m[3].x*m[1].z*m[2].w + m[3].x*m[1].w*m[2].z; float inv8 = m[1].x*m[2].y*m[3].w - m[1].x*m[2].w*m[3].y - m[2].x  * m[1].y * m[3].w + m[2].x  * m[1].w * m[3].y + m[3].x * m[1].y * m[2].w - m[3].x * m[1].w * m[2].y; float inv12 = -m[1].x  * m[2].y * m[3].z + m[1].x  * m[2].z * m[3].y +m[2].x  * m[1].y * m[3].z - m[2].x  * m[1].z * m[3].y - m[3].x * m[1].y * m[2].z + m[3].x * m[1].z * m[2].y; float inv1 = -m[0].y*m[2].z * m[3].w + m[0].y*m[2].w * m[3].z + m[2].y  * m[0].z * m[3].w - m[2].y  * m[0].w * m[3].z - m[3].y * m[0].z * m[2].w + m[3].y * m[0].w * m[2].z; float inv5 = m[0].x  * m[2].z * m[3].w - m[0].x  * m[2].w * m[3].z - m[2].x  * m[0].z * m[3].w + m[2].x  * m[0].w * m[3].z + m[3].x * m[0].z * m[2].w - m[3].x * m[0].w * m[2].z; float inv9 = -m[0].x  * m[2].y * m[3].w +  m[0].x  * m[2].w * m[3].y + m[2].x  * m[0].y * m[3].w - m[2].x  * m[0].w * m[3].y - m[3].x * m[0].y * m[2].w + m[3].x * m[0].w * m[2].y; float inv13 = m[0].x  * m[2].y * m[3].z - m[0].x  * m[2].z * m[3].y - m[2].x  * m[0].y * m[3].z + m[2].x  * m[0].z * m[3].y + m[3].x * m[0].y * m[2].z - m[3].x * m[0].z * m[2].y; float inv2 = m[0].y  * m[1].z * m[3].w - m[0].y  * m[1].w * m[3].z - m[1].y  * m[0].z * m[3].w + m[1].y  * m[0].w * m[3].z + m[3].y * m[0].z * m[1].w - m[3].y * m[0].w * m[1].z; float inv6 = -m[0].x  * m[1].z * m[3].w + m[0].x  * m[1].w * m[3].z + m[1].x  * m[0].z * m[3].w - m[1].x  * m[0].w * m[3].z - m[3].x * m[0].z * m[1].w + m[3].x * m[0].w * m[1].z; float inv10 = m[0].x  * m[1].y * m[3].w - m[0].x  * m[1].w * m[3].y - m[1].x  * m[0].y * m[3].w + m[1].x  * m[0].w * m[3].y + m[3].x * m[0].y * m[1].w - m[3].x * m[0].w * m[1].y; float inv14 = -m[0].x  * m[1].y * m[3].z + m[0].x  * m[1].z * m[3].y + m[1].x  * m[0].y * m[3].z - m[1].x  * m[0].z * m[3].y - m[3].x * m[0].y * m[1].z + m[3].x * m[0].z * m[1].y; float inv3 = -m[0].y * m[1].z * m[2].w + m[0].y * m[1].w * m[2].z + m[1].y * m[0].z * m[2].w - m[1].y * m[0].w * m[2].z - m[2].y * m[0].z * m[1].w + m[2].y * m[0].w * m[1].z; float inv7 = m[0].x * m[1].z * m[2].w - m[0].x * m[1].w * m[2].z - m[1].x * m[0].z * m[2].w + m[1].x * m[0].w * m[2].z + m[2].x * m[0].z * m[1].w - m[2].x * m[0].w * m[1].z; float inv11 = -m[0].x * m[1].y * m[2].w + m[0].x * m[1].w * m[2].y + m[1].x * m[0].y * m[2].w - m[1].x * m[0].w * m[2].y - m[2].x * m[0].y * m[1].w + m[2].x * m[0].w * m[1].y; float inv15 = m[0].x * m[1].y * m[2].z - m[0].x * m[1].z * m[2].y - m[1].x * m[0].y * m[2].z + m[1].x * m[0].z * m[2].y + m[2].x * m[0].y * m[1].z - m[2].x * m[0].z * m[1].y; float det = m[0].x * inv0 + m[0].y * inv4 + m[0].z * inv8 + m[0].w * inv12; det = 1.0 / det; return det*mat4( inv0, inv1, inv2, inv3,inv4, inv5, inv6, inv7,inv8, inv9, inv10, inv11,inv12, inv13, inv14, inv15);}\nfloat sinh(float x)  { return (exp(x)-exp(-x))/2.; }\nfloat cosh(float x)  { return (exp(x)+exp(-x))/2.; }\nfloat tanh(float x)  { return sinh(x)/cosh(x); }\nfloat coth(float x)  { return cosh(x)/sinh(x); }\nfloat sech(float x)  { return 1./cosh(x); }\nfloat csch(float x)  { return 1./sinh(x); }\nfloat asinh(float x) { return    log(x+sqrt(x*x+1.)); }\nfloat acosh(float x) { return    log(x+sqrt(x*x-1.)); }\nfloat atanh(float x) { return .5*log((1.+x)/(1.-x)); }\nfloat acoth(float x) { return .5*log((x+1.)/(x-1.)); }\nfloat asech(float x) { return    log((1.+sqrt(1.-x*x))/x); }\nfloat acsch(float x) { return    log((1.+sqrt(1.+x*x))/x); }\n",x[1]+=30,E&&(A[1]+="vec4 textureLod(  sampler2D   s, vec2 c, float b)          { return texture2DLodEXT(s,c,b); }\n",A[1]+="vec4 textureGrad( sampler2D   s, vec2 c, vec2 dx, vec2 dy) { return texture2DGradEXT(s,c,dx,dy); }\n",x[1]+=2)),!0},F.GetCaps=function(){return{mIsGL20:U,mFloat32Textures:null!=e,mFloat16Textures:null!=t,mDrawBuffers:null!=r,mDepthTextures:null!=n,mDerivatives:null!=m,mShaderTextureLOD:null!=E}},F.GetShaderHeaderLines=function(e){return x[e]},F.CheckErrors=function(){var e=o.getError();if(e!=o.NO_ERROR)for(var t in o)if("number"==typeof o[t]&&o[t]==e){console.log("GL Error "+e+": "+t);break}},F.Clear=function(e,t,r,n){var m=0;1&e&&(m|=o.COLOR_BUFFER_BIT,o.clearColor(t[0],t[1],t[2],t[3])),2&e&&(m|=o.DEPTH_BUFFER_BIT,o.clearDepth(r)),4&e&&(m|=o.STENCIL_BUFFER_BIT,o.clearStencil(n)),o.clear(m)},F.CreateTexture=function(e,t,r,n,m,E,i){if(null===o)return null;var T=o.createTexture(),a=I(n),R=o.REPEAT;if(E===F.TEXWRP.CLAMP&&(R=o.CLAMP_TO_EDGE),e===F.TEXTYPE.T2D)o.bindTexture(o.TEXTURE_2D,T),o.texImage2D(o.TEXTURE_2D,0,a.mGLFormat,t,r,0,a.mGLExternal,a.mGLType,i),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_WRAP_S,R),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_WRAP_T,R),m===F.FILTER.NONE?(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.NEAREST)):m===F.FILTER.LINEAR?(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.LINEAR)):m===F.FILTER.MIPMAP?(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.LINEAR_MIPMAP_LINEAR),o.generateMipmap(o.TEXTURE_2D)):(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.NEAREST_MIPMAP_LINEAR),o.generateMipmap(o.TEXTURE_2D)),o.bindTexture(o.TEXTURE_2D,null);else if(e===F.TEXTYPE.T3D){if(!U)return null;o.bindTexture(o.TEXTURE_3D,T),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_BASE_LEVEL,0),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MAX_LEVEL,Math.log2(t)),m===F.FILTER.NONE?(o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MIN_FILTER,o.NEAREST)):m===F.FILTER.LINEAR?(o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MIN_FILTER,o.LINEAR)):m===F.FILTER.MIPMAP?(o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MIN_FILTER,o.LINEAR_MIPMAP_LINEAR)):(o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MIN_FILTER,o.NEAREST_MIPMAP_LINEAR),o.generateMipmap(o.TEXTURE_3D)),o.texImage3D(o.TEXTURE_3D,0,a.mGLFormat,t,r,r,0,a.mGLExternal,a.mGLType,i),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_WRAP_R,R),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_WRAP_S,R),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_WRAP_T,R),m===F.FILTER.MIPMAP&&o.generateMipmap(o.TEXTURE_3D),o.bindTexture(o.TEXTURE_3D,null)}else o.bindTexture(o.TEXTURE_CUBE_MAP,T),o.texImage2D(o.TEXTURE_CUBE_MAP_POSITIVE_X,0,a.mGLFormat,t,r,0,a.mGLExternal,a.mGLType,i),o.texImage2D(o.TEXTURE_CUBE_MAP_NEGATIVE_X,0,a.mGLFormat,t,r,0,a.mGLExternal,a.mGLType,i),o.texImage2D(o.TEXTURE_CUBE_MAP_POSITIVE_Y,0,a.mGLFormat,t,r,0,a.mGLExternal,a.mGLType,i),o.texImage2D(o.TEXTURE_CUBE_MAP_NEGATIVE_Y,0,a.mGLFormat,t,r,0,a.mGLExternal,a.mGLType,i),o.texImage2D(o.TEXTURE_CUBE_MAP_POSITIVE_Z,0,a.mGLFormat,t,r,0,a.mGLExternal,a.mGLType,i),o.texImage2D(o.TEXTURE_CUBE_MAP_NEGATIVE_Z,0,a.mGLFormat,t,r,0,a.mGLExternal,a.mGLType,i),m===F.FILTER.NONE?(o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MIN_FILTER,o.NEAREST)):m===F.FILTER.LINEAR?(o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MIN_FILTER,o.LINEAR)):m===F.FILTER.MIPMAP&&(o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MIN_FILTER,o.LINEAR_MIPMAP_LINEAR)),m===F.FILTER.MIPMAP&&o.generateMipmap(o.TEXTURE_CUBE_MAP),o.bindTexture(o.TEXTURE_CUBE_MAP,null);return{mObjectID:T,mXres:t,mYres:r,mFormat:n,mType:e,mFilter:m,mWrap:E,mVFlip:!1}},F.CreateTextureFromImage=function(e,t,r,n,m,E){if(null===o)return null;var i=o.createTexture(),T=I(r),a=o.REPEAT;if(m===F.TEXWRP.CLAMP&&(a=o.CLAMP_TO_EDGE),e===F.TEXTYPE.T2D)o.bindTexture(o.TEXTURE_2D,i),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,E),o.pixelStorei(o.UNPACK_PREMULTIPLY_ALPHA_WEBGL,!1),U&&o.pixelStorei(o.UNPACK_COLORSPACE_CONVERSION_WEBGL,o.NONE),o.texImage2D(o.TEXTURE_2D,0,T.mGLFormat,T.mGLExternal,T.mGLType,t),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_WRAP_S,a),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_WRAP_T,a),n===F.FILTER.NONE?(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.NEAREST)):n===F.FILTER.LINEAR?(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.LINEAR)):n===F.FILTER.MIPMAP?(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.LINEAR_MIPMAP_LINEAR),o.generateMipmap(o.TEXTURE_2D)):(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.NEAREST_MIPMAP_LINEAR),o.generateMipmap(o.TEXTURE_2D)),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,!1),o.bindTexture(o.TEXTURE_2D,null);else{if(e===F.TEXTYPE.T3D)return null;o.bindTexture(o.TEXTURE_CUBE_MAP,i),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,E),o.activeTexture(o.TEXTURE0),o.texImage2D(o.TEXTURE_CUBE_MAP_POSITIVE_X,0,T.mGLFormat,T.mGLExternal,T.mGLType,t[0]),o.texImage2D(o.TEXTURE_CUBE_MAP_NEGATIVE_X,0,T.mGLFormat,T.mGLExternal,T.mGLType,t[1]),o.texImage2D(o.TEXTURE_CUBE_MAP_POSITIVE_Y,0,T.mGLFormat,T.mGLExternal,T.mGLType,E?t[3]:t[2]),o.texImage2D(o.TEXTURE_CUBE_MAP_NEGATIVE_Y,0,T.mGLFormat,T.mGLExternal,T.mGLType,E?t[2]:t[3]),o.texImage2D(o.TEXTURE_CUBE_MAP_POSITIVE_Z,0,T.mGLFormat,T.mGLExternal,T.mGLType,t[4]),o.texImage2D(o.TEXTURE_CUBE_MAP_NEGATIVE_Z,0,T.mGLFormat,T.mGLExternal,T.mGLType,t[5]),n===F.FILTER.NONE?(o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MIN_FILTER,o.NEAREST)):n===F.FILTER.LINEAR?(o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MIN_FILTER,o.LINEAR)):n===F.FILTER.MIPMAP&&(o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MIN_FILTER,o.LINEAR_MIPMAP_LINEAR),o.generateMipmap(o.TEXTURE_CUBE_MAP)),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,!1),o.bindTexture(o.TEXTURE_CUBE_MAP,null)}return{mObjectID:i,mXres:t.width,mYres:t.height,mFormat:r,mType:e,mFilter:n,mWrap:m,mVFlip:E}},F.SetSamplerFilter=function(e,t,r){e.mFilter!==t&&(e.mType===F.TEXTYPE.T2D?(o.bindTexture(o.TEXTURE_2D,e.mObjectID),t===F.FILTER.NONE?(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.NEAREST)):t===F.FILTER.LINEAR?(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.LINEAR)):t===F.FILTER.MIPMAP?(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.LINEAR_MIPMAP_LINEAR),r&&o.generateMipmap(o.TEXTURE_2D)):(o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_MIN_FILTER,o.NEAREST_MIPMAP_LINEAR),r&&o.generateMipmap(o.TEXTURE_2D)),o.bindTexture(o.TEXTURE_2D,null)):e.mType===F.TEXTYPE.T3D?(o.bindTexture(o.TEXTURE_3D,e.mObjectID),t===F.FILTER.NONE?(o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MIN_FILTER,o.NEAREST)):t===F.FILTER.LINEAR?(o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MIN_FILTER,o.LINEAR)):t===F.FILTER.MIPMAP?(o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MIN_FILTER,o.LINEAR_MIPMAP_LINEAR),r&&o.generateMipmap(o.TEXTURE_3D)):(o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_MIN_FILTER,o.NEAREST_MIPMAP_LINEAR),r&&o.generateMipmap(o.TEXTURE_3D)),o.bindTexture(o.TEXTURE_3D,null)):(o.bindTexture(o.TEXTURE_CUBE_MAP,e.mObjectID),t===F.FILTER.NONE?(o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MIN_FILTER,o.NEAREST)):t===F.FILTER.LINEAR?(o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MIN_FILTER,o.LINEAR)):t===F.FILTER.MIPMAP?(o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MAG_FILTER,o.LINEAR),o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MIN_FILTER,o.LINEAR_MIPMAP_LINEAR),r&&o.generateMipmap(o.TEXTURE_CUBE_MAP)):(o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MAG_FILTER,o.NEAREST),o.texParameteri(o.TEXTURE_CUBE_MAP,o.TEXTURE_MIN_FILTER,o.NEAREST_MIPMAP_LINEAR),r&&o.generateMipmap(o.TEXTURE_CUBE_MAP)),o.bindTexture(o.TEXTURE_CUBE_MAP,null)),e.mFilter=t)},F.SetSamplerWrap=function(e,t){if(e.mWrap!==t){var r=o.REPEAT;t===F.TEXWRP.CLAMP&&(r=o.CLAMP_TO_EDGE);var n=e.mObjectID;e.mType===F.TEXTYPE.T2D?(o.bindTexture(o.TEXTURE_2D,n),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_WRAP_S,r),o.texParameteri(o.TEXTURE_2D,o.TEXTURE_WRAP_T,r),o.bindTexture(o.TEXTURE_2D,null)):e.mType===F.TEXTYPE.T3D&&(o.bindTexture(o.TEXTURE_3D,n),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_WRAP_R,r),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_WRAP_S,r),o.texParameteri(o.TEXTURE_3D,o.TEXTURE_WRAP_T,r),o.bindTexture(o.TEXTURE_3D,null)),e.mWrap=t}},F.SetSamplerVFlip=function(e,t,r){if(e.mVFlip!==t){var n=e.mObjectID;if(e.mType===F.TEXTYPE.T2D){if(null!=r){o.activeTexture(o.TEXTURE0),o.bindTexture(o.TEXTURE_2D,n),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,t);var m=I(e.mFormat);o.texImage2D(o.TEXTURE_2D,0,m.mGLFormat,m.mGLExternal,m.mGLType,r),o.bindTexture(o.TEXTURE_2D,null),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,!1)}}else if(e.mType===F.TEXTYPE.CUBEMAP&&null!=r){m=I(e.mFormat);o.activeTexture(o.TEXTURE0),o.bindTexture(o.TEXTURE_CUBE_MAP,n),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,t),o.texImage2D(o.TEXTURE_CUBE_MAP_POSITIVE_X,0,m.mGLFormat,m.mGLExternal,m.mGLType,r[0]),o.texImage2D(o.TEXTURE_CUBE_MAP_NEGATIVE_X,0,m.mGLFormat,m.mGLExternal,m.mGLType,r[1]),o.texImage2D(o.TEXTURE_CUBE_MAP_POSITIVE_Y,0,m.mGLFormat,m.mGLExternal,m.mGLType,t?r[3]:r[2]),o.texImage2D(o.TEXTURE_CUBE_MAP_NEGATIVE_Y,0,m.mGLFormat,m.mGLExternal,m.mGLType,t?r[2]:r[3]),o.texImage2D(o.TEXTURE_CUBE_MAP_POSITIVE_Z,0,m.mGLFormat,m.mGLExternal,m.mGLType,r[4]),o.texImage2D(o.TEXTURE_CUBE_MAP_NEGATIVE_Z,0,m.mGLFormat,m.mGLExternal,m.mGLType,r[5]),o.bindTexture(o.TEXTURE_CUBE_MAP,null),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,!1)}e.mVFlip=t}},F.CreateMipmaps=function(e){e.mType===F.TEXTYPE.T2D?(o.activeTexture(o.TEXTURE0),o.bindTexture(o.TEXTURE_2D,e.mObjectID),o.generateMipmap(o.TEXTURE_2D),o.bindTexture(o.TEXTURE_2D,null)):e.mType===F.TEXTYPE.CUBEMAP&&(o.activeTexture(o.TEXTURE0),o.bindTexture(o.TEXTURE_CUBE_MAP,e.mObjectID),o.generateMipmap(o.TEXTURE_CUBE_MAP),o.bindTexture(o.TEXTURE_CUBE_MAP,null))},F.UpdateTexture=function(e,t,r,n,m,E){var i=I(e.mFormat);e.mType===F.TEXTYPE.T2D&&(o.activeTexture(o.TEXTURE0),o.bindTexture(o.TEXTURE_2D,e.mObjectID),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,e.mVFlip),o.texSubImage2D(o.TEXTURE_2D,0,t,r,n,m,i.mGLExternal,i.mGLType,E),o.bindTexture(o.TEXTURE_2D,null),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,!1))},F.UpdateTextureFromImage=function(e,t){var r=I(e.mFormat);e.mType===F.TEXTYPE.T2D&&(o.activeTexture(o.TEXTURE0),o.bindTexture(o.TEXTURE_2D,e.mObjectID),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,e.mVFlip),o.texImage2D(o.TEXTURE_2D,0,r.mGLFormat,r.mGLExternal,r.mGLType,t),o.bindTexture(o.TEXTURE_2D,null),o.pixelStorei(o.UNPACK_FLIP_Y_WEBGL,!1))},F.DestroyTexture=function(e){o.deleteTexture(e.mObjectID)},F.AttachTextures=function(e,t,r,n,m){e>0&&null!=t&&(o.activeTexture(o.TEXTURE0),t.mType===F.TEXTYPE.T2D?o.bindTexture(o.TEXTURE_2D,t.mObjectID):t.mType===F.TEXTYPE.T3D?o.bindTexture(o.TEXTURE_3D,t.mObjectID):t.mType===F.TEXTYPE.CUBEMAP&&o.bindTexture(o.TEXTURE_CUBE_MAP,t.mObjectID)),e>1&&null!=r&&(o.activeTexture(o.TEXTURE1),r.mType===F.TEXTYPE.T2D?o.bindTexture(o.TEXTURE_2D,r.mObjectID):r.mType===F.TEXTYPE.T3D?o.bindTexture(o.TEXTURE_3D,r.mObjectID):r.mType===F.TEXTYPE.CUBEMAP&&o.bindTexture(o.TEXTURE_CUBE_MAP,r.mObjectID)),e>2&&null!=n&&(o.activeTexture(o.TEXTURE2),n.mType===F.TEXTYPE.T2D?o.bindTexture(o.TEXTURE_2D,n.mObjectID):n.mType===F.TEXTYPE.T3D?o.bindTexture(o.TEXTURE_3D,n.mObjectID):n.mType===F.TEXTYPE.CUBEMAP&&o.bindTexture(o.TEXTURE_CUBE_MAP,n.mObjectID)),e>3&&null!=m&&(o.activeTexture(o.TEXTURE3),m.mType===F.TEXTYPE.T2D?o.bindTexture(o.TEXTURE_2D,m.mObjectID):m.mType===F.TEXTYPE.T3D?o.bindTexture(o.TEXTURE_3D,m.mObjectID):m.mType===F.TEXTYPE.CUBEMAP&&o.bindTexture(o.TEXTURE_CUBE_MAP,m.mObjectID))},F.DettachTextures=function(){o.activeTexture(o.TEXTURE0),o.bindTexture(o.TEXTURE_2D,null),o.bindTexture(o.TEXTURE_CUBE_MAP,null),o.activeTexture(o.TEXTURE1),o.bindTexture(o.TEXTURE_2D,null),o.bindTexture(o.TEXTURE_CUBE_MAP,null),o.activeTexture(o.TEXTURE2),o.bindTexture(o.TEXTURE_2D,null),o.bindTexture(o.TEXTURE_CUBE_MAP,null),o.activeTexture(o.TEXTURE3),o.bindTexture(o.TEXTURE_2D,null),o.bindTexture(o.TEXTURE_CUBE_MAP,null)},F.CreateRenderTarget=function(e,t,r,n,m,E){var i=o.createFramebuffer();if(o.bindFramebuffer(o.FRAMEBUFFER,i),null===m){if(!0===E){var T=o.createRenderbuffer();o.bindRenderbuffer(o.RENDERBUFFER,T),o.renderbufferStorage(o.RENDERBUFFER,o.DEPTH_COMPONENT16,e.mXres,e.mYres),o.framebufferRenderbuffer(o.FRAMEBUFFER,o.DEPTH_ATTACHMENT,o.RENDERBUFFER,T)}}else o.framebufferTexture2D(o.FRAMEBUFFER,o.DEPTH_ATTACHMENT,o.TEXTURE_2D,m.mObjectID,0);return null!=e&&o.framebufferTexture2D(o.FRAMEBUFFER,o.COLOR_ATTACHMENT0,o.TEXTURE_2D,e.mObjectID,0),o.checkFramebufferStatus(o.FRAMEBUFFER)!=o.FRAMEBUFFER_COMPLETE?null:(o.bindRenderbuffer(o.RENDERBUFFER,null),o.bindFramebuffer(o.FRAMEBUFFER,null),{mObjectID:i,mTex0:e})},F.DestroyRenderTarget=function(e){o.deleteFramebuffer(e.mObjectID)},F.SetRenderTarget=function(e){null===e?o.bindFramebuffer(o.FRAMEBUFFER,null):o.bindFramebuffer(o.FRAMEBUFFER,e.mObjectID)},F.CreateRenderTargetNew=function(e,t,r,n,m){var E=o.createFramebuffer();if(o.bindFramebuffer(o.FRAMEBUFFER,E),!0===t){var i=o.createRenderbuffer();o.bindRenderbuffer(o.RENDERBUFFER,i),1==m?o.renderbufferStorage(o.RENDERBUFFER,o.DEPTH_COMPONENT16,r,n):o.renderbufferStorageMultisample(o.RENDERBUFFER,m,o.DEPTH_COMPONENT16,r,n),o.framebufferRenderbuffer(o.FRAMEBUFFER,o.DEPTH_ATTACHMENT,o.RENDERBUFFER,i)}if(e){var T=o.createRenderbuffer();o.bindRenderbuffer(o.RENDERBUFFER,T),1==m?o.renderbufferStorage(o.RENDERBUFFER,o.RGBA8,r,n):o.renderbufferStorageMultisample(o.RENDERBUFFER,m,o.RGBA8,r,n),o.framebufferRenderbuffer(o.FRAMEBUFFER,o.COLOR_ATTACHMENT0,o.RENDERBUFFER,T)}return o.checkFramebufferStatus(o.FRAMEBUFFER)!=o.FRAMEBUFFER_COMPLETE?null:(o.bindRenderbuffer(o.RENDERBUFFER,null),o.bindFramebuffer(o.FRAMEBUFFER,null),{mObjectID:E,mXres:r,mYres:n,mTex0:color0})},F.CreateRenderTargetCubeMap=function(e,t,r){var n=o.createFramebuffer();if(o.bindFramebuffer(o.FRAMEBUFFER,n),null===t){if(!0===r){var m=o.createRenderbuffer();o.bindRenderbuffer(o.RENDERBUFFER,m),o.renderbufferStorage(o.RENDERBUFFER,o.DEPTH_COMPONENT16,e.mXres,e.mYres),o.framebufferRenderbuffer(o.FRAMEBUFFER,o.DEPTH_ATTACHMENT,o.RENDERBUFFER,m)}}else o.framebufferTexture2D(o.FRAMEBUFFER,o.DEPTH_ATTACHMENT,o.TEXTURE_2D,t.mObjectID,0);return null!=e&&o.framebufferTexture2D(o.FRAMEBUFFER,o.COLOR_ATTACHMENT0,o.TEXTURE_CUBE_MAP_POSITIVE_X,e.mObjectID,0),o.checkFramebufferStatus(o.FRAMEBUFFER)!=o.FRAMEBUFFER_COMPLETE?null:(o.bindRenderbuffer(o.RENDERBUFFER,null),o.bindFramebuffer(o.FRAMEBUFFER,null),{mObjectID:n,mTex0:e})},F.SetRenderTargetCubeMap=function(e,t){null===e?o.bindFramebuffer(o.FRAMEBUFFER,null):(o.bindFramebuffer(o.FRAMEBUFFER,e.mObjectID),o.framebufferTexture2D(o.FRAMEBUFFER,o.COLOR_ATTACHMENT0,o.TEXTURE_CUBE_MAP_POSITIVE_X+t,e.mTex0.mObjectID,0))},F.BlitRenderTarget=function(e,t){o.bindFramebuffer(o.READ_FRAMEBUFFER,t.mObjectID),o.bindFramebuffer(o.DRAW_FRAMEBUFFER,e.mObjectID),o.clearBufferfv(o.COLOR,0,[0,0,0,1]),o.blitFramebuffer(0,0,t.mXres,t.mYres,0,0,t.mXres,t.mYres,o.COLOR_BUFFER_BIT,o.LINEAR)},F.SetViewport=function(e){o.viewport(e[0],e[1],e[2],e[3])},F.SetWriteMask=function(e,t,r,n,m){o.depthMask(m),o.colorMask(e,e,e,e)},F.SetState=function(e,t){e===F.RENDSTGATE.WIREFRAME?t?o.polygonMode(o.FRONT_AND_BACK,o.LINE):o.polygonMode(o.FRONT_AND_BACK,o.FILL):e===F.RENDSTGATE.FRONT_FACE?t?o.cullFace(o.BACK):o.cullFace(o.FRONT):e===F.RENDSTGATE.CULL_FACE?t?o.enable(o.CULL_FACE):o.disable(o.CULL_FACE):e===F.RENDSTGATE.DEPTH_TEST?t?o.enable(o.DEPTH_TEST):o.disable(o.DEPTH_TEST):e===F.RENDSTGATE.ALPHA_TO_COVERAGE&&(t?o.enable(o.SAMPLE_ALPHA_TO_COVERAGE):o.disable(o.SAMPLE_ALPHA_TO_COVERAGE))},F.SetMultisample=function(e){!0===e?(o.enable(o.SAMPLE_COVERAGE),o.sampleCoverage(1,!1)):o.disable(o.SAMPLE_COVERAGE)},F.GetTranslatedShaderSource=function(e){if(null===o)return null;if(null===a)return null;let t=o.getAttachedShaders(e.mProgram),r=a.getTranslatedShaderSource(t[1]),n=r.split("GLSL END");return r=n.length<2?r:n[1],r},F.CreateShader=function(e,t,r,n,m){if(null===o)return;var E=o.createShader(o.VERTEX_SHADER),i=o.createShader(o.FRAGMENT_SHADER);if(e=A[0]+e,t=A[1]+t,r){e+="\n#define K"+Math.random().toString(36).substring(7)+"\n",t+="\n#define K"+Math.random().toString(36).substring(7)+"\n"}var T=(new Date).getTime();o.shaderSource(E,e),o.shaderSource(i,t),o.compileShader(E),o.compileShader(i);var a=o.createProgram();o.attachShader(a,E),o.attachShader(a,i),o.linkProgram(a);let u=function(){if(o.getProgramParameter(a,o.LINK_STATUS)){let e=(new Date).getTime()-T;m(!0,{mProgram:a,mTime:e})}else if(o.getShaderParameter(E,o.COMPILE_STATUS))if(o.getShaderParameter(i,o.COMPILE_STATUS)){let e=o.getProgramInfoLog(a);m(!1,{mErrorType:2,mErrorStr:e}),o.deleteProgram(a)}else{let e=o.getShaderInfoLog(i);m(!1,{mErrorType:1,mErrorStr:e}),o.deleteProgram(a)}else{let e=o.getShaderInfoLog(E);m(!1,{mErrorType:0,mErrorStr:e}),o.deleteProgram(a)}};if(null===R||!0===n)u();else{let e=function(){!0===o.getProgramParameter(a,R.COMPLETION_STATUS_KHR)?u():setTimeout(e,10)};setTimeout(e,10)}},F.AttachShader=function(e){null===e?(u=null,o.useProgram(null)):(u=e,o.useProgram(e.mProgram))},F.DetachShader=function(){o.useProgram(null)},F.DestroyShader=function(e){o.deleteProgram(e.mProgram)},F.GetAttribLocation=function(e,t){return o.getAttribLocation(e.mProgram,t)},F.SetShaderConstantLocation=function(e,t){return o.getUniformLocation(e.mProgram,t)},F.SetShaderConstantMat4F=function(e,t,r){var n=u;let m=o.getUniformLocation(n.mProgram,e);if(null===m)return!1;if(!1===r){var E=new Float32Array([t[0],t[4],t[8],t[12],t[1],t[5],t[9],t[13],t[2],t[6],t[10],t[14],t[3],t[7],t[11],t[15]]);o.uniformMatrix4fv(m,!1,E)}else o.uniformMatrix4fv(m,!1,new Float32Array(t));return!0},F.SetShaderConstant1F_Pos=function(e,t){return o.uniform1f(e,t),!0},F.SetShaderConstant1FV_Pos=function(e,t){return o.uniform1fv(e,t),!0},F.SetShaderConstant1F=function(e,t){var r=o.getUniformLocation(u.mProgram,e);return null!==r&&(o.uniform1f(r,t),!0)},F.SetShaderConstant1I=function(e,t){let r=o.getUniformLocation(u.mProgram,e);return null!==r&&(o.uniform1i(r,t),!0)},F.SetShaderConstant1I_Pos=function(e,t){return o.uniform1i(e,t),!0},F.SetShaderConstant2F=function(e,t){let r=o.getUniformLocation(u.mProgram,e);return null!==r&&(o.uniform2fv(r,t),!0)},F.SetShaderConstant3F=function(e,t,r,n){let m=o.getUniformLocation(u.mProgram,e);return null!==m&&(o.uniform3f(m,t,r,n),!0)},F.SetShaderConstant1FV=function(e,t){let r=o.getUniformLocation(u.mProgram,e);return null!==r&&(o.uniform1fv(r,new Float32Array(t)),!0)},F.SetShaderConstant3FV=function(e,t){let r=o.getUniformLocation(u.mProgram,e);return null!==r&&(o.uniform3fv(r,new Float32Array(t)),!0)},F.SetShaderConstant4FV=function(e,t){let r=o.getUniformLocation(u.mProgram,e);return null!==r&&(o.uniform4fv(r,new Float32Array(t)),!0)},F.SetShaderTextureUnit=function(e,t){var r=u;let n=o.getUniformLocation(r.mProgram,e);return null!==n&&(o.uniform1i(n,t),!0)},F.CreateVertexArray=function(e,t){let r=o.createBuffer();return o.bindBuffer(o.ARRAY_BUFFER,r),t===F.BUFTYPE.STATIC?o.bufferData(o.ARRAY_BUFFER,e,o.STATIC_DRAW):o.bufferData(o.ARRAY_BUFFER,e,o.DYNAMIC_DRAW),{mObject:r}},F.CreateIndexArray=function(e,t){let r=o.createBuffer();return o.bindBuffer(o.ELEMENT_ARRAY_BUFFER,r),t===F.BUFTYPE.STATIC?o.bufferData(o.ELEMENT_ARRAY_BUFFER,e,o.STATIC_DRAW):o.bufferData(o.ELEMENT_ARRAY_BUFFER,e,o.DYNAMIC_DRAW),{mObject:r}},F.DestroyArray=function(e){o.destroyBuffer(e.mObject)},F.AttachVertexArray=function(e,t,r){o.bindBuffer(o.ARRAY_BUFFER,e.mObject);for(var n=t.mChannels.length,m=t.mStride,E=0,i=0;i<n;i++){var T=r[i];o.enableVertexAttribArray(T);var a=o.FLOAT,R=4;t.mChannels[i].mType===F.TYPE.UINT8?(a=o.UNSIGNED_BYTE,R=1):t.mChannels[i].mType===F.TYPE.UINT16?(a=o.UNSIGNED_SHORT,R=2):t.mChannels[i].mType===F.TYPE.FLOAT32&&(a=o.FLOAT,R=4),o.vertexAttribPointer(T,t.mChannels[i].mNumComponents,a,t.mChannels[i].mNormalize,m,E),E+=t.mChannels[i].mNumComponents*R}},F.AttachIndexArray=function(e){o.bindBuffer(o.ELEMENT_ARRAY_BUFFER,e.mObject)},F.DetachVertexArray=function(e,t){let r=t.mChannels.length;for(let e=0;e<r;e++)o.disableVertexAttribArray(e);o.bindBuffer(o.ARRAY_BUFFER,null)},F.DetachIndexArray=function(e){o.bindBuffer(o.ELEMENT_ARRAY_BUFFER,null)},F.DrawPrimitive=function(e,t,r,n){let m=o.POINTS;e===F.PRIMTYPE.POINTS&&(m=o.POINTS),e===F.PRIMTYPE.LINES&&(m=o.LINES),e===F.PRIMTYPE.LINE_LOOP&&(m=o.LINE_LOOP),e===F.PRIMTYPE.LINE_STRIP&&(m=o.LINE_STRIP),e===F.PRIMTYPE.TRIANGLES&&(m=o.TRIANGLES),e===F.PRIMTYPE.TRIANGLE_STRIP&&(m=o.TRIANGLE_STRIP),n<=1?r?o.drawElements(m,t,o.UNSIGNED_SHORT,0):o.drawArrays(m,0,t):(o.drawArraysInstanced(m,0,t,n),o.drawElementsInstanced(m,t,o.UNSIGNED_SHORT,0,n))},F.DrawFullScreenTriangle_XY=function(e){o.bindBuffer(o.ARRAY_BUFFER,_),o.vertexAttribPointer(e,2,o.FLOAT,!1,0,0),o.enableVertexAttribArray(e),o.drawArrays(o.TRIANGLES,0,3),o.disableVertexAttribArray(e),o.bindBuffer(o.ARRAY_BUFFER,null)},F.DrawUnitQuad_XY=function(e){o.bindBuffer(o.ARRAY_BUFFER,s),o.vertexAttribPointer(e,2,o.FLOAT,!1,0,0),o.enableVertexAttribArray(e),o.drawArrays(o.TRIANGLES,0,6),o.disableVertexAttribArray(e),o.bindBuffer(o.ARRAY_BUFFER,null)},F.DrawUnitCube_XYZ_NOR=function(e){o.bindBuffer(o.ARRAY_BUFFER,l),o.vertexAttribPointer(e[0],3,o.FLOAT,!1,0,0),o.vertexAttribPointer(e[1],3,o.FLOAT,!1,0,0),o.enableVertexAttribArray(e[0]),o.enableVertexAttribArray(e[1]),o.drawArrays(o.TRIANGLE_STRIP,0,4),o.drawArrays(o.TRIANGLE_STRIP,4,4),o.drawArrays(o.TRIANGLE_STRIP,8,4),o.drawArrays(o.TRIANGLE_STRIP,12,4),o.drawArrays(o.TRIANGLE_STRIP,16,4),o.drawArrays(o.TRIANGLE_STRIP,20,4),o.disableVertexAttribArray(e[0]),o.disableVertexAttribArray(e[1]),o.bindBuffer(o.ARRAY_BUFFER,null)},F.DrawUnitCube_XYZ=function(e){o.bindBuffer(o.ARRAY_BUFFER,f),o.vertexAttribPointer(e,3,o.FLOAT,!1,0,0),o.enableVertexAttribArray(e),o.drawArrays(o.TRIANGLE_STRIP,0,4),o.drawArrays(o.TRIANGLE_STRIP,4,4),o.drawArrays(o.TRIANGLE_STRIP,8,4),o.drawArrays(o.TRIANGLE_STRIP,12,4),o.drawArrays(o.TRIANGLE_STRIP,16,4),o.drawArrays(o.TRIANGLE_STRIP,20,4),o.disableVertexAttribArray(e),o.bindBuffer(o.ARRAY_BUFFER,null)},F.SetBlend=function(e){e?(o.enable(o.BLEND),o.blendEquationSeparate(o.FUNC_ADD,o.FUNC_ADD),o.blendFuncSeparate(o.SRC_ALPHA,o.ONE_MINUS_SRC_ALPHA,o.ONE,o.ONE_MINUS_SRC_ALPHA)):o.disable(o.BLEND)},F.GetPixelData=function(e,t,r,n){o.readPixels(0,0,r,n,o.RGBA,o.UNSIGNED_BYTE,e,t)},F.GetPixelDataRenderTarget=function(e,t,r,n){o.bindFramebuffer(o.FRAMEBUFFER,e.mObjectID),o.readBuffer(o.COLOR_ATTACHMENT0),o.readPixels(0,0,r,n,o.RGBA,o.FLOAT,t,0),o.bindFramebuffer(o.FRAMEBUFFER,null)},F}function smoothstep(e,t,r){return(r=(r-e)/(t-e))<0?r=0:r>1&&(r=1),r*r*(3-2*r)}function clamp01(e){return e<0&&(e=0),e>1&&(e=1),e}function clamp(e,t,r){return e<t&&(e=t),e>r&&(e=r),e}function screen(e,t){return 1-(1-e)*(1-t)}function parabola(e){return 4*e*(1-e)}function min(e,t){return e<t?e:t}function max(e,t){return e>t?e:t}function noise(e){function t(e,t,r,n){var m=7*e+131*t;return(536870912&(m=(m^=m<<13)*(m*m*15731+789221)+1376312589)?r:-r)+(268435456&m?n:-n)}var r=[Math.floor(e[0]),Math.floor(e[1])],n=[e[0]-r[0],e[1]-r[1]],m=[n[0]*n[0]*(3-2*n[0]),n[1]*n[1]*(3-2*n[1])],E=t(r[0]+0,r[1]+0,n[0]+0,n[1]+0),i=t(r[0]+1,r[1]+0,n[0]-1,n[1]+0),T=t(r[0]+0,r[1]+1,n[0]+0,n[1]-1),a=t(r[0]+1,r[1]+1,n[0]-1,n[1]-1);return E+(i-E)*m[0]+(T-E)*m[1]+(E-i-T+a)*m[0]*m[1]}function vec3(e,t,r){return[e,t,r]}function add(e,t){return[e[0]+t[0],e[1]+t[1],e[2]+t[2]]}function sub(e,t){return[e[0]-t[0],e[1]-t[1],e[2]-t[2]]}function mul(e,t){return[e[0]*t,e[1]*t,e[2]*t]}function cross(e,t){return[e[1]*t[2]-e[2]*t[1],e[2]*t[0]-e[0]*t[2],e[0]*t[1]-e[1]*t[0]]}function dot(e,t){return e[0]*t[0]+e[1]*t[1]+e[2]*t[2]}function normalize(e){var t=1/Math.sqrt(e[0]*e[0]+e[1]*e[1]+e[2]*e[2]);return[e[0]*t,e[1]*t,e[2]*t]}function createCirclePoint(e,t,r,n,m,E){return[e[0]+n*(t[0]*m+r[0]*E),e[1]+n*(t[1]*m+r[1]*E),e[2]+n*(t[2]*m+r[2]*E)]}function createTangent(e,t,r){var n=normalize([r[0]-t[0],r[1]-t[1],r[2]-t[2]]),m=normalize([t[0]-e[0],t[1]-e[1],t[2]-e[2]]);return normalize([m[0]+n[0],m[1]+n[1],m[2]+n[2]])}function vec4(e,t,r,n){return[e,t,r,n]}function getXYZ(e){return[e[0],e[1],e[2]]}function setIdentity(){return[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]}function setRotationX(e){var t=Math.sin(e),r=Math.cos(e);return[1,0,0,0,0,r,-t,0,0,t,r,0,0,0,0,1]}function setRotationY(e){var t=Math.sin(e),r=Math.cos(e);return[r,0,-t,0,0,1,0,0,t,0,r,0,0,0,0,1]}function extractRotationEuler(e){var t=[];return 1==e[0]||-1==e[0]?(t[0]=Math.atan2(e[2],e[11]),t[1]=0,t[2]=0):(t[0]=Math.atan2(-e[9],e[10]),t[1]=Math.atan2(e[8],Math.sqrt(e[9]*e[9]+e[10]*e[10])),t[2]=Math.atan2(e[4],e[0])),t}function setFromQuaternion(e){var t=e[3]*e[3],r=e[0]*e[0],n=e[1]*e[1],m=e[2]*e[2];return[t+r-n-m,2*(e[0]*e[1]-e[3]*e[2]),2*(e[0]*e[2]+e[3]*e[1]),0,2*(e[0]*e[1]+e[3]*e[2]),t-r+n-m,2*(e[1]*e[2]-e[3]*e[0]),0,2*(e[0]*e[2]-e[3]*e[1]),2*(e[1]*e[2]+e[3]*e[0]),t-r-n+m,0,0,0,0,1]}function setPerspective(e,t,r,n){var m=Math.tan(e*Math.PI/180);return[1/(m*t),0,0,0,0,1/m,0,0,0,0,-(n+r)/(n-r),-2*n*r/(n-r),0,0,-1,0]}function setLookAt(e,t,r){var n=[-t[0]+e[0],-t[1]+e[1],-t[2]+e[2]],m=n[2]*r[1]-n[1]*r[2],E=n[0]*r[2]-n[2]*r[0],i=n[1]*r[0]-n[0]*r[1],T=1/Math.sqrt(m*m+E*E+i*i),a=(i*=T)*n[1]-(E*=T)*n[2],R=(m*=T)*n[2]-i*n[0],o=E*n[0]-m*n[1];a*=T=1/Math.sqrt(a*a+R*R+o*o),R*=T,o*=T;var u=n[0],U=n[1],s=n[2];return u*=T=1/Math.sqrt(u*u+U*U+s*s),U*=T,s*=T,[m,E,i,-(m*e[0]+E*e[1]+i*e[2]),a,R,o,-(a*e[0]+R*e[1]+o*e[2]),u,U,s,-(u*e[0]+U*e[1]+s*e[2]),0,0,0,1]}function setOrtho(e,t,r,n,m,E){return[2/(t-e),0,0,(t+e)/(t-e),0,2/(n-r),0,(n+r)/(n-r),0,0,-2/(E-m),-(E+m)/(E-m),0,0,0,1]}function setTranslation(e){return[1,0,0,e[0],0,1,0,e[1],0,0,1,e[2],0,0,0,1]}function setScale(e){return[e[0],0,0,0,0,e[1],0,0,0,0,e[2],0,0,0,0,1]}function setProjection(e,t,r){var n=2/(e[3]+e[2]),m=2/(e[0]+e[1]);return[n,0,(e[3]-e[2])/(e[3]+e[2]),0,0,m,(e[0]-e[1])/(e[0]+e[1]),0,0,0,-(r+t)/(r-t),-2*r*t/(r-t),0,0,-1,0]}function invertFast(e){var t=[e[5]*e[10]*e[15]-e[5]*e[11]*e[14]-e[9]*e[6]*e[15]+e[9]*e[7]*e[14]+e[13]*e[6]*e[11]-e[13]*e[7]*e[10],-e[1]*e[10]*e[15]+e[1]*e[11]*e[14]+e[9]*e[2]*e[15]-e[9]*e[3]*e[14]-e[13]*e[2]*e[11]+e[13]*e[3]*e[10],e[1]*e[6]*e[15]-e[1]*e[7]*e[14]-e[5]*e[2]*e[15]+e[5]*e[3]*e[14]+e[13]*e[2]*e[7]-e[13]*e[3]*e[6],-e[1]*e[6]*e[11]+e[1]*e[7]*e[10]+e[5]*e[2]*e[11]-e[5]*e[3]*e[10]-e[9]*e[2]*e[7]+e[9]*e[3]*e[6],-e[4]*e[10]*e[15]+e[4]*e[11]*e[14]+e[8]*e[6]*e[15]-e[8]*e[7]*e[14]-e[12]*e[6]*e[11]+e[12]*e[7]*e[10],e[0]*e[10]*e[15]-e[0]*e[11]*e[14]-e[8]*e[2]*e[15]+e[8]*e[3]*e[14]+e[12]*e[2]*e[11]-e[12]*e[3]*e[10],-e[0]*e[6]*e[15]+e[0]*e[7]*e[14]+e[4]*e[2]*e[15]-e[4]*e[3]*e[14]-e[12]*e[2]*e[7]+e[12]*e[3]*e[6],e[0]*e[6]*e[11]-e[0]*e[7]*e[10]-e[4]*e[2]*e[11]+e[4]*e[3]*e[10]+e[8]*e[2]*e[7]-e[8]*e[3]*e[6],e[4]*e[9]*e[15]-e[4]*e[11]*e[13]-e[8]*e[5]*e[15]+e[8]*e[7]*e[13]+e[12]*e[5]*e[11]-e[12]*e[7]*e[9],-e[0]*e[9]*e[15]+e[0]*e[11]*e[13]+e[8]*e[1]*e[15]-e[8]*e[3]*e[13]-e[12]*e[1]*e[11]+e[12]*e[3]*e[9],e[0]*e[5]*e[15]-e[0]*e[7]*e[13]-e[4]*e[1]*e[15]+e[4]*e[3]*e[13]+e[12]*e[1]*e[7]-e[12]*e[3]*e[5],-e[0]*e[5]*e[11]+e[0]*e[7]*e[9]+e[4]*e[1]*e[11]-e[4]*e[3]*e[9]-e[8]*e[1]*e[7]+e[8]*e[3]*e[5],-e[4]*e[9]*e[14]+e[4]*e[10]*e[13]+e[8]*e[5]*e[14]-e[8]*e[6]*e[13]-e[12]*e[5]*e[10]+e[12]*e[6]*e[9],e[0]*e[9]*e[14]-e[0]*e[10]*e[13]-e[8]*e[1]*e[14]+e[8]*e[2]*e[13]+e[12]*e[1]*e[10]-e[12]*e[2]*e[9],-e[0]*e[5]*e[14]+e[0]*e[6]*e[13]+e[4]*e[1]*e[14]-e[4]*e[2]*e[13]-e[12]*e[1]*e[6]+e[12]*e[2]*e[5],e[0]*e[5]*e[10]-e[0]*e[6]*e[9]-e[4]*e[1]*e[10]+e[4]*e[2]*e[9]+e[8]*e[1]*e[6]-e[8]*e[2]*e[5]],r=e[0]*t[0]+e[1]*t[4]+e[2]*t[8]+e[3]*t[12];r=1/r;for(var n=0;n<16;n++)t[n]=t[n]*r;return t}function matMul(e,t){for(var r=[],n=0;n<4;n++){var m=e[4*n+0],E=e[4*n+1],i=e[4*n+2],T=e[4*n+3];r[4*n+0]=m*t[0]+E*t[4]+i*t[8]+T*t[12],r[4*n+1]=m*t[1]+E*t[5]+i*t[9]+T*t[13],r[4*n+2]=m*t[2]+E*t[6]+i*t[10]+T*t[14],r[4*n+3]=m*t[3]+E*t[7]+i*t[11]+T*t[15]}return r}function matMulpoint(e,t){return[e[0]*t[0]+e[1]*t[1]+e[2]*t[2]+e[3],e[4]*t[0]+e[5]*t[1]+e[6]*t[2]+e[7],e[8]*t[0]+e[9]*t[1]+e[10]*t[2]+e[11]]}function matMulvec(e,t){return[e[0]*t[0]+e[1]*t[1]+e[2]*t[2],e[4]*t[0]+e[5]*t[1]+e[6]*t[2],e[8]*t[0]+e[9]*t[1]+e[10]*t[2]]}function bound3(e){return[e,-e,e,-e,e,-e]}function bound3_include(e,t){return[t[0]<e[0]?t[0]:e[0],t[0]>e[1]?t[0]:e[1],t[1]<e[2]?t[1]:e[2],t[1]>e[3]?t[1]:e[3],t[2]<e[4]?t[2]:e[4],t[2]>e[5]?t[2]:e[5]]}function bound3_center(e){return[.5*(e[0]+e[1]),.5*(e[2]+e[3]),.5*(e[4]+e[5])]}function bound3_radius(e){return[.5*(e[1]-e[0]),.5*(e[3]-e[2]),.5*(e[5]-e[4])]}function WebVR(e,t){e(!1)}function htmlEntities(e){return String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;")}function piDisableTouch(){}piMesh.prototype.createCube=function(e){return this.mPrimitiveType=0,this.mChunks[0]={mVerts:new Float32Array([-1,-1,-1,1,-1,-1,-1,1,-1,1,1,-1,-1,-1,1,1,-1,1,-1,1,1,1,1,1]),mIndices:new Uint16Array([0,2,1,1,2,3,5,1,3,5,3,7,4,5,7,4,7,6,4,6,2,4,2,0,6,7,3,6,3,2,4,0,1,4,1,5]),mNumVertices:8,mNumFaces:12,mTransform:setIdentity(),mVBO:null,mIBO:null},this.mVertexFormat={mStride:12,mChannels:[{mNumComponents:3,mType:e.TYPE.FLOAT32,mNormalize:!1}]},!0},piMesh.prototype.createCubeSharp=function(e){return this.mPrimitiveType=0,this.mChunks[0]={mVerts:new Float32Array([-1,1,-1,0,1,0,0,0,-1,1,1,0,1,0,0,1,1,1,1,0,1,0,1,1,1,1,-1,0,1,0,1,0,-1,-1,1,0,0,1,0,0,1,-1,1,0,0,1,0,1,1,1,1,0,0,1,1,1,-1,1,1,0,0,1,1,0,1,1,1,1,0,0,0,0,1,-1,1,1,0,0,0,1,1,-1,-1,1,0,0,1,1,1,1,-1,1,0,0,1,0,1,-1,-1,0,0,-1,0,0,-1,-1,-1,0,0,-1,0,1,-1,1,-1,0,0,-1,1,1,1,1,-1,0,0,-1,1,0,-1,-1,1,0,-1,0,0,0,-1,-1,-1,0,-1,0,0,1,1,-1,-1,0,-1,0,1,1,1,-1,1,0,-1,0,1,0,-1,1,1,-1,0,0,0,0,-1,1,-1,-1,0,0,0,1,-1,-1,-1,-1,0,0,1,1,-1,-1,1,-1,0,0,1,0]),mIndices:new Uint16Array([0,1,2,0,2,3,4,5,6,4,6,7,8,9,10,8,10,11,12,13,14,12,14,15,16,17,18,16,18,19,20,21,22,20,22,23]),mNumVertices:24,mNumFaces:12,mTransform:setIdentity(),mVBO:null,mIBO:null},this.mVertexFormat={mStride:32,mChannels:[{mNumComponents:3,mType:e.TYPE.FLOAT32,mNormalize:!1},{mNumComponents:3,mType:e.TYPE.FLOAT32,mNormalize:!1},{mNumComponents:2,mType:e.TYPE.FLOAT32,mNormalize:!1}]},!0},piMesh.prototype.createUnitQuad=function(e){return this.mPrimitiveType=0,this.mVertexFormat={mStride:8,mChannels:[{mNumComponents:2,mType:e.TYPE.FLOAT32,mNormalize:!1}]},this.mChunks[0]={mVerts:new Float32Array([-1,-1,1,-1,-1,1,1,1]),mIndices:new Uint16Array([0,2,1,1,2,3]),mNumVertices:4,mNumFaces:2,mTransform:setIdentity(),mVBO:null,mIBO:null},!0},piMesh.prototype.destroy=function(){},piMesh.prototype.scale=function(e,t,r){for(var n=this.mVertexFormat.mStride/4,m=0;m<this.mChunks.length;m++)for(var E=this.mChunks[m].mNumVertices,i=0;i<E;i++)this.mChunks[m].mVerts[n*i+0]*=e,this.mChunks[m].mVerts[n*i+1]*=t,this.mChunks[m].mVerts[n*i+2]*=r},piMesh.prototype.translate=function(e,t,r){for(var n=this.mVertexFormat.mStride/4,m=0;m<this.mChunks.length;m++)for(var E=this.mChunks[m].mNumVertices,i=0;i<E;i++)this.mChunks[m].mVerts[n*i+0]+=e,this.mChunks[m].mVerts[n*i+1]+=t,this.mChunks[m].mVerts[n*i+2]+=r},piMesh.prototype.GPULoad=function(e){for(var t=0;t<this.mChunks.length;t++){var r=e.CreateVertexArray(this.mChunks[t].mVerts,e.BUFTYPE.STATIC);if(null==r)return!1;var n=e.CreateIndexArray(this.mChunks[t].mIndices,e.BUFTYPE.STATIC);if(null==n)return!1;this.mChunks[t].mVBO=r,this.mChunks[t].mIBO=n}return!0},piMesh.prototype.GPURender=function(e,t){for(var r=this.mChunks.length,n=0;n<r;n++)e.AttachVertexArray(this.mChunks[n].mVBO,this.mVertexFormat,t),e.AttachIndexArray(this.mChunks[n].mIBO),e.DrawPrimitive(e.PRIMTYPE.TRIANGLES,3*this.mChunks[n].mNumFaces,!0,1),e.DetachIndexArray(this.mChunks[n].mIBO),e.DetachVertexArray(this.mChunks[n].mVBO,this.mVertexFormat)},WebVR.prototype.IsSupported=function(){return!1},WebVR.prototype.GetData=function(e){return{}},WebVR.prototype.Enable=function(e){},WebVR.prototype.Disable=function(e){},WebVR.prototype.RequestAnimationFrame=function(e){},WebVR.prototype.IsPresenting=function(e){return!1},WebVR.prototype.Finish=function(e){};var piGetTime=function(e){return 0==e?"":new Date(1e3*e).toISOString().substr(0,10)};function piGetCoords(e){var t=0,r=0;do{t+=e.offsetLeft,r+=e.offsetTop}while(e=e.offsetParent);return{mX:t,mY:r}}function piGetMouseCoords(e,t){var r=piGetCoords(t);return{mX:(e.pageX-r.mX)*t.width/t.offsetWidth,mY:t.height-(e.pageY-r.mY)*t.height/t.offsetHeight}}function piGetSourceElement(e){var t=null;return e.target&&(t=e.target),e.srcElement&&(t=e.srcElement),t}function piRequestFullScreen(e){}function piIsFullScreen(){return!1}function piExitFullScreen(){}function piIsMobile(){return!1}function piCreateGlContext(e,t,r,n,m){var E={alpha:t,depth:r,stencil:!1,premultipliedAlpha:!1,antialias:m,preserveDrawingBuffer:n,powerPreference:"high-performance"},i=null;return null===i&&(i=e.getContext("webgl2",E)),null===i&&(i=e.getContext("experimental-webgl2",E)),null===i&&(i=e.getContext("webgl",E)),null===i&&(i=e.getContext("experimental-webgl",E)),i}function piCreateAudioContext(){return null}function piHexColorToRGB(e){var t=parseInt(e.slice(1),16);return[t>>16&255,t>>8&255,t>>0&255]}function piCreateFPSCounter(){var e,t,r;return{Reset:function(n){e=0,t=n,r=60},Count:function(n){return e++,n-t>500&&(r=1e3*e/(n-t),e=0,t=n,!0)},GetFPS:function(){return r}}}function piCanMediaRecorded(e){return!0}function piCreateMediaRecorder(e,t){if(0==piCanMediaRecorded(t))return null;var r={audioBitsPerSecond:0,videoBitsPerSecond:8e6};MediaRecorder.isTypeSupported("video/webm;codecs=h264")?r.mimeType="video/webm;codecs=h264":MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?r.mimeType="video/webm;codecs=vp9":MediaRecorder.isTypeSupported("video/webm;codecs=vp8")?r.mimeType="video/webm;codecs=vp8":r.mimeType="video/webm;";var n=new MediaRecorder(t.captureStream(),r),m=[];return n.ondataavailable=function(e){e.data.size>0&&m.push(e.data)},n.onstart=function(){e(!0)},n.onstop=function(){e(!1)},n}function piExportToEXR(e,t,r,n,m){var E=0;"Uint"==n?E=4:"Half"==n?E=2:"Float"==n&&(E=4);var i=new ArrayBuffer(18*r+1+258+8*t+t*(8+r*E*e)),T=new DataView(i),a=0;T.setUint8(a++,118),T.setUint8(a++,47),T.setUint8(a++,49),T.setUint8(a++,1),T.setUint8(a++,2),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,99),T.setUint8(a++,104),T.setUint8(a++,97),T.setUint8(a++,110),T.setUint8(a++,110),T.setUint8(a++,101),T.setUint8(a++,108),T.setUint8(a++,115),T.setUint8(a++,0),T.setUint8(a++,99),T.setUint8(a++,104),T.setUint8(a++,108),T.setUint8(a++,105),T.setUint8(a++,115),T.setUint8(a++,116),T.setUint8(a++,0);var R,o=18*r+1;for(T.setUint8(a++,o),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),R=0;R<r;R++)0==R?T.setUint8(a++,66):1==R?T.setUint8(a++,71):2==R&&T.setUint8(a++,82),T.setUint8(a++,0),"Uint"==n?T.setUint8(a++,0):"Half"==n?T.setUint8(a++,1):"Float"==n&&T.setUint8(a++,2),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,1),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,1),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,1),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0);T.setUint8(a++,0),T.setUint8(a++,99),T.setUint8(a++,111),T.setUint8(a++,109),T.setUint8(a++,112),T.setUint8(a++,114),T.setUint8(a++,101),T.setUint8(a++,115),T.setUint8(a++,115),T.setUint8(a++,105),T.setUint8(a++,111),T.setUint8(a++,110),T.setUint8(a++,0),T.setUint8(a++,99),T.setUint8(a++,111),T.setUint8(a++,109),T.setUint8(a++,112),T.setUint8(a++,114),T.setUint8(a++,101),T.setUint8(a++,115),T.setUint8(a++,115),T.setUint8(a++,105),T.setUint8(a++,111),T.setUint8(a++,110),T.setUint8(a++,0),T.setUint8(a++,1),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,100),T.setUint8(a++,97),T.setUint8(a++,116),T.setUint8(a++,97),T.setUint8(a++,87),T.setUint8(a++,105),T.setUint8(a++,110),T.setUint8(a++,100),T.setUint8(a++,111),T.setUint8(a++,119),T.setUint8(a++,0),T.setUint8(a++,98),T.setUint8(a++,111),T.setUint8(a++,120),T.setUint8(a++,50),T.setUint8(a++,105),T.setUint8(a++,0),T.setUint8(a++,16),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint32(a,e-1,!0),a+=4,T.setUint32(a,t-1,!0),a+=4,T.setUint8(a++,100),T.setUint8(a++,105),T.setUint8(a++,115),T.setUint8(a++,112),T.setUint8(a++,108),T.setUint8(a++,97),T.setUint8(a++,121),T.setUint8(a++,87),T.setUint8(a++,105),T.setUint8(a++,110),T.setUint8(a++,100),T.setUint8(a++,111),T.setUint8(a++,119),T.setUint8(a++,0),T.setUint8(a++,98),T.setUint8(a++,111),T.setUint8(a++,120),T.setUint8(a++,50),T.setUint8(a++,105),T.setUint8(a++,0),T.setUint8(a++,16),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint32(a,e-1,!0),a+=4,T.setUint32(a,t-1,!0),a+=4,T.setUint8(a++,108),T.setUint8(a++,105),T.setUint8(a++,110),T.setUint8(a++,101),T.setUint8(a++,79),T.setUint8(a++,114),T.setUint8(a++,100),T.setUint8(a++,101),T.setUint8(a++,114),T.setUint8(a++,0),T.setUint8(a++,108),T.setUint8(a++,105),T.setUint8(a++,110),T.setUint8(a++,101),T.setUint8(a++,79),T.setUint8(a++,114),T.setUint8(a++,100),T.setUint8(a++,101),T.setUint8(a++,114),T.setUint8(a++,0),T.setUint8(a++,1),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,112),T.setUint8(a++,105),T.setUint8(a++,120),T.setUint8(a++,101),T.setUint8(a++,108),T.setUint8(a++,65),T.setUint8(a++,115),T.setUint8(a++,112),T.setUint8(a++,101),T.setUint8(a++,99),T.setUint8(a++,116),T.setUint8(a++,82),T.setUint8(a++,97),T.setUint8(a++,116),T.setUint8(a++,105),T.setUint8(a++,111),T.setUint8(a++,0),T.setUint8(a++,102),T.setUint8(a++,108),T.setUint8(a++,111),T.setUint8(a++,97),T.setUint8(a++,116),T.setUint8(a++,0),T.setUint8(a++,4),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,128),T.setUint8(a++,63),T.setUint8(a++,115),T.setUint8(a++,99),T.setUint8(a++,114),T.setUint8(a++,101),T.setUint8(a++,101),T.setUint8(a++,110),T.setUint8(a++,87),T.setUint8(a++,105),T.setUint8(a++,110),T.setUint8(a++,100),T.setUint8(a++,111),T.setUint8(a++,119),T.setUint8(a++,67),T.setUint8(a++,101),T.setUint8(a++,110),T.setUint8(a++,116),T.setUint8(a++,101),T.setUint8(a++,114),T.setUint8(a++,0),T.setUint8(a++,118),T.setUint8(a++,50),T.setUint8(a++,102),T.setUint8(a++,0),T.setUint8(a++,8),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,115),T.setUint8(a++,99),T.setUint8(a++,114),T.setUint8(a++,101),T.setUint8(a++,101),T.setUint8(a++,110),T.setUint8(a++,87),T.setUint8(a++,105),T.setUint8(a++,110),T.setUint8(a++,100),T.setUint8(a++,111),T.setUint8(a++,119),T.setUint8(a++,87),T.setUint8(a++,105),T.setUint8(a++,100),T.setUint8(a++,116),T.setUint8(a++,104),T.setUint8(a++,0),T.setUint8(a++,102),T.setUint8(a++,108),T.setUint8(a++,111),T.setUint8(a++,97),T.setUint8(a++,116),T.setUint8(a++,0),T.setUint8(a++,4),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,0),T.setUint8(a++,128),T.setUint8(a++,63),T.setUint8(a++,0);for(var u=a+8*t,U=0;U<t;U++){var s=u+U*(8+e*E*r);T.setUint32(a,s,!0),a+=4,T.setUint32(a,0,!0),a+=4}for(U=0;U<t;U++){T.setUint32(a,U,!0),a+=4;var _=e*r*E;T.setUint32(a,_,!0),a+=4;for(var l=0;l<r;l++)for(var f=0;f<e;f++){var A=m[(t-1-U)*e*4+4*f+(2-l)];"Float"==n?T.setFloat32(a,A,!0):"Half"==n&&T.setUint16(a,A,!0),a+=E}}return new Blob([i],{type:"application/octet-stream"})}function piExportToWAV(e,t,r,n,m){let E=e*n*r/8,i=new ArrayBuffer(44+E),T=new DataView(i);T.setUint32(0,1179011410,!0),T.setUint32(4,E+36,!0),T.setUint32(8,1163280727,!0),T.setUint32(12,544501094,!0),T.setUint32(16,16,!0),T.setUint16(20,1,!0),T.setUint16(22,n,!0),T.setUint32(24,t,!0),T.setUint32(28,t*n*r/8,!0),T.setUint16(32,n*r/8,!0),T.setUint16(34,r,!0),T.setUint32(36,1635017060,!0);{T.setUint32(40,E,!0);let t=e*n;for(let e=0;e<t;e++)T.setInt16(44+2*e,m[e],!0)}return new Blob([i],{type:"application/octet-stream"})}function piTriggerDownload(e,t){}
+"use strict"
+
+//==============================================================================
+//
+// piLibs 2015-2017 - http://www.iquilezles.org/www/material/piLibs/piLibs.htm
+//
+// piCamera
+//
+//==============================================================================
+
+function piCamera()
+{
+    var mMatrix = setIdentity();
+    var mMatrixInv = setIdentity();
+
+    var mPosition = [0.0,0.0,0.0];
+    var mXRotation = 0.0;
+    var mYRotation = 0.0;
+
+    var mPositionTarget = [0.0,0.0,0.0];
+    var mXRotationTarget = 0.0;
+    var mYRotationTarget = 0.0;
+
+    var me = {};
+
+    me.SetPos = function(pos)
+                {
+                    mPosition = pos;
+                };
+
+    me.LocalMove = function( dis )
+                    {
+                        dis = matMulvec( setRotationY(-mYRotation), dis);
+                        mPositionTarget = sub(mPositionTarget,dis)
+                    };
+
+    me.RotateXY = function( x, y)
+                  {
+                    mXRotationTarget -= x;
+                    mYRotationTarget -= y;
+                    mXRotationTarget = Math.min( Math.max( mXRotationTarget, -Math.PI/2), Math.PI/2 );
+                  };
+
+
+    me.CameraExectue = function( dt )
+    {
+        // smooth position
+        mXRotation += (mXRotationTarget-mXRotation) * 12.0*dt;
+        mYRotation += (mYRotationTarget-mYRotation) * 12.0*dt;
+        mPosition = add(mPosition, mul( sub(mPositionTarget, mPosition), 12.0*dt));
+
+        // Make Camera matrix
+        mMatrix = matMul( matMul(setRotationX(mXRotation),
+                                 setRotationY(mYRotation)),
+                                 setTranslation(mPosition));
+        mMatrixInv = invertFast(mMatrix);
+
+    }
+
+    me.GetMatrix = function() { return mMatrix; };
+    me.GetMatrixInverse = function() { return mMatrixInv; };
+    me.SetMatrix = function( mat )
+                    {
+                        mMatrix = mat;
+                        mMatrixInv = invertFast(mMatrix);
+
+                        mPosition = getXYZ(matMulpoint(mat, [0.0,0.0,0.0]));
+                        mPositionTarget = mPosition;
+                    };
+
+    me.GetPos = function() { return getXYZ(matMulpoint(mMatrixInv, [0.0,0.0,0.0])); }
+    me.GetDir = function() { return getXYZ(normalize(matMulvec(mMatrixInv, [0.0,0.0,-1.0]))); }
+
+    return me;
+}
+//==============================================================================
+//
+// piLibs 2015-2017 - http://www.iquilezles.org/www/material/piLibs/piLibs.htm
+//
+// piFile
+//
+//==============================================================================
+
+function piFile( binaryDataArrayBuffer )
+{
+    // private
+    var mDataView = binaryDataArrayBuffer;
+    var mOffset = 0;
+
+    // public members
+    var me = {};
+    me.mDummy = 0;
+
+    me.Seek = function( off ) { mOffset = off; };
+    me.ReadUInt8  = function()  { var res = (new Uint8Array(mDataView,mOffset))[0]; mOffset+=1; return res; };
+    me.ReadUInt16 = function()  { var res = (new Uint16Array(mDataView,mOffset))[0]; mOffset+=2; return res; };
+    me.ReadUInt32 = function()  { var res = (new Uint32Array(mDataView,mOffset))[0]; mOffset+=4; return res; };
+    me.ReadUInt64 = function()  { return me.ReadUInt32() + (me.ReadUInt32()<<32); };
+    me.ReadFloat32 = function() { var res = (new Float32Array(mDataView,mOffset))[0]; mOffset+=4; return res; };
+    me.ReadFloat32Array = function(n)
+                          {
+                              var src = new Float32Array(mDataView, mOffset);
+                              var res = [];  for( var i=0; i<n; i++ ) { res[i] = src[i]; }
+                              mOffset += 4*n;
+                              return res;
+                          };
+    me.ReadFloat32ArrayNative = function(n) { var src = new Float32Array(mDataView, mOffset); mOffset += 4*n; return src; };
+    return me;
+}
+//==============================================================================
+//
+// piLibs 2015-2017 - http://www.iquilezles.org/www/material/piLibs/piLibs.htm
+//
+// piMesh
+//
+//==============================================================================
+
+function piMesh()
+{
+    this.mChunks = [];
+    this.mPrimitiveType = 0;
+    this.mVertexFormat = null;
+}
+
+piMesh.prototype.createCube = function(renderer)
+{
+    this.mPrimitiveType = 0;
+
+    this.mChunks[0] = { mVerts : new Float32Array([ -1.0, -1.0, -1.0,
+                                       1.0, -1.0, -1.0,
+                                      -1.0,  1.0, -1.0,
+                                       1.0,  1.0, -1.0,
+                                      -1.0, -1.0,  1.0,
+                                       1.0, -1.0,  1.0,
+                                      -1.0,  1.0,  1.0,
+                                       1.0,  1.0,  1.0 ]),
+
+                        mIndices : new Uint16Array([ 0, 2, 1,   1, 2, 3,   5, 1, 3,   5, 3, 7,   4, 5, 7,   4, 7, 6,   4, 6, 2,   4, 2, 0,   6, 7, 3,   6, 3, 2,   4, 0, 1,   4, 1, 5 ]),
+                        mNumVertices : 8,
+                        mNumFaces : 12,
+                        mTransform : setIdentity(),
+                        mVBO : null,
+                        mIBO : null };
+
+    this.mVertexFormat = { mStride:12, mChannels:[ { mNumComponents:3, mType: renderer.TYPE.FLOAT32, mNormalize: false } ] };
+
+    return true;
+}
+
+piMesh.prototype.createCubeSharp = function (renderer)
+{
+    this.mPrimitiveType = 0;
+
+    this.mChunks[0] = { mVerts : new Float32Array([-1.0, 1.0,-1.0,   0.0, 1.0, 0.0,   0.0, 0.0,
+                                    -1.0, 1.0, 1.0,   0.0, 1.0, 0.0,   0.0, 1.0,
+                                     1.0, 1.0, 1.0,   0.0, 1.0, 0.0,   1.0, 1.0,
+                                     1.0, 1.0,-1.0,   0.0, 1.0, 0.0,   1.0, 0.0,
+
+                                    -1.0,-1.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0,
+                                     1.0,-1.0, 1.0,   0.0, 0.0, 1.0,   0.0, 1.0,
+                                     1.0, 1.0, 1.0,   0.0, 0.0, 1.0,   1.0, 1.0,
+                                    -1.0, 1.0, 1.0,   0.0, 0.0, 1.0,   1.0, 0.0,
+
+                                     1.0, 1.0, 1.0,   1.0, 0.0, 0.0,   0.0, 0.0,
+                                     1.0,-1.0, 1.0,   1.0, 0.0, 0.0,   0.0, 1.0,
+                                     1.0,-1.0,-1.0,   1.0, 0.0, 0.0,   1.0, 1.0,
+                                     1.0, 1.0,-1.0,   1.0, 0.0, 0.0,   1.0, 0.0,
+
+                                     1.0,-1.0,-1.0,   0.0, 0.0,-1.0,   0.0, 0.0,
+                                    -1.0,-1.0,-1.0,   0.0, 0.0,-1.0,   0.0, 1.0,
+                                    -1.0, 1.0,-1.0,   0.0, 0.0,-1.0,   1.0, 1.0,
+                                     1.0, 1.0,-1.0,   0.0, 0.0,-1.0,   1.0, 0.0,
+
+                                    -1.0,-1.0, 1.0,   0.0,-1.0, 0.0,   0.0, 0.0,
+                                    -1.0,-1.0,-1.0,   0.0,-1.0, 0.0,   0.0, 1.0,
+                                     1.0,-1.0,-1.0,   0.0,-1.0, 0.0,   1.0, 1.0,
+                                     1.0,-1.0, 1.0,   0.0,-1.0, 0.0,   1.0, 0.0,
+
+                                    -1.0, 1.0, 1.0,  -1.0, 0.0, 0.0,   0.0, 0.0,
+                                    -1.0, 1.0,-1.0,  -1.0, 0.0, 0.0,   0.0, 1.0,
+                                    -1.0,-1.0,-1.0,  -1.0, 0.0, 0.0,   1.0, 1.0,
+                                    -1.0,-1.0, 1.0,  -1.0, 0.0, 0.0,   1.0, 0.0 ]),
+
+                        mIndices : new Uint16Array([0,1,2, 0,2,3,   4,5,6, 4,6,7,    8,9,10,8,10,11,   12,13,14,12,14,15,   16,17,18,16,18,19,   20,21,22,20,22,23]),
+                        mNumVertices : 24,
+                        mNumFaces : 12,
+                        mTransform : setIdentity(),
+                        mVBO : null,
+                        mIBO : null };
+
+
+    this.mVertexFormat = { mStride:32, mChannels:[ { mNumComponents:3, mType: renderer.TYPE.FLOAT32, mNormalize: false },
+                                                   { mNumComponents:3, mType: renderer.TYPE.FLOAT32, mNormalize: false },
+                                                   { mNumComponents:2, mType: renderer.TYPE.FLOAT32, mNormalize: false } ] };
+
+    return true;
+}
+
+
+piMesh.prototype.createUnitQuad = function (renderer)
+{
+    this.mPrimitiveType = 0;
+    this.mVertexFormat = { mStride:8, mChannels: [ {mNumComponents:2, mType: renderer.TYPE.FLOAT32, mNormalize: false} ] };
+
+    this.mChunks[0] = { mVerts : new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0,  1.0, 1.0,  1.0]),
+                        mIndices : new Uint16Array([0, 2, 1, 1, 2, 3]),
+                        mNumVertices : 4,
+                        mNumFaces : 2,
+                        mTransform : setIdentity(),
+                        mVBO : null,
+                        mIBO : null };
+
+    return true;
+}
+
+
+
+
+piMesh.prototype.destroy = function()
+{ }
+
+piMesh.prototype.scale = function (x, y, z)
+{
+    var stride = this.mVertexFormat.mStride/4;
+    for( var j=0; j<this.mChunks.length; j++ )
+    {
+        var nv = this.mChunks[j].mNumVertices;
+        for (var i = 0; i < nv; i++)
+        {
+            this.mChunks[j].mVerts[stride * i + 0] *= x;
+            this.mChunks[j].mVerts[stride * i + 1] *= y;
+            this.mChunks[j].mVerts[stride * i + 2] *= z;
+        }
+    }
+}
+
+piMesh.prototype.translate = function (x, y, z)
+{
+    var stride = this.mVertexFormat.mStride/4;
+    for( var j=0; j<this.mChunks.length; j++ )
+    {
+        var nv = this.mChunks[j].mNumVertices;
+        for (var i = 0; i < nv; i++)
+        {
+            this.mChunks[j].mVerts[stride * i + 0] += x;
+            this.mChunks[j].mVerts[stride * i + 1] += y;
+            this.mChunks[j].mVerts[stride * i + 2] += z;
+        }
+    }
+}
+
+piMesh.prototype.GPULoad = function (renderer)
+{
+    for( var i=0; i<this.mChunks.length; i++ )
+    {
+        var vbo = renderer.CreateVertexArray(this.mChunks[i].mVerts, renderer.BUFTYPE.STATIC );
+        if (vbo == null)
+            return false;
+
+        var ibo = renderer.CreateIndexArray(this.mChunks[i].mIndices, renderer.BUFTYPE.STATIC);
+        if (ibo == null)
+            return false;
+
+        this.mChunks[i].mVBO = vbo;
+        this.mChunks[i].mIBO = ibo;
+    }
+    return true;
+}
+
+piMesh.prototype.GPURender = function (renderer, positions )//, matPrj, matCam )
+{
+    var num = this.mChunks.length;
+    for( var i=0; i<num; i++ )
+    {
+        renderer.AttachVertexArray(this.mChunks[i].mVBO, this.mVertexFormat, positions );
+        renderer.AttachIndexArray(this.mChunks[i].mIBO );
+        renderer.DrawPrimitive(renderer.PRIMTYPE.TRIANGLES, this.mChunks[i].mNumFaces * 3, true, 1);
+        renderer.DetachIndexArray(this.mChunks[i].mIBO);
+        renderer.DetachVertexArray(this.mChunks[i].mVBO, this.mVertexFormat );
+    }
+}
+//==============================================================================
+//
+// piLibs 2014-2017 - http://www.iquilezles.org/www/material/piLibs/piLibs.htm
+//
+// piRenderer
+//
+//==============================================================================
+
+function piRenderer()
+{
+    // private members
+
+    var mGL = null;
+    var mBindedShader = null;
+    var mIs20 = false;
+    var mFloat32Textures;
+    var mFloat32Filter;
+    var mFloat16Textures;
+    var mDrawBuffers;
+    var mDepthTextures;
+    var mDerivatives;
+    var mFloat16Filter;
+    var mShaderTextureLOD;
+    var mAnisotropic;
+    var mRenderToFloat32F;
+    var mDebugShader;
+    var mAsynchCompile;
+
+    var mVBO_Quad = null;
+    var mVBO_Tri = null;
+    var mVBO_CubePosNor = null;
+    var mVBO_CubePos = null;
+    var mShaderHeader = ["",""];
+    var mShaderHeaderLines = [0,0];
+
+    // public members
+    var me = {};
+
+    me.CLEAR      = { Color: 1, Zbuffer : 2, Stencil : 4 };
+    me.TEXFMT     = { C4I8 : 0, C1I8 : 1, C1F16 : 2, C4F16 : 3, C1F32 : 4, C4F32 : 5, Z16 : 6, Z24 : 7, Z32 : 8, C3F32:9 };
+    me.TEXWRP     = { CLAMP : 0, REPEAT : 1 };
+    me.BUFTYPE    = { STATIC : 0, DYNAMIC : 1 };
+    me.PRIMTYPE   = { POINTS : 0, LINES : 1, LINE_LOOP : 2, LINE_STRIP : 3, TRIANGLES : 4, TRIANGLE_STRIP : 5 };
+    me.RENDSTGATE = { WIREFRAME : 0, FRONT_FACE : 1, CULL_FACE : 2, DEPTH_TEST : 3, ALPHA_TO_COVERAGE : 4 };
+    me.TEXTYPE    = { T2D : 0, T3D : 1, CUBEMAP : 2 };
+    me.FILTER     = { NONE : 0, LINEAR : 1, MIPMAP : 2, NONE_MIPMAP : 3 };
+    me.TYPE       = { UINT8 : 0, UINT16 : 1, UINT32 : 2, FLOAT16: 3, FLOAT32 : 4, FLOAT64: 5 };
+
+    // private functions
+
+    var iFormatPI2GL = function( format )
+    {
+        if( mIs20 )
+        {
+             if (format === me.TEXFMT.C4I8)  return { mGLFormat: mGL.RGBA8,           mGLExternal: mGL.RGBA,             mGLType: mGL.UNSIGNED_BYTE }
+        else if (format === me.TEXFMT.C1I8)  return { mGLFormat: mGL.R8,              mGLExternal: mGL.RED,              mGLType: mGL.UNSIGNED_BYTE }
+        else if (format === me.TEXFMT.C1F16) return { mGLFormat: mGL.R16F,            mGLExternal: mGL.RED,              mGLType: mGL.FLOAT }
+        else if (format === me.TEXFMT.C4F16) return { mGLFormat: mGL.RGBA16F,         mGLExternal: mGL.RGBA,             mGLType: mGL.FLOAT }
+        else if (format === me.TEXFMT.C1F32) return { mGLFormat: mGL.R32F,            mGLExternal: mGL.RED,              mGLType: mGL.FLOAT }
+        else if (format === me.TEXFMT.C4F32) return { mGLFormat: mGL.RGBA32F,         mGLExternal: mGL.RGBA,             mGLType: mGL.FLOAT }
+        else if (format === me.TEXFMT.C3F32) return { mGLFormat: mGL.RGB32F,          mGLExternal: mGL.RGB,              mGLType: mGL.FLOAT }
+        else if (format === me.TEXFMT.Z16)   return { mGLFormat: mGL.DEPTH_COMPONENT16, mGLExternal: mGL.DEPTH_COMPONENT,  mGLType: mGL.UNSIGNED_SHORT }
+        else if (format === me.TEXFMT.Z24)   return { mGLFormat: mGL.DEPTH_COMPONENT24, mGLExternal: mGL.DEPTH_COMPONENT,  mGLType: mGL.UNSIGNED_SHORT }
+        else if (format === me.TEXFMT.Z32)   return { mGLFormat: mGL.DEPTH_COMPONENT32F, mGLExternal: mGL.DEPTH_COMPONENT,  mGLType: mGL.UNSIGNED_SHORT }
+        }
+        else
+        {
+             if (format === me.TEXFMT.C4I8)  return { mGLFormat: mGL.RGBA,            mGLExternal: mGL.RGBA,            mGLType: mGL.UNSIGNED_BYTE }
+        else if (format === me.TEXFMT.C1I8)  return { mGLFormat: mGL.LUMINANCE,       mGLExternal: mGL.LUMINANCE,       mGLType: mGL.UNSIGNED_BYTE }
+        else if (format === me.TEXFMT.C1F16) return { mGLFormat: mGL.LUMINANCE,       mGLExternal: mGL.LUMINANCE,       mGLType: mGL.FLOAT }
+        else if (format === me.TEXFMT.C4F16) return { mGLFormat: mGL.RGBA,            mGLExternal: mGL.RGBA,            mGLType: mGL.FLOAT }
+        else if (format === me.TEXFMT.C1F32) return { mGLFormat: mGL.LUMINANCE,       mGLExternal: mGL.RED,             mGLType: mGL.FLOAT }
+        else if (format === me.TEXFMT.C4F32) return { mGLFormat: mGL.RGBA,            mGLExternal: mGL.RGBA,            mGLType: mGL.FLOAT }
+        else if (format === me.TEXFMT.Z16)   return { mGLFormat: mGL.DEPTH_COMPONENT, mGLExternal: mGL.DEPTH_COMPONENT, mGLType: mGL.UNSIGNED_SHORT }
+        }
+
+        return null;
+     }
+
+    // public functions
+
+    me.Initialize = function( gl )
+                    {
+                        mGL = gl;
+
+                        mIs20 = !(gl instanceof WebGLRenderingContext);
+
+                        if( mIs20 )
+                        {
+                            mFloat32Textures  = true;
+                            mFloat32Filter    = mGL.getExtension( 'OES_texture_float_linear');
+                            mFloat16Textures  = true;
+                            mFloat16Filter    = mGL.getExtension( 'OES_texture_half_float_linear' );
+                            mDerivatives      = true;
+                            mDrawBuffers      = true;
+                            mDepthTextures    = true;
+                            mShaderTextureLOD = true;
+                            mAnisotropic = mGL.getExtension( 'EXT_texture_filter_anisotropic' );
+                            mRenderToFloat32F = mGL.getExtension( 'EXT_color_buffer_float');
+                            mDebugShader = mGL.getExtension('WEBGL_debug_shaders');
+                            mAsynchCompile = mGL.getExtension('KHR_parallel_shader_compile');
+
+							mGL.hint( mGL.FRAGMENT_SHADER_DERIVATIVE_HINT, mGL.NICEST);
+                        }
+                        else
+                        {
+                            mFloat32Textures  = mGL.getExtension( 'OES_texture_float' );
+                            mFloat32Filter    = mGL.getExtension( 'OES_texture_float_linear');
+                            mFloat16Textures  = mGL.getExtension( 'OES_texture_half_float' );
+                            mFloat16Filter    = mGL.getExtension( 'OES_texture_half_float_linear' );
+                            mDerivatives      = mGL.getExtension( 'OES_standard_derivatives' );
+                            mDrawBuffers      = mGL.getExtension( 'WEBGL_draw_buffers' );
+                            mDepthTextures    = mGL.getExtension( 'WEBGL_depth_texture' );
+                            mShaderTextureLOD = mGL.getExtension( 'EXT_shader_texture_lod' );
+                            mAnisotropic      = mGL.getExtension( 'EXT_texture_filter_anisotropic' );
+                            mRenderToFloat32F = mFloat32Textures;
+                            mDebugShader      = null;
+                            mAsynchCompile    = null;
+
+							if( mDerivatives !== null) mGL.hint( mDerivatives.FRAGMENT_SHADER_DERIVATIVE_HINT_OES, mGL.NICEST);
+                        }
+
+
+                        var maxTexSize = mGL.getParameter( mGL.MAX_TEXTURE_SIZE );
+                        var maxCubeSize = mGL.getParameter( mGL.MAX_CUBE_MAP_TEXTURE_SIZE );
+                        var maxRenderbufferSize = mGL.getParameter( mGL.MAX_RENDERBUFFER_SIZE );
+                        var extensions = mGL.getSupportedExtensions();
+                        var textureUnits = mGL.getParameter( mGL.MAX_TEXTURE_IMAGE_UNITS );
+                        console.log("WebGL (2.0=" + mIs20 + "):" +
+                                    " Asynch Compile: "  + ((mAsynchCompile !==null) ? "yes" : "no") +
+                                    ", Textures: F32 ["   + ((mFloat32Textures !==null) ? "yes" : "no") +
+                                    "], F16 ["   + ((mFloat16Textures !==null) ? "yes" : "no") +
+                                    "], Depth [" + ((mDepthTextures   !==null) ? "yes" : "no") +
+                                    "], LOD ["    + ((mShaderTextureLOD!==null) ? "yes" : "no") +
+                                    "], Aniso ["   + ((mAnisotropic     !==null) ? "yes" : "no") +
+                                    "], Units [" + textureUnits +
+                                    "], Max Size [" + maxTexSize +
+                                    "], Cube Max Size [" + maxCubeSize +
+                                    "], Targets: MRT ["            + ((mDrawBuffers     !==null) ? "yes" : "no") +
+                                    "], F32 ["     + ((mRenderToFloat32F!==null) ? "yes" : "no") +
+                                    "], Max Size [" + maxRenderbufferSize + "]");
+
+                        // create a 2D quad Vertex Buffer
+                        var vertices = new Float32Array( [ -1.0, -1.0,   1.0, -1.0,    -1.0,  1.0,     1.0, -1.0,    1.0,  1.0,    -1.0,  1.0] );
+                        mVBO_Quad = mGL.createBuffer();
+                        mGL.bindBuffer( mGL.ARRAY_BUFFER, mVBO_Quad );
+                        mGL.bufferData( mGL.ARRAY_BUFFER, vertices, mGL.STATIC_DRAW );
+                        mGL.bindBuffer( mGL.ARRAY_BUFFER, null );
+
+                        // create a 2D triangle Vertex Buffer
+                        mVBO_Tri = mGL.createBuffer();
+                        mGL.bindBuffer( mGL.ARRAY_BUFFER, mVBO_Tri );
+                        mGL.bufferData( mGL.ARRAY_BUFFER, new Float32Array( [ -1.0, -1.0,   3.0, -1.0,    -1.0,  3.0] ), mGL.STATIC_DRAW );
+                        mGL.bindBuffer( mGL.ARRAY_BUFFER, null );
+
+                        // create a 3D cube Vertex Buffer
+                        mVBO_CubePosNor = mGL.createBuffer();
+                        mGL.bindBuffer( mGL.ARRAY_BUFFER, mVBO_CubePosNor );
+                        mGL.bufferData( mGL.ARRAY_BUFFER, new Float32Array( [ -1.0, -1.0, -1.0,  -1.0,  0.0,  0.0,
+                                                                              -1.0, -1.0,  1.0,  -1.0,  0.0,  0.0,
+                                                                              -1.0,  1.0, -1.0,  -1.0,  0.0,  0.0,
+                                                                              -1.0,  1.0,  1.0,  -1.0,  0.0,  0.0,
+                                                                               1.0,  1.0, -1.0,   1.0,  0.0,  0.0,
+                                                                               1.0,  1.0,  1.0,   1.0,  0.0,  0.0,
+                                                                               1.0, -1.0, -1.0,   1.0,  0.0,  0.0,
+                                                                               1.0, -1.0,  1.0,   1.0,  0.0,  0.0,
+                                                                               1.0,  1.0,  1.0,   0.0,  1.0,  0.0,
+                                                                               1.0,  1.0, -1.0,   0.0,  1.0,  0.0,
+                                                                              -1.0,  1.0,  1.0,   0.0,  1.0,  0.0,
+                                                                              -1.0,  1.0, -1.0,   0.0,  1.0,  0.0,
+                                                                               1.0, -1.0, -1.0,   0.0, -1.0,  0.0,
+                                                                               1.0, -1.0,  1.0,   0.0, -1.0,  0.0,
+                                                                              -1.0, -1.0, -1.0,   0.0, -1.0,  0.0,
+                                                                              -1.0, -1.0,  1.0,   0.0, -1.0,  0.0,
+                                                                              -1.0,  1.0,  1.0,   0.0,  0.0,  1.0,
+                                                                              -1.0, -1.0,  1.0,   0.0,  0.0,  1.0,
+                                                                               1.0,  1.0,  1.0,   0.0,  0.0,  1.0,
+                                                                               1.0, -1.0,  1.0,   0.0,  0.0,  1.0,
+                                                                              -1.0, -1.0, -1.0,   0.0,  0.0, -1.0,
+                                                                              -1.0,  1.0, -1.0,   0.0,  0.0, -1.0,
+                                                                               1.0, -1.0, -1.0,   0.0,  0.0, -1.0,
+                                                                               1.0,  1.0, -1.0,   0.0,  0.0, -1.0 ] ), mGL.STATIC_DRAW );
+                        mGL.bindBuffer( mGL.ARRAY_BUFFER, null );
+
+                        // create a 3D cube Vertex Buffer
+                        mVBO_CubePos = mGL.createBuffer();
+                        mGL.bindBuffer( mGL.ARRAY_BUFFER, mVBO_CubePos );
+                        mGL.bufferData( mGL.ARRAY_BUFFER, new Float32Array( [ -1.0, -1.0, -1.0,
+                                                                              -1.0, -1.0,  1.0,
+                                                                              -1.0,  1.0, -1.0,
+                                                                              -1.0,  1.0,  1.0,
+                                                                               1.0,  1.0, -1.0,
+                                                                               1.0,  1.0,  1.0,
+                                                                               1.0, -1.0, -1.0,
+                                                                               1.0, -1.0,  1.0,
+                                                                               1.0,  1.0,  1.0,
+                                                                               1.0,  1.0, -1.0,
+                                                                              -1.0,  1.0,  1.0,
+                                                                              -1.0,  1.0, -1.0,
+                                                                               1.0, -1.0, -1.0,
+                                                                               1.0, -1.0,  1.0,
+                                                                              -1.0, -1.0, -1.0,
+                                                                              -1.0, -1.0,  1.0,
+                                                                              -1.0,  1.0,  1.0,
+                                                                              -1.0, -1.0,  1.0,
+                                                                               1.0,  1.0,  1.0,
+                                                                               1.0, -1.0,  1.0,
+                                                                              -1.0, -1.0, -1.0,
+                                                                              -1.0,  1.0, -1.0,
+                                                                               1.0, -1.0, -1.0,
+                                                                               1.0,  1.0, -1.0 ] ), mGL.STATIC_DRAW );
+                        mGL.bindBuffer( mGL.ARRAY_BUFFER, null );
+
+                        //-------------------------------------------------------------------
+
+                        mShaderHeader[0] = "";
+                        mShaderHeaderLines[0] = 0;
+                        if( mIs20 )
+                        {
+                            mShaderHeader[0] += "#version 300 es\n" +
+                                                "#ifdef GL_ES\n"+
+                                                "precision highp float;\n" +
+                                                "precision highp int;\n"+
+                                                "precision mediump sampler3D;\n"+
+                                                "#endif\n";
+                            mShaderHeaderLines[0] += 6;
+                        }
+                        else
+                        {
+                            mShaderHeader[0] += "#ifdef GL_ES\n"+
+                                                "precision highp float;\n" +
+                                                "precision highp int;\n"+
+                                                "#endif\n"+
+                                                "float round( float x ) { return floor(x+0.5); }\n"+
+                                                "vec2 round(vec2 x) { return floor(x + 0.5); }\n"+
+                                                "vec3 round(vec3 x) { return floor(x + 0.5); }\n"+
+                                                "vec4 round(vec4 x) { return floor(x + 0.5); }\n"+
+                                                "float trunc( float x, float n ) { return floor(x*n)/n; }\n"+
+                                                "mat3 transpose(mat3 m) { return mat3(m[0].x, m[1].x, m[2].x, m[0].y, m[1].y, m[2].y, m[0].z, m[1].z, m[2].z); }\n"+
+                                                "float determinant( in mat2 m ) { return m[0][0]*m[1][1] - m[0][1]*m[1][0]; }\n"+
+                                                "float determinant( mat4 m ) { float b00 = m[0][0] * m[1][1] - m[0][1] * m[1][0], b01 = m[0][0] * m[1][2] - m[0][2] * m[1][0], b02 = m[0][0] * m[1][3] - m[0][3] * m[1][0], b03 = m[0][1] * m[1][2] - m[0][2] * m[1][1], b04 = m[0][1] * m[1][3] - m[0][3] * m[1][1], b05 = m[0][2] * m[1][3] - m[0][3] * m[1][2], b06 = m[2][0] * m[3][1] - m[2][1] * m[3][0], b07 = m[2][0] * m[3][2] - m[2][2] * m[3][0], b08 = m[2][0] * m[3][3] - m[2][3] * m[3][0], b09 = m[2][1] * m[3][2] - m[2][2] * m[3][1], b10 = m[2][1] * m[3][3] - m[2][3] * m[3][1], b11 = m[2][2] * m[3][3] - m[2][3] * m[3][2];  return b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;}\n"+
+                                                "mat2 inverse(mat2 m) { float det = determinant(m); return mat2(m[1][1], -m[0][1], -m[1][0], m[0][0]) / det; }\n"+
+                                                "mat4 inverse(mat4 m ) { float inv0 = m[1].y*m[2].z*m[3].w - m[1].y*m[2].w*m[3].z - m[2].y*m[1].z*m[3].w + m[2].y*m[1].w*m[3].z + m[3].y*m[1].z*m[2].w - m[3].y*m[1].w*m[2].z; float inv4 = -m[1].x*m[2].z*m[3].w + m[1].x*m[2].w*m[3].z + m[2].x*m[1].z*m[3].w - m[2].x*m[1].w*m[3].z - m[3].x*m[1].z*m[2].w + m[3].x*m[1].w*m[2].z; float inv8 = m[1].x*m[2].y*m[3].w - m[1].x*m[2].w*m[3].y - m[2].x  * m[1].y * m[3].w + m[2].x  * m[1].w * m[3].y + m[3].x * m[1].y * m[2].w - m[3].x * m[1].w * m[2].y; float inv12 = -m[1].x  * m[2].y * m[3].z + m[1].x  * m[2].z * m[3].y +m[2].x  * m[1].y * m[3].z - m[2].x  * m[1].z * m[3].y - m[3].x * m[1].y * m[2].z + m[3].x * m[1].z * m[2].y; float inv1 = -m[0].y*m[2].z * m[3].w + m[0].y*m[2].w * m[3].z + m[2].y  * m[0].z * m[3].w - m[2].y  * m[0].w * m[3].z - m[3].y * m[0].z * m[2].w + m[3].y * m[0].w * m[2].z; float inv5 = m[0].x  * m[2].z * m[3].w - m[0].x  * m[2].w * m[3].z - m[2].x  * m[0].z * m[3].w + m[2].x  * m[0].w * m[3].z + m[3].x * m[0].z * m[2].w - m[3].x * m[0].w * m[2].z; float inv9 = -m[0].x  * m[2].y * m[3].w +  m[0].x  * m[2].w * m[3].y + m[2].x  * m[0].y * m[3].w - m[2].x  * m[0].w * m[3].y - m[3].x * m[0].y * m[2].w + m[3].x * m[0].w * m[2].y; float inv13 = m[0].x  * m[2].y * m[3].z - m[0].x  * m[2].z * m[3].y - m[2].x  * m[0].y * m[3].z + m[2].x  * m[0].z * m[3].y + m[3].x * m[0].y * m[2].z - m[3].x * m[0].z * m[2].y; float inv2 = m[0].y  * m[1].z * m[3].w - m[0].y  * m[1].w * m[3].z - m[1].y  * m[0].z * m[3].w + m[1].y  * m[0].w * m[3].z + m[3].y * m[0].z * m[1].w - m[3].y * m[0].w * m[1].z; float inv6 = -m[0].x  * m[1].z * m[3].w + m[0].x  * m[1].w * m[3].z + m[1].x  * m[0].z * m[3].w - m[1].x  * m[0].w * m[3].z - m[3].x * m[0].z * m[1].w + m[3].x * m[0].w * m[1].z; float inv10 = m[0].x  * m[1].y * m[3].w - m[0].x  * m[1].w * m[3].y - m[1].x  * m[0].y * m[3].w + m[1].x  * m[0].w * m[3].y + m[3].x * m[0].y * m[1].w - m[3].x * m[0].w * m[1].y; float inv14 = -m[0].x  * m[1].y * m[3].z + m[0].x  * m[1].z * m[3].y + m[1].x  * m[0].y * m[3].z - m[1].x  * m[0].z * m[3].y - m[3].x * m[0].y * m[1].z + m[3].x * m[0].z * m[1].y; float inv3 = -m[0].y * m[1].z * m[2].w + m[0].y * m[1].w * m[2].z + m[1].y * m[0].z * m[2].w - m[1].y * m[0].w * m[2].z - m[2].y * m[0].z * m[1].w + m[2].y * m[0].w * m[1].z; float inv7 = m[0].x * m[1].z * m[2].w - m[0].x * m[1].w * m[2].z - m[1].x * m[0].z * m[2].w + m[1].x * m[0].w * m[2].z + m[2].x * m[0].z * m[1].w - m[2].x * m[0].w * m[1].z; float inv11 = -m[0].x * m[1].y * m[2].w + m[0].x * m[1].w * m[2].y + m[1].x * m[0].y * m[2].w - m[1].x * m[0].w * m[2].y - m[2].x * m[0].y * m[1].w + m[2].x * m[0].w * m[1].y; float inv15 = m[0].x * m[1].y * m[2].z - m[0].x * m[1].z * m[2].y - m[1].x * m[0].y * m[2].z + m[1].x * m[0].z * m[2].y + m[2].x * m[0].y * m[1].z - m[2].x * m[0].z * m[1].y; float det = m[0].x * inv0 + m[0].y * inv4 + m[0].z * inv8 + m[0].w * inv12; det = 1.0 / det; return det*mat4( inv0, inv1, inv2, inv3,inv4, inv5, inv6, inv7,inv8, inv9, inv10, inv11,inv12, inv13, inv14, inv15);}\n"+
+                                                "float sinh(float x)  { return (exp(x)-exp(-x))/2.; }\n"+
+                                                "float cosh(float x)  { return (exp(x)+exp(-x))/2.; }\n"+
+                                                "float tanh(float x)  { return sinh(x)/cosh(x); }\n"+
+                                                "float coth(float x)  { return cosh(x)/sinh(x); }\n"+
+                                                "float sech(float x)  { return 1./cosh(x); }\n"+
+                                                "float csch(float x)  { return 1./sinh(x); }\n"+
+                                                "float asinh(float x) { return    log(x+sqrt(x*x+1.)); }\n"+
+                                                "float acosh(float x) { return    log(x+sqrt(x*x-1.)); }\n"+
+                                                "float atanh(float x) { return .5*log((1.+x)/(1.-x)); }\n"+
+                                                "float acoth(float x) { return .5*log((x+1.)/(x-1.)); }\n"+
+                                                "float asech(float x) { return    log((1.+sqrt(1.-x*x))/x); }\n"+
+                                                "float acsch(float x) { return    log((1.+sqrt(1.+x*x))/x); }\n";
+                            mShaderHeaderLines[0] += 26;
+                        }
+
+                        //-------------------------------------------------------
+
+                        mShaderHeader[1] = "";
+                        mShaderHeaderLines[1] = 0;
+                        if( mIs20 )
+                        {
+                            mShaderHeader[1] += "#version 300 es\n"+
+                                                "#ifdef GL_ES\n"+
+                                                "precision highp float;\n"+
+                                                "precision highp int;\n"+
+                                                "precision mediump sampler3D;\n"+
+                                                "#endif\n";
+                            mShaderHeaderLines[1] += 6;
+                        }
+                        else
+                        {
+                            if( mDerivatives ) { mShaderHeader[1] += "#ifdef GL_OES_standard_derivatives\n#extension GL_OES_standard_derivatives : enable\n#endif\n"; mShaderHeaderLines[1]+=3; }
+                            if( mShaderTextureLOD  ) { mShaderHeader[1] += "#extension GL_EXT_shader_texture_lod : enable\n"; mShaderHeaderLines[1]++; }
+                            mShaderHeader[1] += "#ifdef GL_ES\n"+
+                                                "precision highp float;\n"+
+                                                "precision highp int;\n"+
+                                                "#endif\n"+
+                                                "vec4 texture(     sampler2D   s, vec2 c)                   { return texture2D(s,c); }\n"+
+                                                "vec4 texture(     sampler2D   s, vec2 c, float b)          { return texture2D(s,c,b); }\n"+
+                                                "vec4 texture(     samplerCube s, vec3 c )                  { return textureCube(s,c); }\n"+
+                                                "vec4 texture(     samplerCube s, vec3 c, float b)          { return textureCube(s,c,b); }\n"+
+                                                "float round( float x ) { return floor(x+0.5); }\n"+
+                                                "vec2 round(vec2 x) { return floor(x + 0.5); }\n"+
+                                                "vec3 round(vec3 x) { return floor(x + 0.5); }\n"+
+                                                "vec4 round(vec4 x) { return floor(x + 0.5); }\n"+
+                                                "float trunc( float x, float n ) { return floor(x*n)/n; }\n"+
+                                                "mat3 transpose(mat3 m) { return mat3(m[0].x, m[1].x, m[2].x, m[0].y, m[1].y, m[2].y, m[0].z, m[1].z, m[2].z); }\n"+
+                                                "float determinant( in mat2 m ) { return m[0][0]*m[1][1] - m[0][1]*m[1][0]; }\n"+
+                                                "float determinant( mat4 m ) { float b00 = m[0][0] * m[1][1] - m[0][1] * m[1][0], b01 = m[0][0] * m[1][2] - m[0][2] * m[1][0], b02 = m[0][0] * m[1][3] - m[0][3] * m[1][0], b03 = m[0][1] * m[1][2] - m[0][2] * m[1][1], b04 = m[0][1] * m[1][3] - m[0][3] * m[1][1], b05 = m[0][2] * m[1][3] - m[0][3] * m[1][2], b06 = m[2][0] * m[3][1] - m[2][1] * m[3][0], b07 = m[2][0] * m[3][2] - m[2][2] * m[3][0], b08 = m[2][0] * m[3][3] - m[2][3] * m[3][0], b09 = m[2][1] * m[3][2] - m[2][2] * m[3][1], b10 = m[2][1] * m[3][3] - m[2][3] * m[3][1], b11 = m[2][2] * m[3][3] - m[2][3] * m[3][2];  return b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;}\n"+
+                                                "mat2 inverse(mat2 m) { float det = determinant(m); return mat2(m[1][1], -m[0][1], -m[1][0], m[0][0]) / det; }\n"+
+                                                "mat4 inverse(mat4 m ) { float inv0 = m[1].y*m[2].z*m[3].w - m[1].y*m[2].w*m[3].z - m[2].y*m[1].z*m[3].w + m[2].y*m[1].w*m[3].z + m[3].y*m[1].z*m[2].w - m[3].y*m[1].w*m[2].z; float inv4 = -m[1].x*m[2].z*m[3].w + m[1].x*m[2].w*m[3].z + m[2].x*m[1].z*m[3].w - m[2].x*m[1].w*m[3].z - m[3].x*m[1].z*m[2].w + m[3].x*m[1].w*m[2].z; float inv8 = m[1].x*m[2].y*m[3].w - m[1].x*m[2].w*m[3].y - m[2].x  * m[1].y * m[3].w + m[2].x  * m[1].w * m[3].y + m[3].x * m[1].y * m[2].w - m[3].x * m[1].w * m[2].y; float inv12 = -m[1].x  * m[2].y * m[3].z + m[1].x  * m[2].z * m[3].y +m[2].x  * m[1].y * m[3].z - m[2].x  * m[1].z * m[3].y - m[3].x * m[1].y * m[2].z + m[3].x * m[1].z * m[2].y; float inv1 = -m[0].y*m[2].z * m[3].w + m[0].y*m[2].w * m[3].z + m[2].y  * m[0].z * m[3].w - m[2].y  * m[0].w * m[3].z - m[3].y * m[0].z * m[2].w + m[3].y * m[0].w * m[2].z; float inv5 = m[0].x  * m[2].z * m[3].w - m[0].x  * m[2].w * m[3].z - m[2].x  * m[0].z * m[3].w + m[2].x  * m[0].w * m[3].z + m[3].x * m[0].z * m[2].w - m[3].x * m[0].w * m[2].z; float inv9 = -m[0].x  * m[2].y * m[3].w +  m[0].x  * m[2].w * m[3].y + m[2].x  * m[0].y * m[3].w - m[2].x  * m[0].w * m[3].y - m[3].x * m[0].y * m[2].w + m[3].x * m[0].w * m[2].y; float inv13 = m[0].x  * m[2].y * m[3].z - m[0].x  * m[2].z * m[3].y - m[2].x  * m[0].y * m[3].z + m[2].x  * m[0].z * m[3].y + m[3].x * m[0].y * m[2].z - m[3].x * m[0].z * m[2].y; float inv2 = m[0].y  * m[1].z * m[3].w - m[0].y  * m[1].w * m[3].z - m[1].y  * m[0].z * m[3].w + m[1].y  * m[0].w * m[3].z + m[3].y * m[0].z * m[1].w - m[3].y * m[0].w * m[1].z; float inv6 = -m[0].x  * m[1].z * m[3].w + m[0].x  * m[1].w * m[3].z + m[1].x  * m[0].z * m[3].w - m[1].x  * m[0].w * m[3].z - m[3].x * m[0].z * m[1].w + m[3].x * m[0].w * m[1].z; float inv10 = m[0].x  * m[1].y * m[3].w - m[0].x  * m[1].w * m[3].y - m[1].x  * m[0].y * m[3].w + m[1].x  * m[0].w * m[3].y + m[3].x * m[0].y * m[1].w - m[3].x * m[0].w * m[1].y; float inv14 = -m[0].x  * m[1].y * m[3].z + m[0].x  * m[1].z * m[3].y + m[1].x  * m[0].y * m[3].z - m[1].x  * m[0].z * m[3].y - m[3].x * m[0].y * m[1].z + m[3].x * m[0].z * m[1].y; float inv3 = -m[0].y * m[1].z * m[2].w + m[0].y * m[1].w * m[2].z + m[1].y * m[0].z * m[2].w - m[1].y * m[0].w * m[2].z - m[2].y * m[0].z * m[1].w + m[2].y * m[0].w * m[1].z; float inv7 = m[0].x * m[1].z * m[2].w - m[0].x * m[1].w * m[2].z - m[1].x * m[0].z * m[2].w + m[1].x * m[0].w * m[2].z + m[2].x * m[0].z * m[1].w - m[2].x * m[0].w * m[1].z; float inv11 = -m[0].x * m[1].y * m[2].w + m[0].x * m[1].w * m[2].y + m[1].x * m[0].y * m[2].w - m[1].x * m[0].w * m[2].y - m[2].x * m[0].y * m[1].w + m[2].x * m[0].w * m[1].y; float inv15 = m[0].x * m[1].y * m[2].z - m[0].x * m[1].z * m[2].y - m[1].x * m[0].y * m[2].z + m[1].x * m[0].z * m[2].y + m[2].x * m[0].y * m[1].z - m[2].x * m[0].z * m[1].y; float det = m[0].x * inv0 + m[0].y * inv4 + m[0].z * inv8 + m[0].w * inv12; det = 1.0 / det; return det*mat4( inv0, inv1, inv2, inv3,inv4, inv5, inv6, inv7,inv8, inv9, inv10, inv11,inv12, inv13, inv14, inv15);}\n"+
+                                                "float sinh(float x)  { return (exp(x)-exp(-x))/2.; }\n"+
+                                                "float cosh(float x)  { return (exp(x)+exp(-x))/2.; }\n"+
+                                                "float tanh(float x)  { return sinh(x)/cosh(x); }\n"+
+                                                "float coth(float x)  { return cosh(x)/sinh(x); }\n"+
+                                                "float sech(float x)  { return 1./cosh(x); }\n"+
+                                                "float csch(float x)  { return 1./sinh(x); }\n"+
+                                                "float asinh(float x) { return    log(x+sqrt(x*x+1.)); }\n"+
+                                                "float acosh(float x) { return    log(x+sqrt(x*x-1.)); }\n"+
+                                                "float atanh(float x) { return .5*log((1.+x)/(1.-x)); }\n"+
+                                                "float acoth(float x) { return .5*log((x+1.)/(x-1.)); }\n"+
+                                                "float asech(float x) { return    log((1.+sqrt(1.-x*x))/x); }\n"+
+                                                "float acsch(float x) { return    log((1.+sqrt(1.+x*x))/x); }\n";
+                            mShaderHeaderLines[1] += 30;
+                            if( mShaderTextureLOD )
+                            {
+                            mShaderHeader[1] += "vec4 textureLod(  sampler2D   s, vec2 c, float b)          { return texture2DLodEXT(s,c,b); }\n";
+                            mShaderHeader[1] += "vec4 textureGrad( sampler2D   s, vec2 c, vec2 dx, vec2 dy) { return texture2DGradEXT(s,c,dx,dy); }\n";
+                            mShaderHeaderLines[1] += 2;
+
+                            //mShaderHeader[1] += "vec4 texelFetch( sampler2D s, ivec2 c, int l) { return texture2DLodEXT(s,(vec2(c)+0.5)/vec2(800,450),float(l)); }\n";
+                            //mShaderHeaderLines[1] += 1;
+                            }
+                        }
+
+                        return true;
+                    };
+
+        me.GetCaps =    function ()
+                        {
+                            return { mIsGL20 : mIs20,
+                                     mFloat32Textures: mFloat32Textures != null,
+                                     mFloat16Textures: mFloat16Textures != null,
+                                     mDrawBuffers: mDrawBuffers != null,
+                                     mDepthTextures: mDepthTextures != null,
+                                     mDerivatives: mDerivatives != null,
+                                     mShaderTextureLOD: mShaderTextureLOD != null };
+                        };
+
+        me.GetShaderHeaderLines = function (shaderType)
+                        {
+                            return mShaderHeaderLines[shaderType];
+                        };
+
+        me.CheckErrors = function()
+                         {
+                                var error = mGL.getError();
+                                if( error != mGL.NO_ERROR )
+                                {
+                                    for( var prop in mGL )
+                                    {
+                                        if( typeof mGL[prop] == 'number' )
+                                        {
+                                            if( mGL[prop] == error )
+                                            {
+                                                console.log( "GL Error " + error + ": " + prop );
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                         };
+
+        me.Clear =  function( flags, ccolor, cdepth, cstencil )
+                    {
+                        var mode = 0;
+                        if( flags & 1 ) { mode |= mGL.COLOR_BUFFER_BIT;   mGL.clearColor( ccolor[0], ccolor[1], ccolor[2], ccolor[3] ); }
+                        if( flags & 2 ) { mode |= mGL.DEPTH_BUFFER_BIT;   mGL.clearDepth( cdepth ); }
+                        if( flags & 4 ) { mode |= mGL.STENCIL_BUFFER_BIT; mGL.clearStencil( cstencil ); }
+                        mGL.clear( mode );
+                    };
+
+
+        me.CreateTexture = function ( type, xres, yres, format, filter, wrap, buffer)
+                           {
+                                if( mGL===null ) return null;
+
+                                var id = mGL.createTexture();
+
+                                var glFoTy = iFormatPI2GL( format );
+                                var glWrap = mGL.REPEAT; if (wrap === me.TEXWRP.CLAMP) glWrap = mGL.CLAMP_TO_EDGE;
+
+                                if( type===me.TEXTYPE.T2D )
+                                {
+                                    mGL.bindTexture( mGL.TEXTURE_2D, id );
+
+                                    mGL.texImage2D( mGL.TEXTURE_2D, 0, glFoTy.mGLFormat, xres, yres, 0, glFoTy.mGLExternal, glFoTy.mGLType, buffer );
+                                    mGL.texParameteri( mGL.TEXTURE_2D, mGL.TEXTURE_WRAP_S, glWrap );
+                                    mGL.texParameteri( mGL.TEXTURE_2D, mGL.TEXTURE_WRAP_T, glWrap );
+
+                                    if (filter === me.FILTER.NONE)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST);
+                                    }
+                                    else if (filter === me.FILTER.LINEAR)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR);
+                                    }
+                                    else if (filter === me.FILTER.MIPMAP)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR_MIPMAP_LINEAR);
+                                        mGL.generateMipmap(mGL.TEXTURE_2D);
+                                    }
+                                    else
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST_MIPMAP_LINEAR);
+                                        mGL.generateMipmap(mGL.TEXTURE_2D);
+                                    }
+
+                                    mGL.bindTexture( mGL.TEXTURE_2D, null );
+                                }
+                                else if( type===me.TEXTYPE.T3D )
+                                {
+                                    if( mIs20 )
+                                    {
+                                        mGL.bindTexture( mGL.TEXTURE_3D, id );
+                                        mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_BASE_LEVEL, 0);
+                                        mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MAX_LEVEL, Math.log2(xres));
+                                        if (filter === me.FILTER.NONE)
+                                        {
+                                            mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                            mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST);
+                                        }
+                                        else if (filter === me.FILTER.LINEAR)
+                                        {
+                                            mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                            mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR);
+                                        }
+                                        else if (filter === me.FILTER.MIPMAP)
+                                        {
+                                            mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                            mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR_MIPMAP_LINEAR);
+                                        }
+                                        else
+                                        {
+                                            mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                            mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST_MIPMAP_LINEAR);
+                                            mGL.generateMipmap(mGL.TEXTURE_3D);
+                                        }
+                                        mGL.texImage3D( mGL.TEXTURE_3D, 0, glFoTy.mGLFormat, xres, yres, yres, 0, glFoTy.mGLExternal, glFoTy.mGLType, buffer );
+
+                                        mGL.texParameteri( mGL.TEXTURE_3D, mGL.TEXTURE_WRAP_R, glWrap );
+                                        mGL.texParameteri( mGL.TEXTURE_3D, mGL.TEXTURE_WRAP_S, glWrap );
+                                        mGL.texParameteri( mGL.TEXTURE_3D, mGL.TEXTURE_WRAP_T, glWrap );
+
+                                        if (filter === me.FILTER.MIPMAP)
+                                            mGL.generateMipmap( mGL.TEXTURE_3D );
+                                        mGL.bindTexture( mGL.TEXTURE_3D, null );
+                                    }
+                                    else
+                                    {
+                                        return null;
+                                    }
+                                }
+                                else
+                                {
+                                    mGL.bindTexture( mGL.TEXTURE_CUBE_MAP, id );
+
+                                    mGL.texImage2D( mGL.TEXTURE_CUBE_MAP_POSITIVE_X, 0, glFoTy.mGLFormat, xres, yres, 0, glFoTy.mGLExternal, glFoTy.mGLType, buffer );
+                                    mGL.texImage2D( mGL.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, glFoTy.mGLFormat, xres, yres, 0, glFoTy.mGLExternal, glFoTy.mGLType, buffer );
+                                    mGL.texImage2D( mGL.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, glFoTy.mGLFormat, xres, yres, 0, glFoTy.mGLExternal, glFoTy.mGLType, buffer );
+                                    mGL.texImage2D( mGL.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, glFoTy.mGLFormat, xres, yres, 0, glFoTy.mGLExternal, glFoTy.mGLType, buffer );
+                                    mGL.texImage2D( mGL.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, glFoTy.mGLFormat, xres, yres, 0, glFoTy.mGLExternal, glFoTy.mGLType, buffer );
+                                    mGL.texImage2D( mGL.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, glFoTy.mGLFormat, xres, yres, 0, glFoTy.mGLExternal, glFoTy.mGLType, buffer );
+
+                                    if( filter === me.FILTER.NONE)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST);
+                                    }
+                                    else if (filter === me.FILTER.LINEAR)
+                                    {
+                                        mGL.texParameteri( mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR );
+                                        mGL.texParameteri( mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR );
+                                    }
+                                    else if (filter === me.FILTER.MIPMAP)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR_MIPMAP_LINEAR);
+                                    }
+
+                                    if (filter === me.FILTER.MIPMAP)
+                                        mGL.generateMipmap( mGL.TEXTURE_CUBE_MAP );
+
+                                    mGL.bindTexture( mGL.TEXTURE_CUBE_MAP, null );
+                                }
+                        return { mObjectID: id, mXres: xres, mYres: yres, mFormat: format, mType: type, mFilter: filter, mWrap: wrap, mVFlip:false };
+                        };
+
+        me.CreateTextureFromImage = function ( type, image, format, filter, wrap, flipY)
+                                {
+                                    if( mGL===null ) return null;
+
+                                    var id = mGL.createTexture();
+
+                                    var glFoTy = iFormatPI2GL( format );
+
+                                    var glWrap = mGL.REPEAT; if (wrap === me.TEXWRP.CLAMP) glWrap = mGL.CLAMP_TO_EDGE;
+
+                                    if( type===me.TEXTYPE.T2D )
+                                    {
+                                        mGL.bindTexture(mGL.TEXTURE_2D, id);
+
+                                        mGL.pixelStorei(mGL.UNPACK_FLIP_Y_WEBGL, flipY);
+                                        mGL.pixelStorei(mGL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+                                        if( mIs20 ) mGL.pixelStorei(mGL.UNPACK_COLORSPACE_CONVERSION_WEBGL, mGL.NONE );
+
+                                        mGL.texImage2D(mGL.TEXTURE_2D, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, image);
+
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_WRAP_S, glWrap);
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_WRAP_T, glWrap);
+
+                                        if (filter === me.FILTER.NONE)
+                                        {
+                                            mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                            mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST);
+                                        }
+                                        else if (filter === me.FILTER.LINEAR)
+                                        {
+                                            mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                            mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR);
+                                        }
+                                        else if( filter === me.FILTER.MIPMAP)
+                                        {
+                                            mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                            mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR_MIPMAP_LINEAR);
+                                            mGL.generateMipmap(mGL.TEXTURE_2D);
+                                        }
+                                        else
+                                        {
+                                            mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                            mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST_MIPMAP_LINEAR);
+                                            mGL.generateMipmap(mGL.TEXTURE_2D);
+                                        }
+                                        mGL.pixelStorei(mGL.UNPACK_FLIP_Y_WEBGL, false);
+                                        mGL.bindTexture(mGL.TEXTURE_2D, null);
+                                    }
+                                    else if( type===me.TEXTYPE.T3D )
+                                    {
+                                        return null;
+                                    }
+                                    else
+                                    {
+                                        mGL.bindTexture( mGL.TEXTURE_CUBE_MAP, id );
+                                        mGL.pixelStorei(mGL.UNPACK_FLIP_Y_WEBGL, flipY);
+                                        mGL.activeTexture( mGL.TEXTURE0 );
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_POSITIVE_X, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, image[0] );
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, image[1] );
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, (flipY ? image[3] : image[2]) );
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, (flipY ? image[2] : image[3]) );
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, image[4] );
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, image[5] );
+
+                                        if( filter === me.FILTER.NONE)
+                                        {
+                                            mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                            mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST);
+                                        }
+                                        else if (filter === me.FILTER.LINEAR)
+                                        {
+                                            mGL.texParameteri( mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR );
+                                            mGL.texParameteri( mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR );
+                                        }
+                                        else if (filter === me.FILTER.MIPMAP)
+                                        {
+                                            mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                            mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR_MIPMAP_LINEAR);
+                                            mGL.generateMipmap( mGL.TEXTURE_CUBE_MAP );
+                                        }
+                                        mGL.pixelStorei(mGL.UNPACK_FLIP_Y_WEBGL, false);
+                                        mGL.bindTexture( mGL.TEXTURE_CUBE_MAP, null );
+                                    }
+                                    return { mObjectID: id, mXres: image.width, mYres: image.height, mFormat: format, mType: type, mFilter: filter, mWrap:wrap, mVFlip:flipY };
+                                };
+
+        me.SetSamplerFilter = function (te, filter, doGenerateMipsIfNeeded)
+                            {
+                                if (te.mFilter === filter) return;
+
+                                if (te.mType === me.TEXTYPE.T2D)
+                                {
+                                    mGL.bindTexture(mGL.TEXTURE_2D, te.mObjectID);
+
+                                    if (filter === me.FILTER.NONE)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST);
+                                    }
+                                    else if (filter === me.FILTER.LINEAR)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR);
+                                    }
+                                    else if (filter === me.FILTER.MIPMAP)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR_MIPMAP_LINEAR);
+                                        if( doGenerateMipsIfNeeded ) mGL.generateMipmap(mGL.TEXTURE_2D);
+                                    }
+                                    else
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                        mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST_MIPMAP_LINEAR);
+                                        if( doGenerateMipsIfNeeded ) mGL.generateMipmap(mGL.TEXTURE_2D);
+                                    }
+
+                                    mGL.bindTexture(mGL.TEXTURE_2D, null);
+
+                                }
+                                else if (te.mType === me.TEXTYPE.T3D)
+                                {
+                                    mGL.bindTexture(mGL.TEXTURE_3D, te.mObjectID);
+
+                                    if (filter === me.FILTER.NONE)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                        mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST);
+                                    }
+                                    else if (filter === me.FILTER.LINEAR)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                        mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR);
+                                    }
+                                    else if (filter === me.FILTER.MIPMAP)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                        mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR_MIPMAP_LINEAR);
+                                        if( doGenerateMipsIfNeeded ) mGL.generateMipmap(mGL.TEXTURE_3D);
+                                    }
+                                    else
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                        mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST_MIPMAP_LINEAR);
+                                        if( doGenerateMipsIfNeeded ) mGL.generateMipmap(mGL.TEXTURE_3D);
+                                    }
+
+                                    mGL.bindTexture(mGL.TEXTURE_3D, null);
+
+                                }
+                                else
+                                {
+                                    mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, te.mObjectID);
+
+                                    if (filter === me.FILTER.NONE)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST);
+                                    }
+                                    else if (filter === me.FILTER.LINEAR)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR);
+                                    }
+                                    else if (filter === me.FILTER.MIPMAP)
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MAG_FILTER, mGL.LINEAR);
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MIN_FILTER, mGL.LINEAR_MIPMAP_LINEAR);
+                                        if( doGenerateMipsIfNeeded ) mGL.generateMipmap(mGL.TEXTURE_CUBE_MAP);
+                                    }
+                                    else
+                                    {
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MAG_FILTER, mGL.NEAREST);
+                                        mGL.texParameteri(mGL.TEXTURE_CUBE_MAP, mGL.TEXTURE_MIN_FILTER, mGL.NEAREST_MIPMAP_LINEAR);
+                                        if( doGenerateMipsIfNeeded ) mGL.generateMipmap(mGL.TEXTURE_CUBE_MAP);
+                                    }
+
+                                    mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, null);
+                                }
+
+
+                                te.mFilter = filter;
+                            };
+
+        me.SetSamplerWrap = function (te, wrap)
+                            {
+                                if (te.mWrap === wrap) return;
+
+                                var glWrap = mGL.REPEAT; if (wrap === me.TEXWRP.CLAMP) glWrap = mGL.CLAMP_TO_EDGE;
+
+                                var id = te.mObjectID;
+
+                                if (te.mType === me.TEXTYPE.T2D)
+                                {
+                                    mGL.bindTexture(mGL.TEXTURE_2D, id);
+                                    mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_WRAP_S, glWrap);
+                                    mGL.texParameteri(mGL.TEXTURE_2D, mGL.TEXTURE_WRAP_T, glWrap);
+                                    mGL.bindTexture(mGL.TEXTURE_2D, null);
+
+                                }
+                                else if (te.mType === me.TEXTYPE.T3D)
+                                {
+                                    mGL.bindTexture(mGL.TEXTURE_3D, id);
+                                    mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_WRAP_R, glWrap);
+                                    mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_WRAP_S, glWrap);
+                                    mGL.texParameteri(mGL.TEXTURE_3D, mGL.TEXTURE_WRAP_T, glWrap);
+                                    mGL.bindTexture(mGL.TEXTURE_3D, null);
+                                }
+
+                                te.mWrap = wrap;
+                            };
+
+        me.SetSamplerVFlip = function (te, vflip, image)
+                            {
+                                if (te.mVFlip === vflip) return;
+
+                                var id = te.mObjectID;
+
+                                if (te.mType === me.TEXTYPE.T2D)
+                                {
+                                    if( image != null)
+                                    {
+                                        mGL.activeTexture( mGL.TEXTURE0 );
+                                        mGL.bindTexture(mGL.TEXTURE_2D, id);
+                                        mGL.pixelStorei(mGL.UNPACK_FLIP_Y_WEBGL, vflip);
+                                        var glFoTy = iFormatPI2GL( te.mFormat );
+                                        mGL.texImage2D(mGL.TEXTURE_2D, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, image);
+                                        mGL.bindTexture(mGL.TEXTURE_2D, null);
+                                        mGL.pixelStorei(mGL.UNPACK_FLIP_Y_WEBGL, false);
+                                    }
+                                }
+                                else if (te.mType === me.TEXTYPE.CUBEMAP)
+                                {
+                                    if( image != null)
+                                    {
+                                        var glFoTy = iFormatPI2GL( te.mFormat );
+                                        mGL.activeTexture( mGL.TEXTURE0 );
+                                        mGL.bindTexture( mGL.TEXTURE_CUBE_MAP, id );
+                                        mGL.pixelStorei( mGL.UNPACK_FLIP_Y_WEBGL, vflip);
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_POSITIVE_X, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, image[0] );
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, image[1] );
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, (vflip ? image[3] : image[2]) );
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, (vflip ? image[2] : image[3]) );
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, image[4] );
+                                        mGL.texImage2D(  mGL.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, image[5] );
+                                        mGL.bindTexture( mGL.TEXTURE_CUBE_MAP, null );
+                                        mGL.pixelStorei(mGL.UNPACK_FLIP_Y_WEBGL, false);
+                                    }
+
+                                }
+
+                                te.mVFlip = vflip;
+                            };
+
+        me.CreateMipmaps =  function (te)
+                            {
+                                if( te.mType===me.TEXTYPE.T2D )
+                                {
+                                    mGL.activeTexture(mGL.TEXTURE0);
+                                    mGL.bindTexture(mGL.TEXTURE_2D, te.mObjectID);
+                                    mGL.generateMipmap(mGL.TEXTURE_2D);
+                                    mGL.bindTexture(mGL.TEXTURE_2D, null);
+                                }
+                                else if( te.mType===me.TEXTYPE.CUBEMAP )
+                                {
+                                    mGL.activeTexture(mGL.TEXTURE0);
+                                    mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, te.mObjectID);
+                                    mGL.generateMipmap( mGL.TEXTURE_CUBE_MAP );
+                                    mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, null);
+                                }
+                            };
+
+        me.UpdateTexture =  function( tex, x0, y0, xres, yres, buffer )
+                            {
+                                var glFoTy = iFormatPI2GL( tex.mFormat );
+                                if( tex.mType===me.TEXTYPE.T2D )
+                                {
+                                    mGL.activeTexture( mGL.TEXTURE0);
+                                    mGL.bindTexture( mGL.TEXTURE_2D, tex.mObjectID );
+                                    mGL.pixelStorei(mGL.UNPACK_FLIP_Y_WEBGL, tex.mVFlip );
+                                    mGL.texSubImage2D( mGL.TEXTURE_2D, 0, x0, y0, xres, yres, glFoTy.mGLExternal, glFoTy.mGLType, buffer );
+                                    mGL.bindTexture( mGL.TEXTURE_2D, null );
+                                    mGL.pixelStorei(mGL.UNPACK_FLIP_Y_WEBGL, false);
+                                }
+                            };
+
+        me.UpdateTextureFromImage = function( tex, image )
+                                {
+                                    var glFoTy = iFormatPI2GL( tex.mFormat );
+                                    if( tex.mType===me.TEXTYPE.T2D )
+                                    {
+                                        mGL.activeTexture( mGL.TEXTURE0 );
+                                        mGL.bindTexture( mGL.TEXTURE_2D, tex.mObjectID );
+                                        mGL.pixelStorei(mGL.UNPACK_FLIP_Y_WEBGL, tex.mVFlip );
+                                        mGL.texImage2D(  mGL.TEXTURE_2D, 0, glFoTy.mGLFormat, glFoTy.mGLExternal, glFoTy.mGLType, image );
+                                        mGL.bindTexture( mGL.TEXTURE_2D, null );
+                                        mGL.pixelStorei(mGL.UNPACK_FLIP_Y_WEBGL, false);
+                                    }
+                                };
+
+        me.DestroyTexture = function( te )
+                            {
+                                 mGL.deleteTexture( te.mObjectID );
+                            };
+
+        me.AttachTextures = function (num, t0, t1, t2, t3)
+                            {
+                                if (num > 0 && t0 != null)
+                                {
+                                    mGL.activeTexture(mGL.TEXTURE0);
+                                         if (t0.mType === me.TEXTYPE.T2D) mGL.bindTexture(mGL.TEXTURE_2D, t0.mObjectID);
+                                    else if (t0.mType === me.TEXTYPE.T3D) mGL.bindTexture(mGL.TEXTURE_3D, t0.mObjectID);
+                                    else if (t0.mType === me.TEXTYPE.CUBEMAP) mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, t0.mObjectID);
+                                }
+
+                                if (num > 1 && t1 != null)
+                                {
+                                    mGL.activeTexture(mGL.TEXTURE1);
+                                         if (t1.mType === me.TEXTYPE.T2D) mGL.bindTexture(mGL.TEXTURE_2D, t1.mObjectID);
+                                    else if (t1.mType === me.TEXTYPE.T3D) mGL.bindTexture(mGL.TEXTURE_3D, t1.mObjectID);
+                                    else if (t1.mType === me.TEXTYPE.CUBEMAP) mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, t1.mObjectID);
+                                }
+
+                                if (num > 2 && t2 != null)
+                                {
+                                    mGL.activeTexture(mGL.TEXTURE2);
+                                         if (t2.mType === me.TEXTYPE.T2D) mGL.bindTexture(mGL.TEXTURE_2D, t2.mObjectID);
+                                    else if (t2.mType === me.TEXTYPE.T3D) mGL.bindTexture(mGL.TEXTURE_3D, t2.mObjectID);
+                                    else if (t2.mType === me.TEXTYPE.CUBEMAP) mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, t2.mObjectID);
+                                }
+
+                                if (num > 3 && t3 != null)
+                                {
+                                    mGL.activeTexture(mGL.TEXTURE3);
+                                         if (t3.mType === me.TEXTYPE.T2D) mGL.bindTexture(mGL.TEXTURE_2D, t3.mObjectID);
+                                    else if (t3.mType === me.TEXTYPE.T3D) mGL.bindTexture(mGL.TEXTURE_3D, t3.mObjectID);
+                                    else if (t3.mType === me.TEXTYPE.CUBEMAP) mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, t3.mObjectID);
+                                }
+                            };
+
+        me.DettachTextures = function()
+                             {
+                                mGL.activeTexture(mGL.TEXTURE0);
+                                mGL.bindTexture(mGL.TEXTURE_2D, null);
+                                mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, null);
+
+                                mGL.activeTexture(mGL.TEXTURE1);
+                                mGL.bindTexture(mGL.TEXTURE_2D, null);
+                                mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, null);
+
+                                mGL.activeTexture(mGL.TEXTURE2);
+                                mGL.bindTexture(mGL.TEXTURE_2D, null);
+                                mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, null);
+
+                                mGL.activeTexture(mGL.TEXTURE3);
+                                mGL.bindTexture(mGL.TEXTURE_2D, null);
+                                mGL.bindTexture(mGL.TEXTURE_CUBE_MAP, null);
+                             };
+
+        me.CreateRenderTarget = function ( color0, color1, color2, color3, depth, wantZbuffer )
+                                {
+                                    var id =  mGL.createFramebuffer();
+                                    mGL.bindFramebuffer(mGL.FRAMEBUFFER, id);
+
+                                    if (depth === null)
+                                    {
+                                        if( wantZbuffer===true )
+                                        {
+                                            var zb = mGL.createRenderbuffer();
+                                            mGL.bindRenderbuffer(mGL.RENDERBUFFER, zb);
+                                            mGL.renderbufferStorage(mGL.RENDERBUFFER, mGL.DEPTH_COMPONENT16, color0.mXres, color0.mYres);
+
+                                            mGL.framebufferRenderbuffer(mGL.FRAMEBUFFER, mGL.DEPTH_ATTACHMENT, mGL.RENDERBUFFER, zb);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        mGL.framebufferTexture2D(mGL.FRAMEBUFFER, mGL.DEPTH_ATTACHMENT, mGL.TEXTURE_2D, depth.mObjectID, 0);
+                                    }
+
+                                    if( color0 !=null ) mGL.framebufferTexture2D(mGL.FRAMEBUFFER, mGL.COLOR_ATTACHMENT0, mGL.TEXTURE_2D, color0.mObjectID, 0);
+
+                                    if (mGL.checkFramebufferStatus(mGL.FRAMEBUFFER) != mGL.FRAMEBUFFER_COMPLETE)
+                                        return null;
+
+                                    mGL.bindRenderbuffer(mGL.RENDERBUFFER, null);
+                                    mGL.bindFramebuffer(mGL.FRAMEBUFFER, null);
+                                    return { mObjectID: id, mTex0: color0 };
+                                };
+
+        me.DestroyRenderTarget = function ( tex )
+                                 {
+                                     mGL.deleteFramebuffer(tex.mObjectID);
+                                 };
+
+        me.SetRenderTarget = function (tex)
+                             {
+                                if( tex===null )
+                                    mGL.bindFramebuffer(mGL.FRAMEBUFFER, null);
+                                else
+                                    mGL.bindFramebuffer(mGL.FRAMEBUFFER, tex.mObjectID);
+
+                                //mGL.drawBuffers([mGL.COLOR_ATTACHMENT0, mGL.COLOR_ATTACHMENT1]);
+                             };
+
+        me.CreateRenderTargetNew = function ( wantColor0, wantZbuffer, xres, yres, samples )
+                                {
+                                    var id =  mGL.createFramebuffer();
+                                    mGL.bindFramebuffer(mGL.FRAMEBUFFER, id);
+
+                                    if( wantZbuffer===true )
+                                    {
+                                        var zb = mGL.createRenderbuffer();
+                                        mGL.bindRenderbuffer(mGL.RENDERBUFFER, zb);
+
+                                        if( samples==1 )
+                                        mGL.renderbufferStorage(mGL.RENDERBUFFER, mGL.DEPTH_COMPONENT16, xres, yres);
+                                        else
+                                        mGL.renderbufferStorageMultisample(mGL.RENDERBUFFER, samples, mGL.DEPTH_COMPONENT16, xres, yres);
+                                        mGL.framebufferRenderbuffer(mGL.FRAMEBUFFER, mGL.DEPTH_ATTACHMENT, mGL.RENDERBUFFER, zb);
+                                    }
+
+                                    if( wantColor0 )
+                                    {
+                                        var cb = mGL.createRenderbuffer();
+                                        mGL.bindRenderbuffer(mGL.RENDERBUFFER, cb);
+                                        if( samples==1 )
+                                        mGL.renderbufferStorage(mGL.RENDERBUFFER, mGL.RGBA8, xres, yres);
+                                        else
+                                        mGL.renderbufferStorageMultisample(mGL.RENDERBUFFER, samples, mGL.RGBA8, xres, yres);
+                                        mGL.framebufferRenderbuffer(mGL.FRAMEBUFFER, mGL.COLOR_ATTACHMENT0, mGL.RENDERBUFFER, cb);
+                                    }
+
+                                    if (mGL.checkFramebufferStatus(mGL.FRAMEBUFFER) != mGL.FRAMEBUFFER_COMPLETE)
+                                    {
+                                        return null;
+                                    }
+                                    mGL.bindRenderbuffer(mGL.RENDERBUFFER, null);
+                                    mGL.bindFramebuffer(mGL.FRAMEBUFFER, null);
+                                    return { mObjectID: id, mXres: xres, mYres:yres, mTex0: color0 };
+                                };
+
+        me.CreateRenderTargetCubeMap = function ( color0, depth, wantZbuffer )
+                                {
+                                    var id =  mGL.createFramebuffer();
+                                    mGL.bindFramebuffer(mGL.FRAMEBUFFER, id);
+
+                                    if (depth === null)
+                                    {
+                                        if( wantZbuffer===true )
+                                        {
+                                            var zb = mGL.createRenderbuffer();
+                                            mGL.bindRenderbuffer(mGL.RENDERBUFFER, zb);
+                                            mGL.renderbufferStorage(mGL.RENDERBUFFER, mGL.DEPTH_COMPONENT16, color0.mXres, color0.mYres);
+                                            mGL.framebufferRenderbuffer(mGL.FRAMEBUFFER, mGL.DEPTH_ATTACHMENT, mGL.RENDERBUFFER, zb);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        mGL.framebufferTexture2D(mGL.FRAMEBUFFER, mGL.DEPTH_ATTACHMENT, mGL.TEXTURE_2D, depth.mObjectID, 0);
+                                    }
+
+                                    if( color0 !=null ) mGL.framebufferTexture2D(mGL.FRAMEBUFFER, mGL.COLOR_ATTACHMENT0, mGL.TEXTURE_CUBE_MAP_POSITIVE_X, color0.mObjectID, 0);
+
+                                    if (mGL.checkFramebufferStatus(mGL.FRAMEBUFFER) != mGL.FRAMEBUFFER_COMPLETE)
+                                        return null;
+
+                                    mGL.bindRenderbuffer(mGL.RENDERBUFFER, null);
+                                    mGL.bindFramebuffer(mGL.FRAMEBUFFER, null);
+                                    return { mObjectID: id, mTex0: color0 };
+                                };
+
+        me.SetRenderTargetCubeMap = function (fbo, face)
+                             {
+                                if( fbo===null )
+                                    mGL.bindFramebuffer(mGL.FRAMEBUFFER, null);
+                                else
+                                {
+                                    mGL.bindFramebuffer(mGL.FRAMEBUFFER, fbo.mObjectID);
+                                    mGL.framebufferTexture2D(mGL.FRAMEBUFFER, mGL.COLOR_ATTACHMENT0, mGL.TEXTURE_CUBE_MAP_POSITIVE_X+face, fbo.mTex0.mObjectID, 0);
+                                }
+                             };
+
+
+        me.BlitRenderTarget = function( dst, src )
+                                {
+                                    mGL.bindFramebuffer(mGL.READ_FRAMEBUFFER, src.mObjectID);
+                                    mGL.bindFramebuffer(mGL.DRAW_FRAMEBUFFER, dst.mObjectID);
+                                    mGL.clearBufferfv(mGL.COLOR, 0, [0.0, 0.0, 0.0, 1.0]);
+                                    mGL.blitFramebuffer( 0, 0, src.mXres, src.mYres,
+                                                         0, 0, src.mXres, src.mYres,
+                                                         mGL.COLOR_BUFFER_BIT, mGL.LINEAR
+                                    );
+                                };
+
+        me.SetViewport = function( vp )
+                         {
+                              mGL.viewport( vp[0], vp[1], vp[2], vp[3] );
+                         };
+
+        me.SetWriteMask = function( c0, c1, c2, c3, z )
+                          {
+                              mGL.depthMask(z);
+                              mGL.colorMask(c0,c0,c0,c0);
+                          };
+
+        me.SetState = function( stateName, stateValue )
+                      {
+                            if (stateName === me.RENDSTGATE.WIREFRAME)
+                            {
+                                if( stateValue ) mGL.polygonMode( mGL.FRONT_AND_BACK, mGL.LINE );
+                                else             mGL.polygonMode( mGL.FRONT_AND_BACK, mGL.FILL );
+                            }
+                            else if (stateName === me.RENDSTGATE.FRONT_FACE)
+                            {
+                                if( stateValue ) mGL.cullFace( mGL.BACK );
+                                else             mGL.cullFace( mGL.FRONT );
+                            }
+                            else if (stateName === me.RENDSTGATE.CULL_FACE)
+                            {
+                                if( stateValue ) mGL.enable( mGL.CULL_FACE );
+                                else             mGL.disable( mGL.CULL_FACE );
+                            }
+                            else if (stateName === me.RENDSTGATE.DEPTH_TEST)
+                            {
+                                if( stateValue ) mGL.enable( mGL.DEPTH_TEST );
+                                else             mGL.disable( mGL.DEPTH_TEST );
+                            }
+                            else if (stateName === me.RENDSTGATE.ALPHA_TO_COVERAGE)
+                            {
+                                if( stateValue ) { mGL.enable(  mGL.SAMPLE_ALPHA_TO_COVERAGE ); }
+                                else             { mGL.disable( mGL.SAMPLE_ALPHA_TO_COVERAGE ); }
+                            }
+                      };
+
+        me.SetMultisample = function( v)
+                    {
+                        if( v===true )
+                        {
+                            mGL.enable(mGL.SAMPLE_COVERAGE);
+                            mGL.sampleCoverage(1.0, false);
+                        }
+                        else
+                        {
+                            mGL.disable(mGL.SAMPLE_COVERAGE);
+                        }
+                    };
+
+        me.GetTranslatedShaderSource = function (shader)
+                          {
+                            if( mGL===null ) return null;
+                            if( mDebugShader===null ) return null;
+                            let vfs = mGL.getAttachedShaders(shader.mProgram);
+                            let str = mDebugShader.getTranslatedShaderSource(vfs[1]);
+                            let parts = str.split("GLSL END"); str = (parts.length<2) ? str : parts[1];
+                            return str;
+                          };
+
+        me.CreateShader = function (vsSource, fsSource, preventCache, forceSynch, onResolve)
+                          {
+                            if( mGL===null ) return;
+
+                            var vs = mGL.createShader( mGL.VERTEX_SHADER   );
+                            var fs = mGL.createShader( mGL.FRAGMENT_SHADER );
+
+                            vsSource = mShaderHeader[0] + vsSource;
+                            fsSource = mShaderHeader[1] + fsSource;
+
+                            if( preventCache )
+                            {
+                                let vran = Math.random().toString(36).substring(7);
+                                let fran = Math.random().toString(36).substring(7);
+                                vsSource += "\n#define K" + vran + "\n";
+                                fsSource += "\n#define K" + fran + "\n";
+                            }
+
+                            var timeStart = (new Date()).getTime();
+
+                            mGL.shaderSource(vs, vsSource);
+                            mGL.shaderSource(fs, fsSource);
+                            mGL.compileShader(vs);
+                            mGL.compileShader(fs);
+
+                            var pr = mGL.createProgram();
+                            mGL.attachShader(pr, vs);
+                            mGL.attachShader(pr, fs);
+                            mGL.linkProgram(pr);
+
+                            //-------------
+                            let checkErrors = function()
+                            {
+                                if (!mGL.getProgramParameter(pr, mGL.LINK_STATUS))
+                                {
+                                    // vs error
+                                    if (!mGL.getShaderParameter(vs, mGL.COMPILE_STATUS))
+                                    {
+                                        let vsLog = mGL.getShaderInfoLog(vs);
+                                        onResolve(false, { mErrorType: 0, mErrorStr: vsLog });
+                                        mGL.deleteProgram(pr);
+                                    }
+                                    // fs error
+                                    else if (!mGL.getShaderParameter(fs, mGL.COMPILE_STATUS))
+                                    {
+                                        let fsLog = mGL.getShaderInfoLog(fs);
+                                        onResolve(false, { mErrorType: 1, mErrorStr: fsLog });
+                                        mGL.deleteProgram(pr);
+                                    }
+                                    // link error
+                                    else
+                                    {
+                                        let infoLog = mGL.getProgramInfoLog(pr);
+                                        onResolve(false, { mErrorType: 2, mErrorStr: infoLog });
+                                        mGL.deleteProgram(pr);
+                                    }
+                                }
+                                // no errors
+                                else
+                                {
+                                    let compilationTime = (new Date()).getTime() - timeStart;
+                                    onResolve(true, { mProgram: pr, mTime: compilationTime });
+                                }
+                            };
+
+                            // check compilation
+                            if (mAsynchCompile === null || forceSynch===true )
+                            {
+                                checkErrors();
+                            }
+                            else
+                            {
+                                let loopCheckCompletion = function ()
+                                {
+                                    if( mGL.getProgramParameter(pr, mAsynchCompile.COMPLETION_STATUS_KHR) === true )
+                                        checkErrors();
+                                    else
+                                        setTimeout(loopCheckCompletion, 10);
+                                };
+                                setTimeout(loopCheckCompletion, 10);
+                            }
+                        };
+
+        me.AttachShader = function( shader )
+                          {
+                                if( shader===null )
+                                {
+                                    mBindedShader = null;
+                                    mGL.useProgram( null );
+                                }
+                                else
+                                {
+                                    mBindedShader = shader;
+                                    mGL.useProgram(shader.mProgram);
+                                }
+                          };
+
+        me.DetachShader = function ()
+                        {
+                            mGL.useProgram(null);
+                        };
+
+        me.DestroyShader = function( tex )
+                        {
+                            mGL.deleteProgram(tex.mProgram);
+                        };
+
+        me.GetAttribLocation = function (shader, name)
+                        {
+                            return mGL.getAttribLocation(shader.mProgram, name);
+                        };
+
+        me.SetShaderConstantLocation = function (shader, name)
+                        {
+                            return mGL.getUniformLocation(shader.mProgram, name);
+                        };
+
+        me.SetShaderConstantMat4F = function( uname, params, istranspose )
+                        {
+                            var program = mBindedShader;
+
+                            let pos = mGL.getUniformLocation( program.mProgram, uname );
+                            if( pos===null )
+                                return false;
+
+                            if( istranspose===false )
+                            {
+                                var tmp = new Float32Array( [ params[0], params[4], params[ 8], params[12],
+                                                              params[1], params[5], params[ 9], params[13],
+                                                              params[2], params[6], params[10], params[14],
+                                                              params[3], params[7], params[11], params[15] ] );
+	                            mGL.uniformMatrix4fv(pos,false,tmp);
+                            }
+                            else
+                                mGL.uniformMatrix4fv(pos,false,new Float32Array(params) );
+                            return true;
+                        };
+
+        me.SetShaderConstant1F_Pos = function(pos, x)
+                        {
+                            mGL.uniform1f(pos, x);
+                            return true;
+                        };
+
+        me.SetShaderConstant1FV_Pos = function(pos, x)
+                        {
+                            mGL.uniform1fv(pos, x);
+                            return true;
+                        };
+
+        me.SetShaderConstant1F = function( uname, x )
+                        {
+                            var pos = mGL.getUniformLocation(mBindedShader.mProgram, uname);
+                            if (pos === null)
+                                return false;
+                            mGL.uniform1f(pos, x);
+                            return true;
+                        };
+
+        me.SetShaderConstant1I = function(uname, x)
+                        {
+                            let pos = mGL.getUniformLocation(mBindedShader.mProgram, uname);
+                            if (pos === null)
+                                return false;
+                            mGL.uniform1i(pos, x);
+                            return true;
+                        };
+        me.SetShaderConstant1I_Pos = function(pos, x)
+                        {
+                            mGL.uniform1i(pos, x);
+                            return true;
+                        };
+
+
+        me.SetShaderConstant2F = function(uname, x)
+                        {
+                            let pos = mGL.getUniformLocation(mBindedShader.mProgram, uname);
+                            if (pos === null)
+                                return false;
+                            mGL.uniform2fv(pos, x);
+                            return true;
+                        };
+
+        me.SetShaderConstant3F = function(uname, x, y, z)
+                        {
+                            let pos = mGL.getUniformLocation(mBindedShader.mProgram, uname);
+                            if (pos === null)
+                                return false;
+                            mGL.uniform3f(pos, x, y, z);
+                            return true;
+                        };
+
+        me.SetShaderConstant1FV = function(uname, x)
+                        {
+                            let pos = mGL.getUniformLocation(mBindedShader.mProgram, uname);
+                            if (pos === null)
+                                return false;
+                            mGL.uniform1fv(pos, new Float32Array(x));
+                            return true;
+                        };
+
+        me.SetShaderConstant3FV = function(uname, x)
+                        {
+                            let pos = mGL.getUniformLocation(mBindedShader.mProgram, uname);
+                            if (pos === null) return false;
+                            mGL.uniform3fv(pos, new Float32Array(x) );
+                            return true;
+                        };
+
+        me.SetShaderConstant4FV = function(uname, x)
+                        {
+                            let pos = mGL.getUniformLocation(mBindedShader.mProgram, uname);
+                            if (pos === null) return false;
+                            mGL.uniform4fv(pos, new Float32Array(x) );
+                            return true;
+                        };
+
+        me.SetShaderTextureUnit = function( uname, unit )
+                        {
+                            var program = mBindedShader;
+                            let pos = mGL.getUniformLocation(program.mProgram, uname);
+                            if (pos === null) return false;
+                            mGL.uniform1i(pos, unit);
+                            return true;
+                        };
+
+        me.CreateVertexArray = function( data, mode )
+                        {
+                            let id = mGL.createBuffer();
+                            mGL.bindBuffer(mGL.ARRAY_BUFFER, id);
+                            if (mode === me.BUFTYPE.STATIC)
+                                mGL.bufferData(mGL.ARRAY_BUFFER, data, mGL.STATIC_DRAW);
+                            else
+                                mGL.bufferData(mGL.ARRAY_BUFFER, data, mGL.DYNAMIC_DRAW);
+                            return { mObject: id };
+                        };
+
+        me.CreateIndexArray = function( data, mode )
+                        {
+                            let id = mGL.createBuffer();
+                            mGL.bindBuffer(mGL.ELEMENT_ARRAY_BUFFER, id );
+                            if (mode === me.BUFTYPE.STATIC)
+                                mGL.bufferData(mGL.ELEMENT_ARRAY_BUFFER, data, mGL.STATIC_DRAW);
+                            else
+                                mGL.bufferData(mGL.ELEMENT_ARRAY_BUFFER, data, mGL.DYNAMIC_DRAW);
+                            return { mObject: id };
+                        };
+
+        me.DestroyArray = function( tex )
+                        {
+                            mGL.destroyBuffer(tex.mObject);
+                        };
+
+        me.AttachVertexArray = function( tex, attribs, pos )
+                        {
+                            let shader = mBindedShader;
+
+                            mGL.bindBuffer( mGL.ARRAY_BUFFER, tex.mObject);
+
+                            var num = attribs.mChannels.length;
+                            var stride = attribs.mStride;
+
+                            var offset = 0;
+                            for (var i = 0; i < num; i++)
+                            {
+                                var id = pos[i];
+                                mGL.enableVertexAttribArray(id);
+                                var dtype = mGL.FLOAT;
+                                var dsize = 4;
+                                     if( attribs.mChannels[i].mType === me.TYPE.UINT8   ) { dtype = mGL.UNSIGNED_BYTE;  dsize = 1; }
+                                else if( attribs.mChannels[i].mType === me.TYPE.UINT16  ) { dtype = mGL.UNSIGNED_SHORT; dsize = 2; }
+                                else if( attribs.mChannels[i].mType === me.TYPE.FLOAT32 ) { dtype = mGL.FLOAT;          dsize = 4; }
+                                mGL.vertexAttribPointer(id, attribs.mChannels[i].mNumComponents, dtype, attribs.mChannels[i].mNormalize, stride, offset);
+                                offset += attribs.mChannels[i].mNumComponents * dsize;
+                            }
+                        };
+
+        me.AttachIndexArray = function( tex )
+                        {
+                            mGL.bindBuffer(mGL.ELEMENT_ARRAY_BUFFER, tex.mObject);
+                        };
+
+        me.DetachVertexArray = function (tex, attribs)
+                        {
+                            let num = attribs.mChannels.length;
+                            for (let i = 0; i < num; i++)
+                                mGL.disableVertexAttribArray(i);
+                            mGL.bindBuffer(mGL.ARRAY_BUFFER, null);
+                        };
+
+        me.DetachIndexArray = function( tex )
+                        {
+                            mGL.bindBuffer(mGL.ELEMENT_ARRAY_BUFFER, null);
+                        };
+
+        me.DrawPrimitive = function( typeOfPrimitive, num, useIndexArray, numInstances )
+                        {
+                            let glType = mGL.POINTS;
+                            if( typeOfPrimitive===me.PRIMTYPE.POINTS ) glType = mGL.POINTS;
+                            if( typeOfPrimitive===me.PRIMTYPE.LINES ) glType = mGL.LINES;
+                            if( typeOfPrimitive===me.PRIMTYPE.LINE_LOOP ) glType = mGL.LINE_LOOP;
+                            if( typeOfPrimitive===me.PRIMTYPE.LINE_STRIP ) glType = mGL.LINE_STRIP;
+                            if( typeOfPrimitive===me.PRIMTYPE.TRIANGLES ) glType = mGL.TRIANGLES;
+                            if( typeOfPrimitive===me.PRIMTYPE.TRIANGLE_STRIP ) glType = mGL.TRIANGLE_STRIP;
+
+                            if( numInstances<=1 )
+                            {
+  	                            if( useIndexArray ) mGL.drawElements( glType, num, mGL.UNSIGNED_SHORT, 0 );
+	                            else                mGL.drawArrays( glType, 0, num );
+                            }
+                            else
+                            {
+                                mGL.drawArraysInstanced(glType, 0, num, numInstances);
+                                mGL.drawElementsInstanced( glType, num, mGL.UNSIGNED_SHORT, 0, numInstances);
+                            }
+                        };
+
+
+        me.DrawFullScreenTriangle_XY = function( vpos )
+                        {
+                            mGL.bindBuffer( mGL.ARRAY_BUFFER, mVBO_Tri );
+                            mGL.vertexAttribPointer( vpos, 2, mGL.FLOAT, false, 0, 0 );
+                            mGL.enableVertexAttribArray( vpos );
+                            mGL.drawArrays( mGL.TRIANGLES, 0, 3 );
+                            mGL.disableVertexAttribArray( vpos );
+                            mGL.bindBuffer( mGL.ARRAY_BUFFER, null );
+                        };
+
+
+        me.DrawUnitQuad_XY = function( vpos )
+                        {
+                            mGL.bindBuffer( mGL.ARRAY_BUFFER, mVBO_Quad );
+                            mGL.vertexAttribPointer( vpos, 2, mGL.FLOAT, false, 0, 0 );
+                            mGL.enableVertexAttribArray( vpos );
+                            mGL.drawArrays( mGL.TRIANGLES, 0, 6 );
+                            mGL.disableVertexAttribArray( vpos );
+                            mGL.bindBuffer( mGL.ARRAY_BUFFER, null );
+                        };
+
+        me.DrawUnitCube_XYZ_NOR = function( vpos )
+                        {
+                            mGL.bindBuffer( mGL.ARRAY_BUFFER, mVBO_CubePosNor );
+                            mGL.vertexAttribPointer( vpos[0], 3, mGL.FLOAT, false, 0, 0 );
+                            mGL.vertexAttribPointer( vpos[1], 3, mGL.FLOAT, false, 0, 0 );
+                            mGL.enableVertexAttribArray( vpos[0] );
+                            mGL.enableVertexAttribArray( vpos[1] );
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 0, 4);
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 4, 4);
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 8, 4);
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 12, 4);
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 16, 4);
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 20, 4);
+                            mGL.disableVertexAttribArray( vpos[0] );
+                            mGL.disableVertexAttribArray( vpos[1] );
+                            mGL.bindBuffer( mGL.ARRAY_BUFFER, null );
+                        }
+
+        me.DrawUnitCube_XYZ = function( vpos )
+                        {
+                            mGL.bindBuffer( mGL.ARRAY_BUFFER, mVBO_CubePos );
+                            mGL.vertexAttribPointer( vpos, 3, mGL.FLOAT, false, 0, 0 );
+                            mGL.enableVertexAttribArray( vpos );
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 0, 4);
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 4, 4);
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 8, 4);
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 12, 4);
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 16, 4);
+                            mGL.drawArrays(mGL.TRIANGLE_STRIP, 20, 4);
+                            mGL.disableVertexAttribArray( vpos );
+                            mGL.bindBuffer( mGL.ARRAY_BUFFER, null );
+                        }
+
+        me.SetBlend = function( enabled )
+                    {
+                        if( enabled )
+                        {
+                            mGL.enable( mGL.BLEND );
+                            mGL.blendEquationSeparate( mGL.FUNC_ADD, mGL.FUNC_ADD );
+                            mGL.blendFuncSeparate( mGL.SRC_ALPHA, mGL.ONE_MINUS_SRC_ALPHA, mGL.ONE, mGL.ONE_MINUS_SRC_ALPHA );
+                        }
+                        else
+                        {
+                            mGL.disable( mGL.BLEND );
+                        }
+                    };
+
+        me.GetPixelData = function( data, offset, xres, yres )
+                        {
+                            mGL.readPixels(0, 0, xres, yres, mGL.RGBA, mGL.UNSIGNED_BYTE, data, offset);
+                        };
+
+        me.GetPixelDataRenderTarget = function( obj, data, xres, yres )
+                        {
+                            mGL.bindFramebuffer(mGL.FRAMEBUFFER, obj.mObjectID);
+                            mGL.readBuffer(mGL.COLOR_ATTACHMENT0);
+                            mGL.readPixels(0, 0, xres, yres, mGL.RGBA, mGL.FLOAT, data, 0);
+                            mGL.bindFramebuffer(mGL.FRAMEBUFFER, null);
+                        };
+    return me;
+}
+//==============================================================================
+//
+// piLibs 2015-2017 - http://www.iquilezles.org/www/material/piLibs/piLibs.htm
+//
+// piShading
+//
+//==============================================================================
+
+function smoothstep(a, b, x)
+{
+    x = (x - a) / (b - a);
+    if (x < 0) x = 0; else if (x > 1) x = 1;
+    return x * x * (3.0 - 2.0 * x);
+}
+
+function clamp01(x)
+{
+    if( x < 0.0 ) x = 0.0;
+    if( x > 1.0 ) x = 1.0;
+    return x;
+}
+
+function clamp(x, a, b)
+{
+    if( x < a ) x = a;
+    if( x > b ) x = b;
+    return x;
+}
+
+function screen(a, b)
+{
+    return 1.0 - (1.0 - a) * (1.0 - b);
+}
+
+function parabola(x)
+{
+    return 4.0 * x * (1.0 - x);
+}
+
+function min(a, b)
+{
+    return (a < b) ? a : b;
+}
+
+function max(a, b)
+{
+    return (a > b) ? a : b;
+}
+
+function noise( x )
+{
+    function grad(i, j, x, y)
+    {
+        var h = 7 * i + 131 * j;
+        h = (h << 13) ^ h;
+        h = (h * (h * h * 15731 + 789221) + 1376312589);
+
+        var rx = (h & 0x20000000) ? x : -x;
+        var ry = (h & 0x10000000) ? y : -y;
+
+        return rx + ry;
+    }
+
+    var i = [ Math.floor(x[0]), Math.floor(x[1]) ];
+    var f = [ x[0] - i[0], x[1] - i[1] ];
+    var w = [ f[0]*f[0]*(3.0-2.0*f[0]), f[1]*f[1]*(3.0-2.0*f[1]) ];
+
+    var a = grad( i[0]+0, i[1]+0, f[0]+0.0, f[1]+0.0 );
+    var b = grad( i[0]+1, i[1]+0, f[0]-1.0, f[1]+0.0 );
+    var c = grad( i[0]+0, i[1]+1, f[0]+0.0, f[1]-1.0 );
+    var d = grad( i[0]+1, i[1]+1, f[0]-1.0, f[1]-1.0 );
+
+    return a + (b-a)*w[0] + (c-a)*w[1] + (a-b-c+d)*w[0]*w[1];
+}//==============================================================================
+//
+// piLibs 2015-2017 - http://www.iquilezles.org/www/material/piLibs/piLibs.htm
+//
+// piVecTypes
+//
+//==============================================================================
+
+
+function vec3( a, b, c )
+{
+    return [ a, b, c ];
+}
+
+function add( a, b )
+{
+    return [ a[0]+b[0], a[1]+b[1], a[2]+b[2] ];
+}
+
+function sub( a, b )
+{
+    return [ a[0]-b[0], a[1]-b[1], a[2]-b[2] ];
+}
+
+function mul( a, s )
+{
+    return [ a[0]*s, a[1]*s, a[2]*s ];
+}
+
+function cross( a, b )
+{
+    return [ a[1]*b[2] - a[2]*b[1],
+             a[2]*b[0] - a[0]*b[2],
+             a[0]*b[1] - a[1]*b[0] ];
+}
+
+function dot( a, b )
+{
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+}
+
+function normalize( v )
+{
+    var is = 1.0 / Math.sqrt( v[0]*v[0] + v[1]*v[1] + v[2]*v[2] );
+    return [ v[0]*is, v[1]*is, v[2]*is ];
+}
+
+function createCirclePoint( cen, uuu, vvv, rad, s, t )
+{
+    return [ cen[0] + rad*(uuu[0]*s + vvv[0]*t),
+             cen[1] + rad*(uuu[1]*s + vvv[1]*t),
+             cen[2] + rad*(uuu[2]*s + vvv[2]*t) ];
+}
+
+function createTangent( a, b, c )
+{
+    var cb = normalize( [ c[0]-b[0], c[1]-b[1], c[2]-b[2] ] );
+    var ba = normalize( [ b[0]-a[0], b[1]-a[1], b[2]-a[2] ] );
+    return normalize( [ ba[0]+cb[0], ba[1]+cb[1], ba[2]+cb[2] ] );
+
+}
+
+//===================================
+
+function vec4( a, b, c, d )
+{
+    return [ a, b, c, d ];
+}
+
+function getXYZ( v )
+{
+    return [ v[0], v[1], v[2] ];
+}
+
+//===================================
+
+function setIdentity()
+{
+    return [ 1.0, 0.0, 0.0, 0.0,
+             0.0, 1.0, 0.0, 0.0,
+             0.0, 0.0, 1.0, 0.0,
+             0.0, 0.0, 0.0, 1.0 ];
+}
+
+function setRotationX( t )
+{
+    var sint = Math.sin(t);
+    var cost = Math.cos(t);
+
+    return [ 1.0,   0.0,   0.0, 0.0,
+             0.0,  cost, -sint, 0.0,
+             0.0,  sint,  cost, 0.0,
+             0.0,   0.0,   0.0, 1.0 ];
+}
+
+function setRotationY( t )
+{
+    var sint = Math.sin(t);
+    var cost = Math.cos(t);
+
+    return [ cost, 0.0, -sint, 0.0,
+              0.0, 1.0,   0.0, 0.0,
+             sint, 0.0,  cost, 0.0,
+              0.0, 0.0,   0.0, 1.0 ];
+}
+
+function extractRotationEuler( m)
+{
+    var res = [];
+    if (m[0] == 1.0)
+    {
+        res[0] = Math.atan2(m[2], m[11]);
+        res[1] = 0.0;
+        res[2] = 0.0;
+
+    }
+    else if (m[0] == -1.0)
+    {
+        res[0] = Math.atan2( m[2], m[11]);
+        res[1] = 0.0;
+        res[2] = 0.0;
+    }
+    else
+    {
+        res[0] = Math.atan2( -m[9], m[10]);
+        res[1] = Math.atan2( m[8], Math.sqrt(m[9]*m[9] + m[10]*m[10]));
+        res[2] = Math.atan2( m[4], m[0]);
+    }
+    return res;
+}
+
+function setFromQuaternion( q )
+{
+    var ww = q[3]*q[3];
+    var xx = q[0]*q[0];
+    var yy = q[1]*q[1];
+    var zz = q[2]*q[2];
+
+    return [ ww+xx-yy-zz,                   2.0*(q[0]*q[1] - q[3]*q[2]), 2.0*(q[0]*q[2] + q[3]*q[1]), 0.0,
+               2.0*(q[0]*q[1] + q[3]*q[2]),   ww-xx+yy-zz,                 2.0*(q[1]*q[2] - q[3]*q[0]), 0.0,
+               2.0*(q[0]*q[2] - q[3]*q[1]),   2.0*(q[1]*q[2] + q[3]*q[0]), ww-xx-yy+zz,                 0.0,
+               0.0,                           0.0,                         0.0,                         1.0 ];
+}
+
+function setPerspective( fovy, aspect, znear, zfar )
+{
+    var tan = Math.tan(fovy * Math.PI/180.0);
+    var x = 1.0 / (tan*aspect);
+    var y = 1.0 / (tan);
+    var c = -(zfar + znear) / ( zfar - znear);
+    var d = -(2.0 * zfar * znear) / (zfar - znear);
+
+    return [ x,    0.0,  0.0,  0.0,
+             0.0,  y,    0.0,  0.0,
+             0.0,  0.0,  c,     d,
+             0.0,  0.0, -1.0,  0.0 ];
+}
+
+function setLookAt( eye, tar, up )
+{
+    var dir = [ -tar[0]+eye[0], -tar[1]+eye[1], -tar[2]+eye[2] ];
+
+	var m00 = dir[2]*up[1] - dir[1]*up[2];
+    var m01 = dir[0]*up[2] - dir[2]*up[0];
+    var m02 = dir[1]*up[0] - dir[0]*up[1];
+    var im = 1.0/Math.sqrt( m00*m00 + m01*m01 + m02*m02 );
+    m00 *= im;
+    m01 *= im;
+    m02 *= im;
+
+	var m04 = m02*dir[1] - m01*dir[2];
+    var m05 = m00*dir[2] - m02*dir[0];
+    var m06 = m01*dir[0] - m00*dir[1];
+    im = 1.0/Math.sqrt( m04*m04 + m05*m05 + m06*m06 );
+    m04 *= im;
+    m05 *= im;
+    m06 *= im;
+
+	var m08 = dir[0];
+	var m09 = dir[1];
+	var m10 = dir[2];
+    im = 1.0/Math.sqrt( m08*m08 + m09*m09 + m10*m10 );
+    m08 *= im;
+    m09 *= im;
+    m10 *= im;
+
+	var m03 = -(m00*eye[0] + m01*eye[1] + m02*eye[2] );
+	var m07 = -(m04*eye[0] + m05*eye[1] + m06*eye[2] );
+	var m11 = -(m08*eye[0] + m09*eye[1] + m10*eye[2] );
+
+    return [ m00, m01, m02, m03,
+             m04, m05, m06, m07,
+             m08, m09, m10, m11,
+             0.0, 0.0, 0.0, 1.0 ];
+}
+
+
+function setOrtho( left, right, bottom, top, znear, zfar )
+{
+   var x = 2.0 / (right - left);
+   var y = 2.0 / (top - bottom);
+   var a = (right + left) / (right - left);
+   var b = (top + bottom) / (top - bottom);
+   var c = -2.0 / (zfar - znear);
+   var d = -(zfar + znear) / ( zfar - znear);
+
+   return [  x, 0.0, 0.0,   a,
+           0.0,   y, 0.0,   b,
+           0.0, 0.0,   c,   d,
+           0.0, 0.0, 0.0, 1.0 ];
+}
+
+function setTranslation( p )
+{
+    return [ 1.0, 0.0, 0.0, p[0],
+             0.0, 1.0, 0.0, p[1],
+             0.0, 0.0, 1.0, p[2],
+             0.0, 0.0, 0.0, 1.0 ];
+}
+
+function setScale( s )
+{
+    return [ s[0], 0.0,  0.0,  0.0,
+             0.0,  s[1], 0.0,  0.0,
+             0.0,  0.0,  s[2], 0.0,
+             0.0,  0.0,  0.0,  1.0];
+}
+
+function setProjection( fov, znear, zfar )
+{
+    var x = 2.0 / (fov[3]+fov[2]);
+    var y = 2.0 / (fov[0]+fov[1]);
+    var a = (fov[3]-fov[2]) / (fov[3]+fov[2]);
+    var b = (fov[0]-fov[1]) / (fov[0]+fov[1]);
+    var c = -(zfar + znear) / ( zfar - znear);
+    var d = -(2.0*zfar*znear) / (zfar - znear);
+    return [   x, 0.0,    a, 0.0,
+             0.0,   y,    b, 0.0,
+             0.0, 0.0,    c,   d,
+             0.0, 0.0, -1.0, 0.0 ];
+   // inverse is:
+   //return mat4x4( 1.0/x, 0.0f,  0.0f,   a/x,
+   //               0.0f,  1.0/y, 0.0f,   b/x,
+   //               0.0f,  0.0f,  0.0f,   -1.0,
+   //               0.0f,  0.0f,  1.0f/d, c/d );
+}
+
+
+function invertFast( m )
+{
+    var inv = [
+
+             m[5]  * m[10] * m[15] -
+             m[5]  * m[11] * m[14] -
+             m[9]  * m[6]  * m[15] +
+             m[9]  * m[7]  * m[14] +
+             m[13] * m[6]  * m[11] -
+             m[13] * m[7]  * m[10],
+
+             -m[1]  * m[10] * m[15] +
+              m[1]  * m[11] * m[14] +
+              m[9]  * m[2] * m[15] -
+              m[9]  * m[3] * m[14] -
+              m[13] * m[2] * m[11] +
+              m[13] * m[3] * m[10],
+
+             m[1]  * m[6] * m[15] -
+             m[1]  * m[7] * m[14] -
+             m[5]  * m[2] * m[15] +
+             m[5]  * m[3] * m[14] +
+             m[13] * m[2] * m[7] -
+             m[13] * m[3] * m[6],
+
+             -m[1] * m[6] * m[11] +
+              m[1] * m[7] * m[10] +
+              m[5] * m[2] * m[11] -
+              m[5] * m[3] * m[10] -
+              m[9] * m[2] * m[7] +
+              m[9] * m[3] * m[6],
+
+             -m[4]  * m[10] * m[15] +
+              m[4]  * m[11] * m[14] +
+              m[8]  * m[6]  * m[15] -
+              m[8]  * m[7]  * m[14] -
+              m[12] * m[6]  * m[11] +
+              m[12] * m[7]  * m[10],
+
+             m[0]  * m[10] * m[15] -
+             m[0]  * m[11] * m[14] -
+             m[8]  * m[2] * m[15] +
+             m[8]  * m[3] * m[14] +
+             m[12] * m[2] * m[11] -
+             m[12] * m[3] * m[10],
+
+             -m[0]  * m[6] * m[15] +
+              m[0]  * m[7] * m[14] +
+              m[4]  * m[2] * m[15] -
+              m[4]  * m[3] * m[14] -
+              m[12] * m[2] * m[7] +
+              m[12] * m[3] * m[6],
+
+
+             m[0] * m[6] * m[11] -
+             m[0] * m[7] * m[10] -
+             m[4] * m[2] * m[11] +
+             m[4] * m[3] * m[10] +
+             m[8] * m[2] * m[7] -
+             m[8] * m[3] * m[6],
+
+
+             m[4]  * m[9] * m[15] -
+             m[4]  * m[11] * m[13] -
+             m[8]  * m[5] * m[15] +
+             m[8]  * m[7] * m[13] +
+             m[12] * m[5] * m[11] -
+             m[12] * m[7] * m[9],
+
+
+
+             -m[0]  * m[9] * m[15] +
+              m[0]  * m[11] * m[13] +
+              m[8]  * m[1] * m[15] -
+              m[8]  * m[3] * m[13] -
+              m[12] * m[1] * m[11] +
+              m[12] * m[3] * m[9],
+
+              m[0]  * m[5] * m[15] -
+              m[0]  * m[7] * m[13] -
+              m[4]  * m[1] * m[15] +
+              m[4]  * m[3] * m[13] +
+              m[12] * m[1] * m[7] -
+              m[12] * m[3] * m[5],
+
+              -m[0] * m[5] * m[11] +
+               m[0] * m[7] * m[9] +
+               m[4] * m[1] * m[11] -
+               m[4] * m[3] * m[9] -
+               m[8] * m[1] * m[7] +
+               m[8] * m[3] * m[5],
+
+              -m[4]  * m[9] * m[14] +
+               m[4]  * m[10] * m[13] +
+               m[8]  * m[5] * m[14] -
+               m[8]  * m[6] * m[13] -
+               m[12] * m[5] * m[10] +
+               m[12] * m[6] * m[9],
+
+              m[0]  * m[9] * m[14] -
+              m[0]  * m[10] * m[13] -
+              m[8]  * m[1] * m[14] +
+              m[8]  * m[2] * m[13] +
+              m[12] * m[1] * m[10] -
+              m[12] * m[2] * m[9],
+
+              -m[0]  * m[5] * m[14] +
+               m[0]  * m[6] * m[13] +
+               m[4]  * m[1] * m[14] -
+               m[4]  * m[2] * m[13] -
+               m[12] * m[1] * m[6] +
+               m[12] * m[2] * m[5],
+
+              m[0] * m[5] * m[10] -
+              m[0] * m[6] * m[9] -
+              m[4] * m[1] * m[10] +
+              m[4] * m[2] * m[9] +
+              m[8] * m[1] * m[6] -
+              m[8] * m[2] * m[5] ];
+
+    var det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+
+    det = 1.0/det;
+
+    for( var i = 0; i<16; i++ ) inv[i] = inv[i] * det;
+
+    return inv;
+}
+
+function matMul( a, b )
+{
+    var res = [];
+    for( var i=0; i<4; i++ )
+    {
+        var x = a[4*i+0];
+        var y = a[4*i+1];
+        var z = a[4*i+2];
+        var w = a[4*i+3];
+
+        res[4*i+0] = x * b[ 0] + y * b[ 4] + z * b[ 8] + w * b[12];
+        res[4*i+1] = x * b[ 1] + y * b[ 5] + z * b[ 9] + w * b[13];
+        res[4*i+2] = x * b[ 2] + y * b[ 6] + z * b[10] + w * b[14];
+        res[4*i+3] = x * b[ 3] + y * b[ 7] + z * b[11] + w * b[15];
+    }
+
+    return res;
+}
+
+function matMulpoint( m, v )
+{
+    return [ m[0]*v[0] + m[1]*v[1] + m[ 2]*v[2] + m[ 3],
+             m[4]*v[0] + m[5]*v[1] + m[ 6]*v[2] + m[ 7],
+             m[8]*v[0] + m[9]*v[1] + m[10]*v[2] + m[11] ];
+}
+
+function matMulvec( m, v )
+{
+    return [ m[0]*v[0] + m[1]*v[1] + m[ 2]*v[2],
+             m[4]*v[0] + m[5]*v[1] + m[ 6]*v[2],
+             m[8]*v[0] + m[9]*v[1] + m[10]*v[2] ];
+}
+
+
+function bound3( infi )
+{
+    return [ infi, -infi, infi, -infi, infi, -infi ];
+}
+
+function bound3_include( a, p )
+{
+    return [
+        (p[0]<a[0]) ? p[0] : a[0],
+        (p[0]>a[1]) ? p[0] : a[1],
+        (p[1]<a[2]) ? p[1] : a[2],
+        (p[1]>a[3]) ? p[1] : a[3],
+        (p[2]<a[4]) ? p[2] : a[4],
+        (p[2]>a[5]) ? p[2] : a[5] ];
+}
+
+function bound3_center( b )
+{
+    return [ 0.5*(b[0]+b[1]),
+             0.5*(b[2]+b[3]),
+             0.5*(b[4]+b[5]) ];
+}
+
+function bound3_radius( b )
+{
+    return [ 0.5*(b[1]-b[0]),
+             0.5*(b[3]-b[2]),
+             0.5*(b[5]-b[4]) ];
+}
+//==============================================================================
+//
+// piLibs 2015-2017 - http://www.iquilezles.org/www/material/piLibs/piLibs.htm
+//
+// piWebVR
+//
+//==============================================================================
+
+function WebVR( isVREnabledCallback, canvasElement )
+{
+    isVREnabledCallback(false);
+}
+
+WebVR.prototype.IsSupported = function()
+{
+    return false;
+    //return this.mSupportVR;
+}
+
+WebVR.prototype.GetData = function( id )
+{
+    return {};
+}
+
+WebVR.prototype.Enable = function( id )
+{
+}
+
+WebVR.prototype.Disable = function( id )
+{
+}
+
+WebVR.prototype.RequestAnimationFrame = function (id)
+{
+}
+
+WebVR.prototype.IsPresenting = function (id)
+{
+    return false;
+}
+
+WebVR.prototype.Finish = function (id)
+{
+}
+
+//==============================================================================
+//
+// piLibs 2015-2017 - http://www.iquilezles.org/www/material/piLibs/piLibs.htm
+//
+// piWebUtils
+//
+//==============================================================================
+
+
+
+function htmlEntities(str)
+{
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g,'&apos;');
+}
+
+function piDisableTouch()
+{}
+
+var piGetTime = function ( timestamp )
+{
+    if (timestamp == 0)
+        return "";
+    return new Date(timestamp * 1000).toISOString().substr(0, 10);
+}
+
+function piGetCoords( obj )
+{
+    var x = 0;
+    var y = 0;
+    do
+    {
+         x += obj.offsetLeft;
+         y += obj.offsetTop;
+    }while( obj = obj.offsetParent );
+
+    return { mX:x, mY:y };
+}
+
+function piGetMouseCoords( ev, canvasElement )
+{
+    var pos = piGetCoords(canvasElement );
+    var mcx =                        (ev.pageX - pos.mX) * canvasElement.width / canvasElement.offsetWidth;
+    var mcy = canvasElement.height - (ev.pageY - pos.mY) * canvasElement.height / canvasElement.offsetHeight;
+
+    return { mX: mcx, mY: mcy };
+
+}
+
+function piGetSourceElement( e )
+{
+    var ele = null;
+    if( e.target )     ele = e.target;
+    if( e.srcElement ) ele = e.srcElement;
+    return ele;
+}
+
+function piRequestFullScreen( ele )
+{}
+
+function piIsFullScreen()
+{
+    return false;
+}
+
+function piExitFullScreen()
+{}
+
+function piIsMobile()
+{
+    return false;
+}
+
+function piCreateGlContext( cv, useAlpha, useDepth, usePreserveBuffer, useSupersampling )
+{
+    var opts = { alpha: useAlpha,
+                 depth: useDepth,
+                 stencil: false,
+                 premultipliedAlpha: false,
+                 antialias: useSupersampling,
+                 preserveDrawingBuffer: usePreserveBuffer,
+                 powerPreference: "high-performance" }; // "low_power", "high_performance", "default"
+
+    var gl = null;
+    if( gl === null) gl = cv.getContext( "webgl2", opts );
+    if( gl === null) gl = cv.getContext( "experimental-webgl2", opts );
+    if( gl === null) gl = cv.getContext( "webgl", opts );
+    if( gl === null) gl = cv.getContext( "experimental-webgl", opts );
+
+    return gl;
+}
+
+function piCreateAudioContext()
+{
+    return null;
+}
+
+function piHexColorToRGB(str) // "#ff3041"
+{
+    var rgb = parseInt(str.slice(1), 16);
+    var r = (rgb >> 16) & 255;
+    var g = (rgb >> 8) & 255;
+    var b = (rgb >> 0) & 255;
+    return [r, g, b];
+}
+
+function piCreateFPSCounter()
+{
+    var mFrame;
+    var mTo;
+    var mFPS;
+
+    var iReset = function( time )
+    {
+        mFrame = 0;
+        mTo = time;
+        mFPS = 60.0;
+    }
+
+    var iCount = function( time )
+    {
+        mFrame++;
+
+        if( (time-mTo)>500.0 )
+        {
+            mFPS = 1000.0*mFrame/(time-mTo);
+            mFrame = 0;
+            mTo = time;
+            return true;
+        }
+        return false;
+    }
+
+    var iGetFPS = function()
+    {
+        return mFPS;
+    }
+
+    return { Reset : iReset, Count : iCount, GetFPS : iGetFPS };
+}
+
+function piCanMediaRecorded(canvas)
+{
+    return true;
+}
+
+function piCreateMediaRecorder(isRecordingCallback, canvas)
+{
+    if (piCanMediaRecorded(canvas) == false)
+    {
+        return null;
+    }
+
+    var options = { audioBitsPerSecond : 0, videoBitsPerSecond : 8000000 };
+	     if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) options.mimeType = 'video/webm;codecs=h264';
+    else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9' )) options.mimeType = 'video/webm;codecs=vp9';
+    else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8' )) options.mimeType = 'video/webm;codecs=vp8';
+    else                                                              options.mimeType = 'video/webm;';
+
+    var mediaRecorder = new MediaRecorder(canvas.captureStream(), options);
+    var chunks = [];
+
+    mediaRecorder.ondataavailable = function(e)
+    {
+        if (e.data.size > 0)
+        {
+            chunks.push(e.data);
+        }
+    };
+
+    mediaRecorder.onstart = function(){
+        isRecordingCallback( true );
+    };
+
+    mediaRecorder.onstop = function()
+    {
+         isRecordingCallback( false );
+     };
+
+    return mediaRecorder;
+}
+
+function piExportToEXR(width, height, numComponents, type, bytes)
+{
+    var bytesPerComponent = 0;
+    if      (type=="Uint")   bytesPerComponent = 4;
+    else if (type=="Half")   bytesPerComponent = 2;
+    else if (type=="Float")  bytesPerComponent = 4;
+
+    var tHeader = 258 + (18 * numComponents + 1);
+    var tTable = 8 * height;
+    var tScanlines = height * (4 + 4 + (numComponents * bytesPerComponent * width));
+    var tTotal = tHeader + tTable + tScanlines;
+
+    var buffer = new ArrayBuffer(tTotal);
+    var data = new DataView(buffer);
+
+    // Header
+    {
+        // Header : 4 bytes -> 0x76, 0x2f, 0x31, 0x01
+        var c = 0;
+        data.setUint8 (c++, 0x76);
+        data.setUint8 (c++, 0x2f);
+        data.setUint8 (c++, 0x31);
+        data.setUint8 (c++, 0x01);
+
+        // Version : 4 bytes -> 2, 0, 0, 0
+        data.setUint8 (c++, 0x02);
+        data.setUint8 (c++, 0x0);
+        data.setUint8 (c++, 0x0);
+        data.setUint8 (c++, 0x0);
+
+        // Write channel info
+        // Write attribute name : "channels"
+            data.setUint8 (c++, 0x63);
+            data.setUint8 (c++, 0x68);
+            data.setUint8 (c++, 0x61);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x6c);
+            data.setUint8 (c++, 0x73);
+            data.setUint8 (c++, 0x0);
+
+            // Write attribute type : "chlist"
+            data.setUint8 (c++, 0x63);
+            data.setUint8 (c++, 0x68);
+            data.setUint8 (c++, 0x6c);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x73);
+            data.setUint8 (c++, 0x74);
+            data.setUint8 (c++, 0x00);
+
+            // Write attribute size : 18 x 3 + 1 = 55
+            var attribSize = 18 * numComponents + 1;
+            data.setUint8 (c++, attribSize);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            var i;
+            for (i = 0; i < numComponents; i++)
+            {
+                // Attribute : "B" (42) "G" (47) "R" (52)
+                if (i==0)       data.setUint8 (c++, 0x42);
+                else if (i==1)  data.setUint8 (c++, 0x47);
+                else if (i==2)  data.setUint8 (c++, 0x52);
+                data.setUint8 (c++, 0x00);
+
+                // Value : Float (2), Half (1), Uint (0)
+                if      (type=="Uint")   data.setUint8 (c++, 0x00);
+                else if (type=="Half")   data.setUint8 (c++, 0x01);
+                else if (type=="Float")  data.setUint8 (c++, 0x02);
+                data.setUint8 (c++, 0x00);
+                data.setUint8 (c++, 0x00);
+                data.setUint8 (c++, 0x00);
+
+                // Plinear
+                data.setUint8 (c++, 0x01);
+
+                // Reserved
+                data.setUint8 (c++, 0x00);
+                data.setUint8 (c++, 0x00);
+                data.setUint8 (c++, 0x00);
+
+                // X sampling
+                data.setUint8 (c++, 0x01);
+                data.setUint8 (c++, 0x00);
+                data.setUint8 (c++, 0x00);
+                data.setUint8 (c++, 0x00);
+
+                // Y sampling
+                data.setUint8 (c++, 0x01);
+                data.setUint8 (c++, 0x00);
+                data.setUint8 (c++, 0x00);
+                data.setUint8 (c++, 0x00);
+            }
+            // End attribute
+            data.setUint8 (c++, 0x00);
+
+        // Write attribute name : "compression"
+            data.setUint8 (c++, 0x63);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x6d);
+            data.setUint8 (c++, 0x70);
+            data.setUint8 (c++, 0x72);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x73);
+            data.setUint8 (c++, 0x73);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x00);
+
+            // Write attribute type : "compression"
+            data.setUint8 (c++, 0x63);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x6d);
+            data.setUint8 (c++, 0x70);
+            data.setUint8 (c++, 0x72);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x73);
+            data.setUint8 (c++, 0x73);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x00);
+
+            // Write attribute size : "1"
+            data.setUint8 (c++, 0x01);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            // Write attribute value : "0" (None)
+            data.setUint8 (c++, 0x00);
+
+        // datawindow
+            data.setUint8 (c++, 0x64);
+            data.setUint8 (c++, 0x61);
+            data.setUint8 (c++, 0x74);
+            data.setUint8 (c++, 0x61);
+            data.setUint8 (c++, 0x57);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x64);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x77);
+            data.setUint8 (c++, 0x00);
+
+            // box2i
+            data.setUint8 (c++, 0x62);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x78);
+            data.setUint8 (c++, 0x32);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x00);
+
+            // size 16
+            data.setUint8 (c++, 0x10);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            // value 0 0 3 2
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            data.setUint32 (c, width-1, true);
+            c += 4;
+
+            data.setUint32 (c, height-1, true);
+            c += 4;
+
+        // displayWindow
+            data.setUint8 (c++, 0x64);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x73);
+            data.setUint8 (c++, 0x70);
+            data.setUint8 (c++, 0x6c);
+            data.setUint8 (c++, 0x61);
+            data.setUint8 (c++, 0x79);
+            data.setUint8 (c++, 0x57);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x64);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x77);
+            data.setUint8 (c++, 0x00);
+
+            // box2i
+            data.setUint8 (c++, 0x62);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x78);
+            data.setUint8 (c++, 0x32);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x00);
+
+            // size 16
+            data.setUint8 (c++, 0x10);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            // value 0 0 3 2
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            data.setUint32 (c, width-1, true);
+            c += 4;
+
+            data.setUint32 (c, height-1, true);
+            c += 4;
+
+        // lineOrder
+            data.setUint8 (c++, 0x6c);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x4f);
+            data.setUint8 (c++, 0x72);
+            data.setUint8 (c++, 0x64);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x72);
+            data.setUint8 (c++, 0x00);
+
+            // lineOrder
+            data.setUint8 (c++, 0x6c);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x4f);
+            data.setUint8 (c++, 0x72);
+            data.setUint8 (c++, 0x64);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x72);
+            data.setUint8 (c++, 0x00);
+
+            // size
+            data.setUint8 (c++, 0x01);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            // value
+            data.setUint8 (c++, 0x00);
+
+        // PixelAspectRatio
+            data.setUint8 (c++, 0x70);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x78);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x6c);
+            data.setUint8 (c++, 0x41);
+            data.setUint8 (c++, 0x73);
+            data.setUint8 (c++, 0x70);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x63);
+            data.setUint8 (c++, 0x74);
+            data.setUint8 (c++, 0x52);
+            data.setUint8 (c++, 0x61);
+            data.setUint8 (c++, 0x74);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x00);
+
+            // float
+            data.setUint8 (c++, 0x66);
+            data.setUint8 (c++, 0x6c);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x61);
+            data.setUint8 (c++, 0x74);
+            data.setUint8 (c++, 0x00);
+
+            // size 4
+            data.setUint8 (c++, 0x04);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            // value 1.0
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x80);
+            data.setUint8 (c++, 0x3f);
+
+        // screenWindowCenter
+            data.setUint8 (c++, 0x73);
+            data.setUint8 (c++, 0x63);
+            data.setUint8 (c++, 0x72);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x57);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x64);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x77);
+            data.setUint8 (c++, 0x43);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x74);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x72);
+            data.setUint8 (c++, 0x00);
+
+            // v2f
+            data.setUint8 (c++, 0x76);
+            data.setUint8 (c++, 0x32);
+            data.setUint8 (c++, 0x66);
+            data.setUint8 (c++, 0x00);
+
+            // size 8
+            data.setUint8 (c++, 0x08);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            // value 0 0
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+        // screenWindowWidth
+            data.setUint8 (c++, 0x73);
+            data.setUint8 (c++, 0x63);
+            data.setUint8 (c++, 0x72);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x65);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x57);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x6e);
+            data.setUint8 (c++, 0x64);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x77);
+            data.setUint8 (c++, 0x57);
+            data.setUint8 (c++, 0x69);
+            data.setUint8 (c++, 0x64);
+            data.setUint8 (c++, 0x74);
+            data.setUint8 (c++, 0x68);
+            data.setUint8 (c++, 0x00);
+
+            // float
+            data.setUint8 (c++, 0x66);
+            data.setUint8 (c++, 0x6c);
+            data.setUint8 (c++, 0x6f);
+            data.setUint8 (c++, 0x61);
+            data.setUint8 (c++, 0x74);
+            data.setUint8 (c++, 0x00);
+
+            // size
+            data.setUint8 (c++, 0x04);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+
+            // value
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x00);
+            data.setUint8 (c++, 0x80);
+            data.setUint8 (c++, 0x3f);
+
+        // End of header
+        data.setUint8 (c++, 0x00);
+    }
+
+    // Scanline table
+    var initc = c + height * 8;
+    for (var scanline = 0 ; scanline < height ; scanline ++)
+    {
+        var jump = initc + scanline * (8 + width * bytesPerComponent * numComponents);
+        data.setUint32 (c, jump, true);
+        c += 4;
+
+        data.setUint32 (c, 0x00, true);
+        c += 4;
+    }
+
+    // Scanlines
+    for (var scanline = 0 ; scanline < height ; scanline ++)
+    {
+        // Scanline
+        data.setUint32(c, scanline, true);
+        c += 4;
+
+        // size 24
+        var size = width * numComponents * bytesPerComponent;
+        data.setUint32(c, size, true);
+        c += 4;
+
+        var numComponentsSource = 4; // number of components in the SOURCE image
+        for (var component = 0; component < numComponents ; component ++)
+        {
+            for (var pixel = 0 ; pixel < width ; pixel ++)
+            {
+                // flip vertical, so we read OpenGL buffers without JS image flipping
+                var v = bytes[(height-1-scanline) * width *numComponentsSource + pixel * numComponentsSource + (2-component)];
+                if      (type=="Float") data.setFloat32(c, v, true);
+                else if (type=="Half")  data.setUint16(c, v, true);
+
+                c += bytesPerComponent;
+            }
+        }
+    }
+
+    return new Blob([buffer], {type: 'application/octet-stream'});
+}
+
+
+function piExportToWAV(numSamples, rate, bits, numChannels, words)
+{
+    let numBytes = numSamples * numChannels * bits/8;
+
+    let buffer = new ArrayBuffer(44 + numBytes);
+    let data = new DataView(buffer);
+
+    {
+        data.setUint32( 0, 0x46464952, true );  // RIFF
+        data.setUint32( 4, numBytes + 36, true);
+        {
+            data.setUint32( 8, 0x45564157, true );  // WAV_WAVE
+            data.setUint32( 12, 0x20746D66, true );  // WAV_FMT
+            {
+                data.setUint32( 16, 16, true);
+                data.setUint16( 20, 1, true ); // WAV_FORMAT_PCM
+                data.setUint16( 22, numChannels, true);
+                data.setUint32( 24, rate, true);
+                data.setUint32( 28, rate*numChannels*bits / 8, true);
+                data.setUint16( 32, numChannels*bits / 8, true);
+                data.setUint16( 34, bits, true);
+            }
+
+            data.setUint32( 36, 0x61746164, true);  // WAV_DATA
+            {
+                data.setUint32( 40, numBytes, true);
+                let numWords = numSamples * numChannels;
+                for(let i=0; i<numWords; i++ )
+                {
+                    data.setInt16( 44 + i*2, words[i], true );
+                }
+            }
+        }
+    }
+
+
+    return new Blob([buffer], {type: 'application/octet-stream'});
+}
+
+function piTriggerDownload(name, blob)
+{}
