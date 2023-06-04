@@ -1,11 +1,1 @@
-const { moveMouse } = require('robotjs');
-const { contextBridge, ipcRenderer } = require('electron')
-
-contextBridge.exposeInMainWorld("moveMouse", (...args) => moveMouse(...args));
-
-contextBridge.exposeInMainWorld("onShortcut", (callback) => {
-	ipcRenderer.on("shortcut", (event, data) => {
-		// console.log("shortcut", data);
-		callback(data);
-	});
-});
+const{moveMouse}=require("robotjs"),{contextBridge,ipcRenderer}=require("electron");contextBridge.exposeInMainWorld("moveMouse",((...e)=>moveMouse(...e))),contextBridge.exposeInMainWorld("onShortcut",(e=>{ipcRenderer.on("shortcut",((o,r)=>{e(r)}))}));
