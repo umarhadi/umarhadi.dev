@@ -8,6 +8,8 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     steps:
       - uses: actions/checkout@v3
+      - name: Check files
+        run: pwd && ls -a
       - name: Deploy
         uses: reggionick/s3-deploy@v3
         with:
