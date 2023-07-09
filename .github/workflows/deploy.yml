@@ -8,12 +8,10 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     steps:
         - uses: actions/checkout@v3
-        - name: Select folder
-          run: cd ..
         - name: Deploy
           uses: reggionick/s3-deploy@v3
           with:
-            folder: umarhadi.dev
+            folder: /home/runner/work/umarhadi.dev/umarhadi.dev
             bucket: ${{ secrets.S3_BUCKET }}
             bucket-region: ${{ secrets.S3_BUCKET_REGION }}
             dist-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
