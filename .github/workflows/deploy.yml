@@ -18,7 +18,7 @@ jobs:
           bucket-region: ${{ secrets.S3_BUCKET_REGION }}
           dist-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
           invalidation: /
-          deleteRemoved: true
-          noCache: true
+          delete-removed: true
+          no-cache: true
           private: false
           filesToInclude: ".index/**,.*/*,*/*,**"
