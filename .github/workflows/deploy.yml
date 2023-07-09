@@ -13,12 +13,12 @@ jobs:
       - name: Deploy
         uses: reggionick/s3-deploy@v3
         with:
-          folder: /home/runner/work/umarhadi.dev/umarhadi.dev
+          folder: .
           bucket: ${{ secrets.S3_BUCKET }}
           bucket-region: ${{ secrets.S3_BUCKET_REGION }}
           dist-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
           invalidation: /
-          delete-removed: true
-          no-cache: true
+          deleteRemoved: true
+          noCache: true
           private: false
           filesToInclude: ".index/**,.*/*,*/*,**"
